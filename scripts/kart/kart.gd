@@ -111,6 +111,7 @@ var _spark_mat: StandardMaterial3D
 @onready var model: Node3D = $Model
 @onready var body: Node3D = $Model/Body
 @onready var chassis: MeshInstance3D = $Model/Body/Chassis
+@onready var cabin: MeshInstance3D = $Model/Body/Cabin
 @onready var sparks: Array[MeshInstance3D] = [$Model/Body/SparkL, $Model/Body/SparkR]
 
 
@@ -255,6 +256,13 @@ func get_drift_color(level: int) -> Color:
 func start_boost(source: StringName, duration: float, mult := BOOST_SPEED_MULT) -> void:
 	fx.add(EffectLibrary.get_effect(&"boost"), duration, mult)
 	boost_started.emit(source, duration)
+
+
+## Color del personaje en la cabina del kart.
+func set_accent_color(c: Color) -> void:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	cabin.material_override = m
 
 
 func set_body_color(c: Color) -> void:

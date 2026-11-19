@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_y2b4u"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_1wdan"]
+
+[sub_resource type="Resource" id="Resource_2gtn0"]
+script = ExtResource("1_y2b4u")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_hq5h6"]
+script = ExtResource("1_y2b4u")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_v4bqa"]
+script = ExtResource("1_y2b4u")
+speed = 1.0
+acceleration = 1.0
+handling = -4.0
+weight = -3.0
+offroad = 8.0
+item_speed = 18.0
+
+[resource]
+script = ExtResource("2_1wdan")
+id = &"ferchaos"
+display_name = "FerChaos"
+description = "Caos con ruedas: se maneja bien fuera del asfalto y usa los ítems a la velocidad del rayo."
+gender = 1
+color = Color(1, 0.85, 0.1, 1)
+stats = SubResource("Resource_v4bqa")
+likes = Array[StringName]([&"azulon"])
+like_bonus = SubResource("Resource_hq5h6")
+dislikes = Array[StringName]([&"cohete"])
+dislike_penalty = SubResource("Resource_2gtn0")

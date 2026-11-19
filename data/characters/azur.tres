@@ -28,6 +28,7 @@ script = ExtResource("2_7xkn3")
 id = &"azur"
 display_name = "Azur"
 description = "Soldado de armadura azul con rifle de rayos. Preciso y rápido con los ítems."
+color = Color(0.2, 0.3, 0.6, 1)
 stats = SubResource("Resource_udjlw")
 likes = Array[StringName]([&"tanque"])
 like_bonus = SubResource("Resource_hq5h6")

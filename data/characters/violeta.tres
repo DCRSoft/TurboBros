@@ -29,6 +29,7 @@ id = &"violeta"
 display_name = "Violeta"
 description = "Artillera de pelo morado: derrapa mucho y dispara ítems a toda prisa."
 gender = 1
+color = Color(0.6, 0.35, 0.85, 1)
 stats = SubResource("Resource_i18gf")
 likes = Array[StringName]([&"escorpion"])
 like_bonus = SubResource("Resource_hq5h6")

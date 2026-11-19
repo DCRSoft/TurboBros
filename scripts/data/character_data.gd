@@ -11,6 +11,7 @@ const GOLD := Color(1.0, 0.82, 0.2)
 @export var display_name := "Piloto"
 @export_multiline var description := ""
 @export var gender: Gender = Gender.MALE
+@export var color := Color.WHITE   ## color del personaje (acento del kart y tarjeta de selección)
 @export var use_custom_drift_color := false
 @export var custom_drift_color := Color.WHITE
 @export_group("Estadísticas")

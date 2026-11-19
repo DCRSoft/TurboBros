@@ -82,14 +82,14 @@ Godot_console.exe --headless --path . res://scenes/debug/stability_probe.tscn
 
 ## Vehículos, personajes y equilibrio (hito 6)
 - Tras el lobby hay una **pantalla de selección**: cada jugador elige su **personaje** (Izq/Der) y el jugador solo o el conductor elige el **vehículo** (Arriba/Abajo). A/confirmar = listo; cuando todos lo están, arranca la carrera. Muestra las estadísticas finales del kart en vivo.
-- **6 vehículos** (`data/vehicles/`: Chatarrero, Azulón, Relámpago, Escorpión, Tanque, Cohete) y **8 personajes** (`data/characters/`: Brutus, Crimson, Azur, Titán, Sakura, Áurea, Violeta, Chispa). Añadir un `.tres` = opción nueva.
+- **6 vehículos** (`data/vehicles/`: Chatarrero, Azulón, Relámpago, Escorpión, Tanque, Cohete) y **14 personajes** (`data/characters/`: Brutus, Crimson, Azur, Titán, Sakura, Áurea, Violeta, Chispa, DranCr, Agnelopolus, EnD, ClarStar, PoleWar, FerChaos). Añadir un `.tres` = opción nueva.
 - **Estadísticas** (% sobre la base): velocidad, aceleración, manejo, peso, derrape, fuera de pista, fuerza de golpe y rapidez con ítems. Kart final = vehículo + personaje + **sinergia** (a cada personaje le gustan o le sientan mal ciertos vehículos). *Fuera de pista* se activará cuando haya superficies; el circuito actual tiene muros.
 - **Kart de 2 jugadores**: el conductor aporta manejo y estadísticas de conducción; el artillero aporta fuerza de golpe, rapidez con ítems y la mitad de su peso. Llevar dos personas cuesta -2 % de velocidad y -3 % de aceleración.
 - **Rapidez con ítems** acorta la ruleta y la espera entre usos; **peso** reduce lo que te empuja un golpe. El color del 3.er mini turbo sigue saliendo del personaje del conductor.
-- **Equilibrio**: `tools/balance.gd` calcula TODAS las combinaciones (48 en solitario y 336 con artillero), marca las que se salen de ±15 % del promedio y escribe `docs/BALANCE.md`:
+- **Equilibrio**: `tools/balance.gd` calcula TODAS las combinaciones (84 en solitario y 1092 con artillero), marca las que se salen de ±15 % del promedio y escribe `docs/BALANCE.md`:
 ```powershell
 Godot_console.exe --headless --path . --script tools/balance.gd -- --write
 ```
-  Resultado actual: ninguna marcada; diferencia mejor/peor 5.8 % (solo) y 8.5 % (con artillero).
+  Resultado actual: ninguna marcada; diferencia mejor/peor 5.8 % (solo) y 8.8 % (con artillero).
 - Los datos se regeneran con `tools/generate_data.gd` (también crea vehículos y personajes).
 - La portada (`assets/ui/cover.jpg`) se muestra en el menú principal pero **no está en el repositorio** hasta decidir su licencia (ver `CREDITS.md`).

@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_7lybl"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_kt2yd"]
+
+[sub_resource type="Resource" id="Resource_2gtn0"]
+script = ExtResource("1_7lybl")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_hq5h6"]
+script = ExtResource("1_7lybl")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_ycxa8"]
+script = ExtResource("1_7lybl")
+acceleration = -2.0
+handling = -2.0
+weight = 4.0
+drift = -1.0
+offroad = 2.0
+hit_power = 30.0
+item_speed = -8.0
+
+[resource]
+script = ExtResource("2_kt2yd")
+id = &"polewar"
+display_name = "PoleWar"
+description = "Artillera pesada: su golpe lanza a cualquiera a la cuneta; poco amiga de los ítems."
+gender = 1
+color = Color(0.55, 0.2, 0.8, 1)
+stats = SubResource("Resource_ycxa8")
+likes = Array[StringName]([&"tanque"])
+like_bonus = SubResource("Resource_hq5h6")
+dislikes = Array[StringName]([&"relampago"])
+dislike_penalty = SubResource("Resource_2gtn0")

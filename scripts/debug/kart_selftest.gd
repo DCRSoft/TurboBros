@@ -114,8 +114,9 @@ func _test_roster_and_build() -> void:
 		ids[x.id] = true
 	for x in cs:
 		ids[x.id] = true
-	_check("datos: 6 vehículos y 8 personajes con ids únicos", vs.size() == 6 and cs.size() == 8 and ids.size() == 14,
+	_check("datos: 6 vehículos y 14 personajes con ids únicos", vs.size() == 6 and cs.size() == 14 and ids.size() == 20,
 			"vehículos=%d personajes=%d" % [vs.size(), cs.size()])
+	_check_new_characters(cs)
 	var v := DataCatalog.vehicle(&"relampago")
 	var aurea := DataCatalog.character(&"aurea")
 	var brutus := DataCatalog.character(&"brutus")
@@ -143,6 +144,36 @@ func _test_roster_and_build() -> void:
 			and brutus.get_final_drift_color() == CharacterData.GOLD)
 
 
+func _check_new_characters(cs: Array[CharacterData]) -> void:
+	var G := CharacterData.Gender
+	var spec := {
+		&"drancr": [G.MALE, Color(0.25, 0.14, 0.08)], &"agnelopolus": [G.MALE, Color(0.9, 0.1, 0.1)],
+		&"end": [G.MALE, Color(0.15, 0.35, 0.95)], &"clarstar": [G.FEMALE, Color(1.0, 0.5, 0.75)],
+		&"polewar": [G.FEMALE, Color(0.55, 0.2, 0.8)], &"ferchaos": [G.FEMALE, Color(1.0, 0.85, 0.1)],
+	}
+	var ok := true
+	var bad := ""
+	for id in spec:
+		var c := DataCatalog.character(id)
+		if c.id != id or c.gender != spec[id][0] or not c.color.is_equal_approx(spec[id][1]):
+			ok = false
+			bad += " " + String(id)
+	_check("personajes nuevos: DranCr, Agnelopolus, EnD, ClarStar, PoleWar y FerChaos (género y color)", ok, bad)
+	var max_speed := cs[0]
+	var max_accel := cs[0]
+	for c in cs:
+		if c.stats.speed > max_speed.stats.speed:
+			max_speed = c
+		if c.stats.acceleration > max_accel.stats.acceleration:
+			max_accel = c
+	_check("DranCr es el especialista en velocidad", max_speed.id == &"drancr", String(max_speed.id))
+	_check("Agnelopolus es el especialista en aceleración", max_accel.id == &"agnelopolus", String(max_accel.id))
+	var end := DataCatalog.character(&"end")
+	_check("EnD es el tanque (peso, fuera de pista y golpe altos; lento)",
+			end.stats.weight >= 8.0 and end.stats.offroad >= 8.0 and end.stats.hit_power >= 20.0 and end.stats.speed < 0.0,
+			"peso=%.0f fuera=%.0f golpe=%.0f" % [end.stats.weight, end.stats.offroad, end.stats.hit_power])
+
+
 func _test_balance() -> void:
 	var res := BalanceAnalyzer.analyze(DataCatalog.vehicles(), DataCatalog.characters(), 15.0)
 	var n_solo := 0
@@ -152,8 +183,30 @@ func _test_balance() -> void:
 			n_solo += 1
 		else:
 			n_duo += 1
-	_check("equilibrio: calcula todas las combinaciones (48 solo, 336 con artillero)", n_solo == 48 and n_duo == 336,
+	_check("equilibrio: calcula todas las combinaciones (84 solo, 1092 con artillero)", n_solo == 84 and n_duo == 1092,
 			"solo=%d duo=%d" % [n_solo, n_duo])
+	# Ningún personaje ni vehículo es mejor o peor que el resto por más de ~3 % de media
+	var by_char := {}
+	var by_veh := {}
+	var total := 0.0
+	for e in res["entries"]:
+		if e["mode"] == "solo":
+			by_char[e["driver"].id] = by_char.get(e["driver"].id, 0.0) + e["index"] / 6.0
+			by_veh[e["vehicle"].id] = by_veh.get(e["vehicle"].id, 0.0) + e["index"] / 14.0
+			total += e["index"]
+	var mean := total / 84.0
+	var worst_dev := 0.0
+	var who := ""
+	for k in by_char:
+		if absf(by_char[k] / mean - 1.0) > worst_dev:
+			worst_dev = absf(by_char[k] / mean - 1.0)
+			who = String(k)
+	for k in by_veh:
+		if absf(by_veh[k] / mean - 1.0) > worst_dev:
+			worst_dev = absf(by_veh[k] / mean - 1.0)
+			who = String(k)
+	_check("equilibrio: cada personaje y vehículo está a menos de 3 % de la media", worst_dev < 0.03,
+			"peor=%s %.2f %%" % [who, worst_dev * 100.0])
 	_check("equilibrio: ninguna combinación fuera de ±15 % del promedio", res["flagged"].is_empty(),
 			"marcadas=%d" % res["flagged"].size())
 	var s := BalanceAnalyzer.spread(res, "solo")

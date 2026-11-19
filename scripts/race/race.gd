@@ -110,6 +110,8 @@ func _spawn(grid_slot: int, color: Color, vehicle: VehicleData, driver: Characte
 	k.character = driver
 	add_child(k)
 	k.set_body_color(color)
+	if driver != null:
+		k.set_accent_color(driver.color)
 	karts.append(k)
 	return k
 

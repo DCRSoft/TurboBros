@@ -32,6 +32,7 @@ id = &"sakura"
 display_name = "Sakura"
 description = "Piloto ágil de coletas rosas. Manejo fino y manos rápidas con los ítems."
 gender = 1
+color = Color(1, 0.55, 0.75, 1)
 stats = SubResource("Resource_f3mup")
 likes = Array[StringName]([&"escorpion"])
 like_bonus = SubResource("Resource_hq5h6")

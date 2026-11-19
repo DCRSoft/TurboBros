@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_7uohd"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_iiemo"]
+
+[sub_resource type="Resource" id="Resource_2gtn0"]
+script = ExtResource("1_7uohd")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_rlfi0"]
+script = ExtResource("1_7uohd")
+speed = 2.0
+acceleration = 2.0
+handling = 2.0
+
+[sub_resource type="Resource" id="Resource_6g8fx"]
+script = ExtResource("1_7uohd")
+speed = -3.0
+acceleration = -3.0
+handling = -4.0
+weight = 9.0
+drift = -1.0
+offroad = 8.0
+hit_power = 20.0
+item_speed = -6.0
+
+[resource]
+script = ExtResource("2_iiemo")
+id = &"end"
+display_name = "EnD"
+description = "El tanque del grupo: pesado, resistente y de golpe durísimo; lento de reflejos."
+color = Color(0.15, 0.35, 0.95, 1)
+stats = SubResource("Resource_6g8fx")
+likes = Array[StringName]([&"chatarrero"])
+like_bonus = SubResource("Resource_rlfi0")
+dislikes = Array[StringName]([&"cohete"])
+dislike_penalty = SubResource("Resource_2gtn0")

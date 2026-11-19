@@ -121,7 +121,7 @@ func _refresh() -> void:
 		var ch := model.characters[e.char_idx]
 		var v := model.vehicle_of(e.kart_index)
 		var team: int = model.setups[e.kart_index].get("team", -1)
-		_bars[idx].color = GameSession.TEAM_COLORS[team] if team >= 0 else v.body_color
+		_bars[idx].color = GameSession.TEAM_COLORS[team] if team >= 0 else ch.color
 		var role := ""
 		match e.seat.role:
 			Seat.Role.DRIVER: role = " · Conductor"

@@ -26,6 +26,7 @@ script = ExtResource("2_1na0u")
 id = &"crimson"
 display_name = "Crimson"
 description = "Veterano de armadura roja. Equilibrado con buena pegada."
+color = Color(0.65, 0.12, 0.12, 1)
 stats = SubResource("Resource_2bh05")
 likes = Array[StringName]([&"azulon"])
 like_bonus = SubResource("Resource_hq5h6")

@@ -58,6 +58,17 @@ func _effects() -> void:
 	_e("explode", "Explosión", 1.6, {"lock_control": true, "spin": true, "speed_mult": 0.2, "grip_mult": 0.3})
 
 
+const CHARACTER_COLORS := {
+	"brutus": Color(0.45, 0.28, 0.18), "crimson": Color(0.65, 0.12, 0.12), "azur": Color(0.2, 0.3, 0.6),
+	"titan": Color(0.5, 0.5, 0.55), "sakura": Color(1.0, 0.55, 0.75), "aurea": Color(0.95, 0.78, 0.2),
+	"violeta": Color(0.6, 0.35, 0.85), "chispa": Color(0.95, 0.5, 0.15),
+	"drancr": Color(0.25, 0.14, 0.08),      # café oscuro
+	"agnelopolus": Color(0.9, 0.1, 0.1),    # rojo
+	"end": Color(0.15, 0.35, 0.95),         # azul
+	"clarstar": Color(1.0, 0.5, 0.75),      # rosa
+	"polewar": Color(0.55, 0.2, 0.8),       # morado
+	"ferchaos": Color(1.0, 0.85, 0.1),      # amarillo
+}
 const VEHICLE_DIR := "res://data/vehicles/"
 const CHARACTER_DIR := "res://data/characters/"
 
@@ -81,6 +92,7 @@ func _character(id: String, name: String, desc: String, gender: CharacterData.Ge
 	c.display_name = name
 	c.description = desc
 	c.gender = gender
+	c.color = CHARACTER_COLORS.get(id, Color.WHITE)
 	c.stats = s
 	c.likes = likes
 	c.like_bonus = like_bonus
@@ -125,6 +137,19 @@ func _roster() -> void:
 			SD.make(1, 2, 2, -3, 2, -3, -5, 10), [&"relampago"], like, [&"tanque"], dislike)
 	_character("violeta", "Violeta", "Artillera de pelo morado: derrapa mucho y dispara ítems a toda prisa.", G.FEMALE,
 			SD.make(-3, 0, 1, -4, 4, 0, 0, 25), [&"escorpion"], like, [&"chatarrero"], dislike)
+	# Pilotos de la comunidad (3 masculinos y 3 femeninos)
+	_character("drancr", "DranCr", "Especialista en velocidad: nadie le gana en la recta, pero arranca y gira con pereza.",
+			G.MALE, SD.make(9, -6, -5, 0, -2, 0, 4, 0), [&"cohete"], like, [&"tanque"], dislike)
+	_character("agnelopolus", "Agnelopolus", "Especialista en aceleración: sale disparado de cada curva aunque su punta sea modesta.",
+			G.MALE, SD.make(-3, 9, 1, -2, 0, -2, 0, 0), [&"relampago"], like, [&"chatarrero"], dislike)
+	_character("end", "EnD", "El tanque del grupo: pesado, resistente y de golpe durísimo; lento de reflejos.",
+			G.MALE, SD.make(-3, -3, -4, 9, -1, 8, 20, -6), [&"chatarrero"], SD.make(2, 2, 2, 0, 0, 0), [&"cohete"], dislike)
+	_character("clarstar", "ClarStar", "Reina del derrape: carga los mini turbos al instante y se desliza con elegancia.",
+			G.FEMALE, SD.make(-3, 0, 3, -3, 10, -2, -5, 5), [&"escorpion"], like, [&"tanque"], dislike)
+	_character("polewar", "PoleWar", "Artillera pesada: su golpe lanza a cualquiera a la cuneta; poco amiga de los ítems.",
+			G.FEMALE, SD.make(0, -2, -2, 4, -1, 2, 30, -8), [&"tanque"], like, [&"relampago"], dislike)
+	_character("ferchaos", "FerChaos", "Caos con ruedas: se maneja bien fuera del asfalto y usa los ítems a la velocidad del rayo.",
+			G.FEMALE, SD.make(1, 1, -4, -3, 0, 8, 0, 18), [&"azulon"], like, [&"cohete"], dislike)
 	_character("chispa", "Chispa", "Impulsiva y veloz en recta. Poco peso y menos control.", G.FEMALE,
 			SD.make(4, -2, -3, -2, 0, -2, 0, 5), [&"cohete"], like, [&"azulon"], dislike)
 

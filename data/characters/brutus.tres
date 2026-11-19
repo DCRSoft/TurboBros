@@ -30,6 +30,7 @@ script = ExtResource("2_gybr5")
 id = &"brutus"
 display_name = "Brutus"
 description = "Armadura de pinchos y minigun. Pega durísimo y es pesado como un yunque."
+color = Color(0.45, 0.28, 0.18, 1)
 stats = SubResource("Resource_o4bsg")
 likes = Array[StringName]([&"chatarrero"])
 like_bonus = SubResource("Resource_uuxqt")

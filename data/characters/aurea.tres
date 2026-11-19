@@ -32,6 +32,7 @@ id = &"aurea"
 display_name = "Áurea"
 description = "Casco y armadura dorados. Muy buen manejo y arranque."
 gender = 1
+color = Color(0.95, 0.78, 0.2, 1)
 stats = SubResource("Resource_ek1yn")
 likes = Array[StringName]([&"relampago"])
 like_bonus = SubResource("Resource_hq5h6")
