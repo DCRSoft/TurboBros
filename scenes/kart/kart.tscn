@@ -1,0 +1,103 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/kart/kart.gd" id="1_kart"]
+[ext_resource type="Resource" path="res://data/stats/vehicle_default.tres" id="2_stats"]
+[ext_resource type="Resource" path="res://data/characters/test_male.tres" id="3_char"]
+
+[sub_resource type="SphereShape3D" id="shape"]
+radius = 0.5
+
+[sub_resource type="PhysicsMaterial" id="pm"]
+friction = 0.0
+bounce = 0.0
+
+[sub_resource type="BoxMesh" id="body_mesh"]
+size = Vector3(1.2, 0.4, 2.0)
+
+[sub_resource type="BoxMesh" id="cabin_mesh"]
+size = Vector3(0.7, 0.35, 0.8)
+
+[sub_resource type="CylinderMesh" id="wheel_mesh"]
+top_radius = 0.3
+bottom_radius = 0.3
+height = 0.3
+radial_segments = 8
+rings = 1
+
+[sub_resource type="SphereMesh" id="spark_mesh"]
+radius = 0.12
+height = 0.24
+radial_segments = 6
+rings = 3
+
+[sub_resource type="StandardMaterial3D" id="mat_body"]
+albedo_color = Color(0.85, 0.15, 0.15, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_cabin"]
+albedo_color = Color(0.15, 0.15, 0.2, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_wheel"]
+albedo_color = Color(0.08, 0.08, 0.08, 1)
+
+[node name="Kart" type="Node3D"]
+script = ExtResource("1_kart")
+stats = ExtResource("2_stats")
+character = ExtResource("3_char")
+
+[node name="Sphere" type="RigidBody3D" parent="."]
+collision_layer = 2
+collision_mask = 3
+physics_material_override = SubResource("pm")
+gravity_scale = 2.0
+can_sleep = false
+lock_rotation = true
+continuous_cd = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Sphere"]
+shape = SubResource("shape")
+
+[node name="GroundRay" type="RayCast3D" parent="Sphere"]
+target_position = Vector3(0, -0.85, 0)
+collision_mask = 1
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Body" type="Node3D" parent="Model"]
+
+[node name="Chassis" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+mesh = SubResource("body_mesh")
+surface_material_override/0 = SubResource("mat_body")
+
+[node name="Cabin" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.77, 0.15)
+mesh = SubResource("cabin_mesh")
+surface_material_override/0 = SubResource("mat_cabin")
+
+[node name="WheelFL" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.65, 0.3, -0.7)
+mesh = SubResource("wheel_mesh")
+surface_material_override/0 = SubResource("mat_wheel")
+
+[node name="WheelFR" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0.65, 0.3, -0.7)
+mesh = SubResource("wheel_mesh")
+surface_material_override/0 = SubResource("mat_wheel")
+
+[node name="WheelRL" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.65, 0.3, 0.7)
+mesh = SubResource("wheel_mesh")
+surface_material_override/0 = SubResource("mat_wheel")
+
+[node name="WheelRR" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0.65, 0.3, 0.7)
+mesh = SubResource("wheel_mesh")
+surface_material_override/0 = SubResource("mat_wheel")
+
+[node name="SparkL" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 0.2, 1.1)
+mesh = SubResource("spark_mesh")
+
+[node name="SparkR" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 0.2, 1.1)
+mesh = SubResource("spark_mesh")

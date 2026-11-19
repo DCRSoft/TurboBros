@@ -1,0 +1,169 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/tracks/test_track.gd" id="1_track"]
+[ext_resource type="PackedScene" path="res://scenes/kart/kart.tscn" id="2_kart"]
+[ext_resource type="Script" path="res://scripts/kart/chase_camera.gd" id="3_cam"]
+[ext_resource type="Script" path="res://scripts/debug/debug_hud.gd" id="4_hud"]
+
+[sub_resource type="BoxShape3D" id="shape_ground"]
+size = Vector3(200, 1, 200)
+
+[sub_resource type="BoxMesh" id="mesh_ground"]
+size = Vector3(200, 1, 200)
+
+[sub_resource type="BoxShape3D" id="shape_wall_ns"]
+size = Vector3(204, 4, 2)
+
+[sub_resource type="BoxMesh" id="mesh_wall_ns"]
+size = Vector3(204, 4, 2)
+
+[sub_resource type="BoxShape3D" id="shape_wall_ew"]
+size = Vector3(2, 4, 204)
+
+[sub_resource type="BoxMesh" id="mesh_wall_ew"]
+size = Vector3(2, 4, 204)
+
+[sub_resource type="BoxShape3D" id="shape_ramp_big"]
+size = Vector3(8, 2, 14)
+
+[sub_resource type="BoxMesh" id="mesh_ramp_big"]
+size = Vector3(8, 2, 14)
+
+[sub_resource type="BoxShape3D" id="shape_ramp_slope"]
+size = Vector3(10, 2, 20)
+
+[sub_resource type="BoxMesh" id="mesh_ramp_slope"]
+size = Vector3(10, 2, 20)
+
+[sub_resource type="BoxShape3D" id="shape_ramp_kicker"]
+size = Vector3(4, 2, 6)
+
+[sub_resource type="BoxMesh" id="mesh_ramp_kicker"]
+size = Vector3(4, 2, 6)
+
+[sub_resource type="StandardMaterial3D" id="mat_ground"]
+albedo_color = Color(0.32, 0.48, 0.3, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_wall"]
+albedo_color = Color(0.7, 0.25, 0.2, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_ramp"]
+albedo_color = Color(0.9, 0.75, 0.2, 1)
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_mat")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+
+[node name="TestTrack" type="Node3D"]
+script = ExtResource("1_track")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 20, 0)
+shadow_enabled = true
+directional_shadow_max_distance = 80.0
+
+[node name="Ground" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+collision_layer = 1
+
+[node name="Shape" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("shape_ground")
+
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("mesh_ground")
+surface_material_override/0 = SubResource("mat_ground")
+
+[node name="WallN" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -101)
+collision_layer = 1
+
+[node name="Shape" type="CollisionShape3D" parent="WallN"]
+shape = SubResource("shape_wall_ns")
+
+[node name="Mesh" type="MeshInstance3D" parent="WallN"]
+mesh = SubResource("mesh_wall_ns")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="WallS" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 101)
+collision_layer = 1
+
+[node name="Shape" type="CollisionShape3D" parent="WallS"]
+shape = SubResource("shape_wall_ns")
+
+[node name="Mesh" type="MeshInstance3D" parent="WallS"]
+mesh = SubResource("mesh_wall_ns")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="WallE" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 101, 2, 0)
+collision_layer = 1
+
+[node name="Shape" type="CollisionShape3D" parent="WallE"]
+shape = SubResource("shape_wall_ew")
+
+[node name="Mesh" type="MeshInstance3D" parent="WallE"]
+mesh = SubResource("mesh_wall_ew")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="WallW" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -101, 2, 0)
+collision_layer = 1
+
+[node name="Shape" type="CollisionShape3D" parent="WallW"]
+shape = SubResource("shape_wall_ew")
+
+[node name="Mesh" type="MeshInstance3D" parent="WallW"]
+mesh = SubResource("mesh_wall_ew")
+surface_material_override/0 = SubResource("mat_wall")
+
+[node name="RampBig" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9659, -0.2588, 0, 0.2588, 0.9659, 0, 0.844, -30.26)
+collision_layer = 1
+
+[node name="Shape" type="CollisionShape3D" parent="RampBig"]
+shape = SubResource("shape_ramp_big")
+
+[node name="Mesh" type="MeshInstance3D" parent="RampBig"]
+mesh = SubResource("mesh_ramp_big")
+surface_material_override/0 = SubResource("mat_ramp")
+
+[node name="RampSlope" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9903, -0.1392, 0, 0.1392, 0.9903, -30, 0.4, -0.14)
+collision_layer = 1
+
+[node name="Shape" type="CollisionShape3D" parent="RampSlope"]
+shape = SubResource("shape_ramp_slope")
+
+[node name="Mesh" type="MeshInstance3D" parent="RampSlope"]
+mesh = SubResource("mesh_ramp_slope")
+surface_material_override/0 = SubResource("mat_ramp")
+
+[node name="RampKicker" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9397, -0.342, 0, 0.342, 0.9397, 30, 0.09, -0.34)
+collision_layer = 1
+
+[node name="Shape" type="CollisionShape3D" parent="RampKicker"]
+shape = SubResource("shape_ramp_kicker")
+
+[node name="Mesh" type="MeshInstance3D" parent="RampKicker"]
+mesh = SubResource("mesh_ramp_kicker")
+surface_material_override/0 = SubResource("mat_ramp")
+
+[node name="Kart" parent="." instance=ExtResource("2_kart")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 70)
+
+[node name="ChaseCamera" type="Node3D" parent="."]
+script = ExtResource("3_cam")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+script = ExtResource("4_hud")
