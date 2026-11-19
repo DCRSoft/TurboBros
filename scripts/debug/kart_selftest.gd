@@ -35,12 +35,54 @@ func _reset() -> void:
 	_landings.clear()
 
 
+func _test_split_screen() -> void:
+	var area := Vector2(1920, 1080)
+	for n in [1, 2, 3, 4]:
+		var rects := SplitScreen.compute_cells(n, area, 4.0)
+		var ok: bool = rects.size() == n
+		var inside := true
+		var overlap := false
+		for i in rects.size():
+			inside = inside and Rect2(Vector2.ZERO, area).encloses(rects[i])
+			for j in range(i + 1, rects.size()):
+				overlap = overlap or rects[i].intersects(rects[j])
+		_check("layout %d vista(s)" % n, ok and inside and not overlap,
+				"rects=%d dentro=%s solapadas=%s" % [rects.size(), inside, overlap])
+
+	for n in [4, 3, 2, 1]:
+		track.set_player_count(n)
+		await _ticks(150)
+		var split: SplitScreen = track.split
+		var all_grounded := true
+		var min_dist := INF
+		for i in track.karts.size():
+			all_grounded = all_grounded and track.karts[i].grounded
+			for j in range(i + 1, track.karts.size()):
+				min_dist = minf(min_dist, track.karts[i].sphere.global_position.distance_to(
+						track.karts[j].sphere.global_position))
+		_check("%d karts: viewports y karts creados" % n,
+				track.karts.size() == n and split.cells.size() == n and track.seats.size() == n,
+				"karts=%d vistas=%d" % [track.karts.size(), split.cells.size()])
+		_check("%d karts: todos en el suelo y separados" % n, all_grounded and (n == 1 or min_dist > 2.0),
+				"min_dist=%.1f" % (min_dist if n > 1 else 0.0))
+		if n == 4:
+			print("      píxeles internos totales (4 vistas, ventana %s): %d" % [split.size, split.get_total_pixels()])
+	track.set_render_scale(0.5)
+	await _ticks(3)
+	var px_half: int = track.split.get_total_pixels()
+	track.set_render_scale(1.0)
+	await _ticks(3)
+	var px_full: int = track.split.get_total_pixels()
+	_check("la escala de render reduce los píxeles", px_half < px_full, "%d vs %d" % [px_half, px_full])
+
+
 func _run() -> void:
 	var scene: PackedScene = load("res://scenes/tracks/test_track.tscn")
 	track = scene.instantiate()
 	track.attach_player_input = false
 	add_child(track)
-	kart = track.get_node("Kart")
+	await _ticks(2)
+	kart = track.karts[0]
 	kart.add_child(ctrl)
 	kart.controller = ctrl
 	kart.drift_level_changed.connect(func(l: int) -> void: _levels.append(l))
@@ -110,7 +152,10 @@ func _run() -> void:
 	await _ticks(60)
 	_check("da marcha atrás", kart.forward_speed < -1.0, "fspeed=%.2f" % kart.forward_speed)
 
-	# 5. Versión
+	# 5. Pantalla dividida
+	await _test_split_screen()
+
+	# 6. Versión
 	_check("versión leída de VERSION", GameVersion.current == "0.1.0", GameVersion.current)
 	_check("compare de versiones", GameVersion.compare("v1.2.0", "1.10.0") < 0)
 

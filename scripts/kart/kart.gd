@@ -53,6 +53,7 @@ var _spark_mat: StandardMaterial3D
 @onready var ground_ray: RayCast3D = $Sphere/GroundRay
 @onready var model: Node3D = $Model
 @onready var body: Node3D = $Model/Body
+@onready var chassis: MeshInstance3D = $Model/Body/Chassis
 @onready var sparks: Array[MeshInstance3D] = [$Model/Body/SparkL, $Model/Body/SparkR]
 
 
@@ -128,6 +129,12 @@ func start_boost(source: StringName, duration: float, mult := BOOST_SPEED_MULT) 
 		boost_mult = maxf(boost_mult, mult)
 	boost_time = maxf(boost_time, duration)
 	boost_started.emit(source, duration)
+
+
+func set_body_color(c: Color) -> void:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	chassis.material_override = m
 
 
 func respawn(t: Transform3D) -> void:

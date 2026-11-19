@@ -1,7 +1,6 @@
 extends Node
 ## Lectura de dispositivos (mandos USB/Bluetooth y teclado) -> KartControls según el rol del asiento.
-## Hito 1: un asiento principal (primer mando, o teclado como respaldo de desarrollo).
-## Hito 3: lobby que asigna mandos a asientos.
+## Hito 2: asignación provisional por orden (mandos, luego teclado). Hito 3: lobby.
 
 const DEADZONE := 0.18
 
@@ -13,24 +12,38 @@ const KEY_SCHEMES: Array[Dictionary] = [
 		"drift": KEY_L, "item": KEY_K, "hit_l": KEY_J, "hit_r": KEY_SEMICOLON},
 ]
 
-var primary_seat := Seat.new()
-var allow_keyboard_fallback := true
+signal devices_changed
+
+var allow_keyboard := true  ## teclado como respaldo de desarrollo (hito 8: control oficial)
 
 
 func _ready() -> void:
-	Input.joy_connection_changed.connect(func(_id: int, _connected: bool) -> void: refresh_primary())
-	refresh_primary()
+	Input.joy_connection_changed.connect(func(_id: int, _connected: bool) -> void: devices_changed.emit())
 
 
-func refresh_primary() -> void:
+## Mandos conectados (por id) y luego los esquemas de teclado.
+func get_devices() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
 	var pads := Input.get_connected_joypads()
-	if pads.size() > 0:
-		if primary_seat.kind != Seat.DeviceKind.JOYPAD or not pads.has(primary_seat.device_id):
-			primary_seat.set_joypad(pads[0])
-	elif allow_keyboard_fallback:
-		primary_seat.set_keyboard(0)
-	else:
-		primary_seat.clear_device()
+	pads.sort()
+	for p in pads:
+		out.append({"kind": Seat.DeviceKind.JOYPAD, "id": p})
+	if allow_keyboard:
+		for s in KEY_SCHEMES.size():
+			out.append({"kind": Seat.DeviceKind.KEYBOARD, "id": s})
+	return out
+
+
+## Asignación provisional por orden (el lobby del hito 3 la reemplaza).
+## Los asientos sin dispositivo quedan inactivos.
+func assign_devices(seats: Array[Seat]) -> void:
+	var devs := get_devices()
+	for i in seats.size():
+		if i < devs.size():
+			seats[i].kind = devs[i]["kind"]
+			seats[i].device_id = devs[i]["id"]
+		else:
+			seats[i].clear_device()
 
 
 func describe_seat(seat: Seat) -> String:
@@ -39,7 +52,7 @@ func describe_seat(seat: Seat) -> String:
 			return "Mando %d (%s)" % [seat.device_id, Input.get_joy_name(seat.device_id)]
 		Seat.DeviceKind.KEYBOARD:
 			return "Teclado (esquema %d)" % seat.device_id
-	return "Sin dispositivo"
+	return "Sin dispositivo (kart inactivo)"
 
 
 func read_seat(seat: Seat, out: KartControls) -> void:

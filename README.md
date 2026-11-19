@@ -11,6 +11,12 @@ Hasta 8 jugadores locales con mandos USB/Bluetooth. Licencia del código: MIT (v
    - **Mando**: stick izq. girar · RT/A acelerar · LT/B frenar · LB/RB derrapar (pulsar con el stick inclinado).
    - **Teclado (solo desarrollo)**: WASD, Shift = derrape, R = reiniciar.
 
+## Pantalla dividida (hito 2)
+- **F1–F4**: número de karts (1 a 4). 2 = arriba/abajo, 3–4 = cuadrícula 2×2.
+- **[ y ]**: escala de render por vista (0.25–1.0). Con ventana 1280×720 y 4 vistas a escala 1.0 son ≈0.91 M píxeles internos.
+- Asignación provisional de dispositivos por orden: mandos conectados, luego teclado J1 (WASD + Shift) y J2 (flechas + L). Karts sin dispositivo quedan inactivos. El lobby llega en el hito 3.
+- Cada kart tiene su `SubViewport` (mismo mundo 3D) con su cámara y se dibuja en un `TextureRect`.
+
 ## Autotest sin interfaz
 ```powershell
 Godot_console.exe --headless --path . res://scenes/debug/selftest.tscn
