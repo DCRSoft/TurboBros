@@ -47,7 +47,7 @@ static func compute_cells(count: int, area: Vector2, gap_px: float) -> Array[Rec
 
 
 ## seat_groups[i] = Array[Seat] del kart i (para mostrar conductor/artillero en el HUD).
-func setup(karts: Array[Kart], seat_groups: Array) -> void:
+func setup(karts: Array[Kart], seat_groups: Array, race: RaceManager = null) -> void:
 	clear()
 	for i in karts.size():
 		var c := Cell.new()
@@ -64,6 +64,7 @@ func setup(karts: Array[Kart], seat_groups: Array) -> void:
 		if i < seat_groups.size():
 			c.hud.seats.assign(seat_groups[i])
 		c.hud.show_help = (i == 0)
+		c.hud.race = race
 		c.hud.info_provider = func() -> String:
 			return "Vista %d: %dx%d (escala %.2f)" % [
 					karts.find(c.kart) + 1, c.viewport.size.x, c.viewport.size.y, render_scale]

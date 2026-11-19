@@ -1,12 +1,14 @@
 class_name LobbyModel
 extends RefCounted
-## Lógica pura del lobby: reparte jugadores (hasta 8) en karts humanos (hasta 4) con 1 o 2 asientos.
+## Lógica pura del lobby: reparte jugadores (hasta 8) en karts humanos (hasta 4) con 1 o 2 asientos,
+## y guarda las opciones de la carrera (equipos, bots, vueltas, fuego amigo).
 ## Reparto automático: karts = N si N <= 4, si no ceil(N/2); primero los karts de 1 jugador y luego los de 2
 ## (1=1, 2=1+1, 3=1+1+1, 5=1+2+2, 6=2+2+2, 7=1+2+2+2, 8=2+2+2+2).
 ## Cada jugador puede cambiar de kart a mano ("cualquier combinación", máx. 2 por kart).
 
 const MAX_KARTS := 4
 const MAX_PLAYERS := 8
+const MAX_LAPS := 9
 
 class Player:
 	var kind: Seat.DeviceKind
@@ -15,6 +17,10 @@ class Player:
 
 var players: Array[Player] = []
 var swapped := [false, false, false, false]  ## por kart: intercambia conductor/artillero
+var teams := [-1, -1, -1, -1]                ## equipo de cada kart humano (-1 = sin equipo)
+var bots := 0
+var laps := 3
+var friendly_fire := false
 
 
 static func default_kart_count(n: int) -> int:
@@ -47,15 +53,15 @@ func remove(p: Player) -> void:
 func auto_layout() -> void:
 	swapped = [false, false, false, false]
 	var n := players.size()
-	if n == 0:
-		return
-	var k := default_kart_count(n)
-	var solos := k - (n - k)
-	var idx := 0
-	for slot in k:
-		for i in (1 if slot < solos else 2):
-			players[idx].kart_slot = slot
-			idx += 1
+	if n > 0:
+		var k := default_kart_count(n)
+		var solos := k - (n - k)
+		var idx := 0
+		for slot in k:
+			for i in (1 if slot < solos else 2):
+				players[idx].kart_slot = slot
+				idx += 1
+	_clamp_bots()
 
 
 func members(slot: int) -> Array[Player]:
@@ -66,6 +72,14 @@ func members(slot: int) -> Array[Player]:
 	return out
 
 
+func kart_count() -> int:
+	var n := 0
+	for slot in MAX_KARTS:
+		if not members(slot).is_empty():
+			n += 1
+	return n
+
+
 ## Mueve al jugador al kart contiguo (dir = -1/+1) si tiene sitio.
 func move(p: Player, dir: int) -> bool:
 	var target := clampi(p.kart_slot + dir, 0, MAX_KARTS - 1)
@@ -73,6 +87,7 @@ func move(p: Player, dir: int) -> bool:
 		return false
 	p.kart_slot = target
 	swapped[target] = false
+	_clamp_bots()
 	return true
 
 
@@ -95,6 +110,81 @@ func is_valid() -> bool:
 	return players.size() >= 1
 
 
+# --- Opciones de carrera --------------------------------------------------------
+
+func max_bots() -> int:
+	return maxi(0, GameSession.MAX_KARTS - kart_count())
+
+
+func set_bots(n: int) -> void:
+	bots = clampi(n, 0, max_bots())
+
+
+func _clamp_bots() -> void:
+	bots = clampi(bots, 0, max_bots())
+
+
+func set_laps(n: int) -> void:
+	laps = clampi(n, 1, MAX_LAPS)
+
+
+func toggle_friendly_fire() -> void:
+	friendly_fire = not friendly_fire
+
+
+## Cambia el equipo del kart del jugador: sin equipo -> 0..3 -> sin equipo (máx. 4 karts por equipo).
+func cycle_team(slot: int, dir: int) -> void:
+	if members(slot).is_empty():
+		return
+	var t: int = teams[slot]
+	for _i in 6:
+		t += dir
+		if t > 3:
+			t = -1
+		elif t < -1:
+			t = 3
+		if t == -1 or _team_size(t, slot) < GameSession.MAX_TEAM_SIZE:
+			teams[slot] = t
+			return
+
+
+func _team_size(team: int, except_slot: int) -> int:
+	var n := 0
+	for slot in MAX_KARTS:
+		if slot != except_slot and teams[slot] == team and not members(slot).is_empty():
+			n += 1
+	return n
+
+
+## Equipo de cada bot. Sin equipos entre los humanos -> todos -1. Con equipos, los bots equilibran los equipos
+## (si solo hay un equipo humano se crea un rival); máx. 4 karts por equipo.
+func bot_teams() -> Array[int]:
+	var out: Array[int] = []
+	var counts := {}
+	for slot in MAX_KARTS:
+		if not members(slot).is_empty() and teams[slot] >= 0:
+			counts[teams[slot]] = counts.get(teams[slot], 0) + 1
+	if counts.is_empty():
+		for _b in bots:
+			out.append(-1)
+		return out
+	if counts.size() == 1:
+		for id in 4:
+			if not counts.has(id):
+				counts[id] = 0
+				break
+	for _b in bots:
+		var best := -1
+		for id in counts:
+			if counts[id] < GameSession.MAX_TEAM_SIZE and (best == -1 or counts[id] < counts[best]
+					or (counts[id] == counts[best] and id < best)):
+				best = id
+		if best >= 0:
+			counts[best] += 1
+		out.append(best)
+	return out
+
+
 ## Un elemento por kart no vacío (en orden de slot), listo para GameSession.setups.
 func build_setups() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
@@ -109,5 +199,13 @@ func build_setups() -> Array[Dictionary]:
 			s.kind = p.kind
 			s.device_id = p.device_id
 			seats.append(s)
-		out.append({"slot": slot, "seats": seats})
+		out.append({"slot": slot, "seats": seats, "team": teams[slot]})
 	return out
+
+
+## Vuelca todo en GameSession para la carrera.
+func apply_to_session() -> void:
+	GameSession.setups = build_setups()
+	GameSession.bot_teams = bot_teams()
+	GameSession.laps = laps
+	GameSession.friendly_fire = friendly_fire

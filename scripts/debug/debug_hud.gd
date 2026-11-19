@@ -6,7 +6,9 @@ var kart: Kart
 var seats: Array[Seat] = []
 var show_help := false          ## solo la vista 1 muestra versión/FPS/ayuda
 var info_provider := Callable() ## devuelve texto extra (p. ej. resolución de la vista)
+var race: RaceManager           ## si hay carrera: vueltas, tiempo y mensajes centrales
 var _label: Label
+var _center: Label
 var _ink: Control
 
 
@@ -35,6 +37,15 @@ func _ready() -> void:
 		_ink.add_child(r)
 	add_child(_ink)
 	move_child(_label, -1)
+	_center = Label.new()
+	_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_center.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_center.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_center.add_theme_font_size_override("font_size", 72)
+	_center.add_theme_color_override("font_outline_color", Color.BLACK)
+	_center.add_theme_constant_override("outline_size", 12)
+	_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_center)
 
 
 func _process(_delta: float) -> void:
@@ -52,6 +63,13 @@ func _process(_delta: float) -> void:
 		lines.append("TurboBros v%s   %d FPS" % [GameVersion.current, Engine.get_frames_per_second()])
 	lines.append("%d km/h   %s   Pos %d/%d" % [roundi(kart.get_speed_kmh()), state,
 			kart.race_position, kart.race_total])
+	if race != null:
+		var r := race.get_racer(kart)
+		if r != null:
+			lines.append("Vuelta %d/%d   Tiempo %s" % [race.lap_of(r), race.laps, race.format_time(race.race_time)])
+		_center.text = race.center_text(kart)
+	if kart.team >= 0:
+		lines.append("Equipo %s" % GameSession.TEAM_NAMES[kart.team])
 	if kart.is_rolling():
 		lines.append("Ítem: ¡sorteando!")
 	elif kart.held_item != null:

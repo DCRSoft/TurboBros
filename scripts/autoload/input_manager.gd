@@ -126,15 +126,24 @@ func _solo_hit(out: KartControls) -> void:
 		out.hit_right = out.steer > 0.5
 
 
-## Entrada de menú de un dispositivo: x (-1..1), confirm, back, swap, start.
+## Entrada de menú de un dispositivo: x/y (-1..1; y>0 = abajo), confirm, back, swap, start, select,
+## lb, rb, lt, rt.
 func read_menu(kind: Seat.DeviceKind, id: int) -> Dictionary:
 	if kind == Seat.DeviceKind.JOYPAD:
-		var dpad := int(_btn(id, JOY_BUTTON_DPAD_RIGHT)) - int(_btn(id, JOY_BUTTON_DPAD_LEFT))
-		return {"x": clampf(_dz(Input.get_joy_axis(id, JOY_AXIS_LEFT_X)) + dpad, -1.0, 1.0),
+		var dx := int(_btn(id, JOY_BUTTON_DPAD_RIGHT)) - int(_btn(id, JOY_BUTTON_DPAD_LEFT))
+		var dy := int(_btn(id, JOY_BUTTON_DPAD_DOWN)) - int(_btn(id, JOY_BUTTON_DPAD_UP))
+		return {"x": clampf(_dz(Input.get_joy_axis(id, JOY_AXIS_LEFT_X)) + dx, -1.0, 1.0),
+				"y": clampf(_dz(Input.get_joy_axis(id, JOY_AXIS_LEFT_Y)) + dy, -1.0, 1.0),
 				"confirm": _btn(id, JOY_BUTTON_A), "back": _btn(id, JOY_BUTTON_B),
-				"swap": _btn(id, JOY_BUTTON_Y), "start": _btn(id, JOY_BUTTON_START)}
+				"swap": _btn(id, JOY_BUTTON_Y), "start": _btn(id, JOY_BUTTON_START),
+				"select": _btn(id, JOY_BUTTON_BACK),
+				"lb": _btn(id, JOY_BUTTON_LEFT_SHOULDER), "rb": _btn(id, JOY_BUTTON_RIGHT_SHOULDER),
+				"lt": Input.get_joy_axis(id, JOY_AXIS_TRIGGER_LEFT) > 0.6,
+				"rt": Input.get_joy_axis(id, JOY_AXIS_TRIGGER_RIGHT) > 0.6}
 	var k: Dictionary = KEY_SCHEMES[clampi(id, 0, KEY_SCHEMES.size() - 1)]
 	var key := func(name: String) -> bool: return Input.is_physical_key_pressed(k[name])
 	return {"x": float(int(key.call("right")) - int(key.call("left"))),
+			"y": float(int(key.call("brake")) - int(key.call("throttle"))),
 			"confirm": key.call("item"), "back": key.call("hit_l"),
-			"swap": key.call("hit_r"), "start": false}
+			"swap": key.call("hit_r"), "start": false, "select": false,
+			"lb": false, "rb": false, "lt": false, "rt": false}

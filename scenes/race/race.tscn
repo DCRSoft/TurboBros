@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/race/race.gd" id="1_race"]
+[ext_resource type="Script" path="res://scripts/race/circuit.gd" id="2_circuit"]
+[ext_resource type="Script" path="res://scripts/race/race_manager.gd" id="3_manager"]
+[ext_resource type="Script" path="res://scripts/game/split_screen.gd" id="4_split"]
+[ext_resource type="Script" path="res://scripts/race/results_screen.gd" id="5_results"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_mat")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+
+[node name="Race" type="Node3D"]
+script = ExtResource("1_race")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 20, 0)
+shadow_enabled = true
+directional_shadow_max_distance = 80.0
+
+[node name="Circuit" type="Node3D" parent="."]
+script = ExtResource("2_circuit")
+
+[node name="RaceManager" type="Node" parent="."]
+script = ExtResource("3_manager")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="SplitScreen" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_split")
+
+[node name="Results" type="CanvasLayer" parent="."]
+script = ExtResource("5_results")

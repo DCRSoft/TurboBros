@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/race_selftest.gd" id="1"]
+
+[node name="RaceSelftest" type="Node"]
+script = ExtResource("1")

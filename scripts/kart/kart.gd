@@ -14,6 +14,7 @@ signal drift_level_changed(level: int)
 signal boost_started(source: StringName, duration: float)
 signal item_changed
 signal item_used(item: ItemData)
+signal teleported
 
 ## Resultado de recibir un ataque.
 enum HitResult {
@@ -69,8 +70,11 @@ var held_uses := 0
 var race_progress := 0.0  ## lo actualiza la pista/carrera
 var race_position := 1
 var race_total := 1
-var team := -1            ## -1 = sin equipo (hito 5)
+var team := -1            ## -1 = sin equipo
 var friendly_fire := false
+var frozen := false       ## cuenta atrás: no responde a los controles
+var is_bot := false
+var racer_name := ""
 
 var _steer := 0.0
 var _smooth_up := Vector3.UP
@@ -185,7 +189,7 @@ func _build_visual_extras() -> void:
 func _physics_process(delta: float) -> void:
 	fx.tick(delta)
 	var c: KartControls = controller.get_controls() if controller else _idle_controls
-	if fx.mods.lock_control:
+	if fx.mods.lock_control or frozen:
 		c = _idle_controls
 		hop_active = false
 		_end_drift(false)
@@ -337,6 +341,7 @@ func set_motion_state(pos: Vector3, vel: Vector3, new_heading: float) -> void:
 	heading = new_heading
 	global_position = pos
 	reset_physics_interpolation()
+	teleported.emit()
 
 
 func respawn(t: Transform3D) -> void:

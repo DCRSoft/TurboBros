@@ -57,3 +57,17 @@ Godot_console.exe --headless --path . --script tools/generate_data.gd
 ```
 - Todos los ataques entran por `Kart.take_hit` (compañeros/fantasma → reflejo → inmunidad → guardias → trampa trasera → efecto). Equipos y fuego amigo ya están soportados (`team`, `friendly_fire`); los equipos se asignan en el hito 5.
 - La clasificación es provisional (avance hacia -Z); en el hito 5 pasa a vueltas y checkpoints.
+
+## Carrera, bots y equipos (hito 5)
+Flujo: **menú principal → lobby → carrera → resultados → lobby**.
+- **Circuito**: generado por código desde una curva cerrada (`scripts/race/circuit.gd`, ≈920 m, carretera con muros y línea de meta). La misma curva mide el progreso/vueltas y guía a los bots. La pista de pruebas anterior sigue en `scenes/tracks/test_track.tscn` (la usa el autotest).
+- **Carrera** (`RaceManager`): cuenta atrás 3-2-1 con los karts congelados, vueltas (1-9), clasificación en vivo, aviso de contramano, reaparición si te caes (o con **R**), y resultados con puntos por puesto (15, 12, 10, 8, 6, 4, 3, 2). El progreso no deja "saltarse" tramos.
+- **Bots** (`BotController`): siguen la curva con un punto de mira, frenan en curvas cerradas, usan ítems con reglas sencillas y se desatascan solos. Piensan a 20 Hz y escalonados entre sí (poca CPU). Hasta 8 karts en pantalla (4 humanos + 4 bots); los bots no tienen vista.
+- **Equipos**: Arriba/Abajo en el lobby cambia el equipo de tu kart (Rojo, Azul, Verde, Amarillo; máx. 4 karts por equipo). Los bots equilibran los equipos. Los resultados suman puntos por equipo. **Sin fuego amigo** por defecto (activable con Select/F).
+- **Lobby**: LB/RB o `-`/`+` = nº de bots · LT/RT o `[` `]` = vueltas · Select o `F` = fuego amigo · Start/Enter = iniciar · Esc = menú.
+- Al terminar, un kart humano pasa a piloto automático. La carrera acaba cuando llegan todos los humanos o 25 s después del primero; los que no llegan puntúan por progreso.
+
+Autotest de carrera (1 humano en piloto automático + 3 bots, 2 vueltas):
+```powershell
+Godot_console.exe --headless --path . res://scenes/debug/race_selftest.tscn
+```

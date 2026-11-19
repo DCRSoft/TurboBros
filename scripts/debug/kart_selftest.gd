@@ -106,6 +106,60 @@ func _test_hits() -> void:
 			"golpes=%d vx_max=%.2f" % [landed.size(), peak_vx])
 
 
+func _test_race_options() -> void:
+	var m := LobbyModel.new()
+	m.add(Seat.DeviceKind.JOYPAD, 0)
+	m.add(Seat.DeviceKind.JOYPAD, 1)
+	m.add(Seat.DeviceKind.JOYPAD, 2)
+	_check("bots: 3 karts humanos -> máx. 5 bots", m.max_bots() == 5, str(m.max_bots()))
+	m.set_bots(9)
+	_check("bots: se limita al máximo (8 karts en pantalla)", m.bots == 5, str(m.bots))
+	for i in 3:
+		m.add(Seat.DeviceKind.KEYBOARD, i)  # 6 jugadores -> 3 karts de 2
+	_check("bots: se recortan si se ocupan más karts", m.bots <= m.max_bots())
+	m.set_laps(0)
+	var low := m.laps
+	m.set_laps(99)
+	_check("vueltas: entre 1 y 9", low == 1 and m.laps == 9, "%d / %d" % [low, m.laps])
+
+	var t := LobbyModel.new()
+	t.add(Seat.DeviceKind.JOYPAD, 0)
+	t.set_bots(3)
+	_check("equipos: sin equipos los bots van libres", str(t.bot_teams()) == "[-1, -1, -1]", str(t.bot_teams()))
+	t.cycle_team(0, 1)
+	_check("equipos: el kart pasa al equipo Rojo", t.teams[0] == 0, str(t.teams[0]))
+	_check("equipos: los bots equilibran y crean rival", str(t.bot_teams()) == "[1, 0, 1]", str(t.bot_teams()))
+	t.cycle_team(0, -1)
+	_check("equipos: se puede volver a sin equipo", t.teams[0] == -1)
+	t.toggle_friendly_fire()
+	t.set_laps(5)
+	t.apply_to_session()
+	_check("sesión: el lobby entrega vueltas, fuego amigo, karts y bots",
+			GameSession.laps == 5 and GameSession.friendly_fire and GameSession.setups.size() == 1
+			and GameSession.bot_teams.size() == 3, "vueltas=%d" % GameSession.laps)
+	GameSession.reset()
+	_check("puntos por puesto", RaceManager.points_for(1) == 15 and RaceManager.points_for(8) == 2
+			and RaceManager.points_for(12) == 1)
+	var rm := RaceManager.new()
+	rm.results = [
+		{"team": 0, "points": 15}, {"team": 1, "points": 12}, {"team": 0, "points": 10}, {"team": -1, "points": 8},
+	]
+	var scores := rm.team_scores()
+	_check("equipos: suma de puntos por equipo", scores.get(0) == 25 and scores.get(1) == 12 and not scores.has(-1),
+			str(scores))
+	rm.free()
+
+
+func _test_menus_smoke() -> void:
+	for path in ["res://scenes/menu/main_menu.tscn", "res://scenes/menu/lobby.tscn"]:
+		var scene: Node = load(path).instantiate()
+		add_child(scene)
+		await _ticks(5)
+		scene.queue_free()
+		await _ticks(2)
+	_check("menús: principal y lobby cargan y corren", true)
+
+
 func _test_effects_unit() -> void:
 	var fx := KartEffects.new()
 	fx.add(EffectLibrary.get_effect(&"slow"))
@@ -499,6 +553,10 @@ func _run() -> void:
 	_test_effects_unit()
 	_test_catalog_and_roller()
 	await _test_items()
+
+	# 6b. Equipos, bots, vueltas, puntos y menús
+	_test_race_options()
+	await _test_menus_smoke()
 
 	# 7. Versión
 	_check("versión leída de VERSION", GameVersion.current == "0.1.0", GameVersion.current)
