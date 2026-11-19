@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ItemTrap" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_nnjq2"]
+[ext_resource type="Script" path="res://scripts/items/item_trap.gd" id="2_ry5ir"]
+
+[sub_resource type="Resource" id="Resource_gv5o2"]
+script = ExtResource("1_nnjq2")
+id = &"flat_tire"
+display_name = "Rueda pinchada"
+speed_mult = 0.55
+accel_mult = 0.5
+
+[resource]
+script = ExtResource("2_ry5ir")
+kind = 1
+hit_effect = SubResource("Resource_gv5o2")
+color = Color(0.6, 0.6, 0.65, 1)
+id = &"nails"
+display_name = "Clavos"
+category = 3
+icon_color = Color(0.6, 0.6, 0.65, 1)
+weight_front = 2.0
+weight_mid = 1.5
+weight_back = 0.5
+carried_guard = true

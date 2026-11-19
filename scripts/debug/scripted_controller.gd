@@ -3,6 +3,11 @@ extends KartController
 ## Controlador programable para pruebas automáticas.
 
 
+func set_item(pressed: bool, back := false) -> void:
+	_controls.item = pressed
+	_controls.item_back = back
+
+
 func set_hit(left: bool, right: bool) -> void:
 	_controls.hit_left = left
 	_controls.hit_right = right

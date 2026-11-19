@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemSelfEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_d1gwb"]
+[ext_resource type="Script" path="res://scripts/items/item_self_effect.gd" id="2_p55ml"]
+
+[sub_resource type="Resource" id="Resource_det6f"]
+script = ExtResource("1_d1gwb")
+id = &"reflect"
+display_name = "Burbuja reflectante"
+duration = 5.0
+reflect = true
+bubble_color = Color(0.6, 1, 1, 0.3)
+
+[resource]
+script = ExtResource("2_p55ml")
+effects = Array[ExtResource("1_d1gwb")]([SubResource("Resource_det6f")])
+id = &"reflect"
+display_name = "Burbuja reflectante"
+category = 1
+icon_color = Color(0.6, 1, 1, 1)
+weight_back = 2.0

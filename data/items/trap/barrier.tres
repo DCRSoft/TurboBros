@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemTrap" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_trap.gd" id="1_npi8u"]
+
+[resource]
+script = ExtResource("1_npi8u")
+kind = 3
+lifetime = 15.0
+color = Color(1, 0.5, 0.1, 1)
+id = &"barrier"
+display_name = "Barrera"
+category = 3
+icon_color = Color(1, 0.5, 0.1, 1)
+weight_front = 2.0
+weight_mid = 1.5
+weight_back = 0.5
+carried_guard = true

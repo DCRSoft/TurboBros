@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ItemProjectile" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_6hriy"]
+[ext_resource type="Script" path="res://scripts/items/item_projectile.gd" id="2_6cknb"]
+
+[sub_resource type="Resource" id="Resource_mhfp2"]
+script = ExtResource("1_6hriy")
+id = &"explode"
+display_name = "Explosión"
+duration = 1.6
+speed_mult = 0.2
+grip_mult = 0.3
+lock_control = true
+spin = true
+
+[resource]
+script = ExtResource("2_6cknb")
+kind = 3
+speed = 40.0
+lifetime = 5.0
+hit_effect = SubResource("Resource_mhfp2")
+color = Color(0.15, 0.15, 0.15, 1)
+id = &"bomb"
+display_name = "Bomba de área"
+category = 2
+icon_color = Color(0.15, 0.15, 0.15, 1)
+weight_front = 1.0
+weight_mid = 2.0
+weight_back = 2.0

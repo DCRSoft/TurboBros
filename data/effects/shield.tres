@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="KartEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_o101t"]
+
+[resource]
+script = ExtResource("1_o101t")
+id = &"shield"
+display_name = "Escudo"
+duration = 5.0
+immune = true
+bubble_color = Color(0.3, 0.6, 1, 0.3)

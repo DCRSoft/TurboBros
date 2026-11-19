@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="KartEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_fb6s5"]
+
+[resource]
+script = ExtResource("1_fb6s5")
+id = &"spin"
+display_name = "Giro"
+duration = 1.2
+speed_mult = 0.4
+grip_mult = 0.3
+lock_control = true
+spin = true

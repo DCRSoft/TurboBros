@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="KartEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_ybhls"]
+
+[resource]
+script = ExtResource("1_ybhls")
+id = &"ghost"
+display_name = "Fantasma"
+duration = 6.0
+ghost = true
+bubble_color = Color(1, 1, 1, 0.15)

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="KartEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_ju12e"]
+
+[resource]
+script = ExtResource("1_ju12e")
+id = &"rocket"
+display_name = "Cohete"
+duration = 2.8
+speed_mult = 1.9
+accel_mult = 5.0
+steer_mult = 0.6
+force_throttle = true

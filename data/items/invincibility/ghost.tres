@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemSelfEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_hy7da"]
+[ext_resource type="Script" path="res://scripts/items/item_self_effect.gd" id="2_uqpb7"]
+
+[sub_resource type="Resource" id="Resource_6vj8e"]
+script = ExtResource("1_hy7da")
+id = &"ghost"
+display_name = "Fantasma"
+duration = 6.0
+ghost = true
+bubble_color = Color(1, 1, 1, 0.15)
+
+[resource]
+script = ExtResource("2_uqpb7")
+effects = Array[ExtResource("1_hy7da")]([SubResource("Resource_6vj8e")])
+id = &"ghost"
+display_name = "Fantasma"
+category = 4
+icon_color = Color(0.9, 0.9, 1, 1)
+weight_mid = 0.8
+weight_back = 2.0

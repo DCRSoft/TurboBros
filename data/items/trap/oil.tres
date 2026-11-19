@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ItemTrap" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_mhspe"]
+[ext_resource type="Script" path="res://scripts/items/item_trap.gd" id="2_w4x8g"]
+
+[sub_resource type="Resource" id="Resource_s7k3m"]
+script = ExtResource("1_mhspe")
+id = &"oil_slip"
+display_name = "Resbalón"
+duration = 2.0
+steer_mult = 0.6
+grip_mult = 0.15
+
+[resource]
+script = ExtResource("2_w4x8g")
+trigger_radius = 2.5
+hit_effect = SubResource("Resource_s7k3m")
+color = Color(0.05, 0.05, 0.08, 1)
+id = &"oil"
+display_name = "Aceite"
+category = 3
+icon_color = Color(0.05, 0.05, 0.08, 1)
+weight_front = 3.0
+weight_mid = 1.5
+weight_back = 0.5
+carried_guard = true

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ItemSelfEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_j8oij"]
+[ext_resource type="Script" path="res://scripts/items/item_self_effect.gd" id="2_42tfs"]
+
+[sub_resource type="Resource" id="Resource_icevq"]
+script = ExtResource("1_j8oij")
+id = &"turbo"
+display_name = "Turbo corto"
+duration = 1.2
+speed_mult = 1.45
+accel_mult = 3.0
+force_throttle = true
+
+[resource]
+script = ExtResource("2_42tfs")
+effects = Array[ExtResource("1_j8oij")]([SubResource("Resource_icevq")])
+id = &"triple_turbo"
+display_name = "Triple turbo"
+icon_color = Color(1, 0.45, 0.1, 1)
+uses = 3
+weight_front = 0.5
+weight_mid = 1.5
+weight_back = 2.0

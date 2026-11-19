@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemChaos" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_c7hu8"]
+[ext_resource type="Script" path="res://scripts/items/item_chaos.gd" id="2_t8gt8"]
+
+[sub_resource type="Resource" id="Resource_7v8qj"]
+script = ExtResource("1_c7hu8")
+id = &"slow"
+display_name = "Ralentizado"
+duration = 4.0
+speed_mult = 0.6
+accel_mult = 0.6
+
+[resource]
+script = ExtResource("2_t8gt8")
+target = 1
+effect = SubResource("Resource_7v8qj")
+id = &"slow_ahead"
+display_name = "Ralentizar a los de delante"
+category = 5
+icon_color = Color(0.3, 0.3, 0.9, 1)
+weight_back = 2.5

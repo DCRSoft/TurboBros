@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemChaos" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_wkpkr"]
+[ext_resource type="Script" path="res://scripts/items/item_chaos.gd" id="2_af50m"]
+
+[sub_resource type="Resource" id="Resource_o0ecj"]
+script = ExtResource("1_wkpkr")
+id = &"invert"
+display_name = "Controles invertidos"
+duration = 6.0
+steer_mult = -1.0
+
+[resource]
+script = ExtResource("2_af50m")
+effect = SubResource("Resource_o0ecj")
+id = &"invert"
+display_name = "Controles invertidos"
+category = 5
+icon_color = Color(0.8, 0.2, 0.8, 1)
+weight_front = 0.5
+weight_mid = 1.5

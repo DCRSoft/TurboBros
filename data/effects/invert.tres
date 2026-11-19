@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="KartEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_a0pxh"]
+
+[resource]
+script = ExtResource("1_a0pxh")
+id = &"invert"
+display_name = "Controles invertidos"
+duration = 6.0
+steer_mult = -1.0

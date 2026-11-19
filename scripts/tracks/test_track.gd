@@ -22,6 +22,7 @@ var _spawns: Array[Transform3D] = []
 
 func _ready() -> void:
 	_spawn_markers()
+	_spawn_item_boxes()
 	split.render_scale = render_scale
 	InputManager.devices_changed.connect(_on_devices_changed)
 	if GameSession.setups.is_empty():
@@ -29,6 +30,23 @@ func _ready() -> void:
 	else:
 		_debug_mode = false
 		build_from_setups(GameSession.setups)
+
+
+func _physics_process(_delta: float) -> void:
+	# Clasificación provisional: avance hacia -Z desde la salida (hito 5: vueltas y checkpoints).
+	for k in karts:
+		k.race_progress = 70.0 - k.sphere.global_position.z
+	RaceRanking.update(karts)
+
+
+func _spawn_item_boxes() -> void:
+	var rows := {50.0: [-12.0, -6.0, 0.0, 6.0, 12.0], 15.0: [-24.0, -12.0, 12.0, 24.0],
+			-5.0: [-8.0, -2.0, 4.0, 10.0], -55.0: [-9.0, -3.0, 3.0, 9.0]}
+	for z in rows:
+		for x in rows[z]:
+			var b := ItemBox.new()
+			b.position = Vector3(x, 0.0, z)
+			add_child(b)
 
 
 func _on_devices_changed() -> void:

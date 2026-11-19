@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="KartEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_0xenk"]
+
+[resource]
+script = ExtResource("1_0xenk")
+id = &"flat_tire"
+display_name = "Rueda pinchada"
+speed_mult = 0.55
+accel_mult = 0.5

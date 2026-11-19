@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="KartEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_qagoi"]
+
+[resource]
+script = ExtResource("1_qagoi")
+id = &"giant"
+display_name = "Gigante"
+duration = 7.0
+speed_mult = 1.1
+scale_mult = 1.8
+mass_mult = 3.0
+immune = true
+touch_hit = true

@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ItemProjectile" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_dyjxq"]
+[ext_resource type="Script" path="res://scripts/items/item_projectile.gd" id="2_f60hd"]
+
+[sub_resource type="Resource" id="Resource_f4x3w"]
+script = ExtResource("1_dyjxq")
+id = &"spin"
+display_name = "Giro"
+duration = 1.2
+speed_mult = 0.4
+grip_mult = 0.3
+lock_control = true
+spin = true
+
+[resource]
+script = ExtResource("2_f60hd")
+kind = 1
+speed = 40.0
+lifetime = 8.0
+hit_effect = SubResource("Resource_f4x3w")
+color = Color(0.2, 0.9, 0.3, 1)
+id = &"bouncer"
+display_name = "Rebotador"
+category = 2
+icon_color = Color(0.2, 0.9, 0.3, 1)
+weight_front = 2.0
+weight_mid = 2.0

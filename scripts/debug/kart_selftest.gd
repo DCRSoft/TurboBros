@@ -106,6 +106,239 @@ func _test_hits() -> void:
 			"golpes=%d vx_max=%.2f" % [landed.size(), peak_vx])
 
 
+func _test_effects_unit() -> void:
+	var fx := KartEffects.new()
+	fx.add(EffectLibrary.get_effect(&"slow"))
+	_check("efecto: aplica modificadores", is_equal_approx(fx.mods.speed_mult, 0.6), str(fx.mods.speed_mult))
+	for i in 250:
+		fx.tick(1.0 / 60.0)
+	_check("efecto: caduca por temporizador", fx.instances.is_empty() and fx.mods.speed_mult == 1.0)
+	fx.add(EffectLibrary.get_effect(&"boost"), 0.6, 1.35)
+	fx.add(EffectLibrary.get_effect(&"boost"), 1.0, 1.35)
+	_check("efecto: renovar no duplica y alarga", fx.instances.size() == 1 and fx.instances[0].time_left >= 0.99)
+	fx.clear()
+	fx.add(EffectLibrary.get_effect(&"guard"))
+	var absorbed := 0
+	for i in 4:
+		if fx.consume_guard():
+			absorbed += 1
+	fx.tick(0.01)
+	_check("guardia: absorbe 3 ataques y desaparece", absorbed == 3 and fx.instances.is_empty(), "absorbidos=%d" % absorbed)
+	fx.add(EffectLibrary.get_effect(&"invert"))
+	fx.add(EffectLibrary.get_effect(&"slow"))
+	_check("efectos distintos se combinan", fx.mods.steer_mult == -1.0 and fx.mods.speed_mult < 1.0)
+
+
+func _test_catalog_and_roller() -> void:
+	var items := ItemCatalog.all()
+	var ids := {}
+	var counts := {}
+	for it in items:
+		ids[it.id] = true
+		counts[it.category] = counts.get(it.category, 0) + 1
+	var C := ItemData.Category
+	_check("catálogo: 23 ítems con ids únicos", items.size() == 23 and ids.size() == 23,
+			"items=%d únicos=%d" % [items.size(), ids.size()])
+	_check("catálogo: categorías 3/3/5/5/3/4", counts.get(C.SPEED) == 3 and counts.get(C.DEFENSE) == 3
+			and counts.get(C.ATTACK) == 5 and counts.get(C.TRAP) == 5 and counts.get(C.INVINCIBILITY) == 3
+			and counts.get(C.CHAOS) == 4, str(counts))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1234
+	var strong := [&"rocket", &"star", &"giant", &"ghost", &"reflect", &"shockwave", &"swap", &"slow_ahead"]
+	var first_strong := 0
+	var last_strong := 0
+	for i in 2000:
+		if ItemRoller.roll(1, 8, rng).id in strong:
+			first_strong += 1
+		if ItemRoller.roll(8, 8, rng).id in strong:
+			last_strong += 1
+	_check("reparto: en 1.º nunca salen ítems potentes y en último muchos", first_strong == 0 and last_strong > 600,
+			"1.º=%d último=%d de 2000" % [first_strong, last_strong])
+
+
+func _setup_pair() -> Array[Kart]:
+	track.set_player_count(2)
+	await _ticks(5)
+	var out: Array[Kart] = [track.karts[0], track.karts[1]]
+	for k in out:
+		var c := ScriptedController.new()
+		k.add_child(c)
+		k.controller = c
+	out[0].respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 25)))
+	out[1].respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 40)))
+	await _ticks(30)
+	return out
+
+
+func _give(k: Kart, id: StringName) -> void:
+	k.held_item = ItemCatalog.find(id)
+	k.held_uses = k.held_item.uses
+
+
+func _fresh(f: Kart, r: Kart) -> void:
+	for k in [f, r]:
+		k.fx.clear()
+		k.held_item = null
+		k.team = -1
+	f.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 25)))
+	r.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 40)))
+
+
+func _test_items() -> void:
+	var pair := await _setup_pair()
+	var f := pair[0]  # delante (z=25)
+	var r := pair[1]  # detrás (z=40)
+	_check("clasificación: el de delante va 1.º", f.race_position == 1 and r.race_position == 2,
+			"f=%d r=%d" % [f.race_position, r.race_position])
+
+	# Turbo por la entrada del jugador (pulsar ítem)
+	f.respawn(Transform3D(Basis.IDENTITY, Vector3(12, 0.6, 60)))
+	_give(r, &"turbo")
+	var cr: ScriptedController = r.controller
+	cr.set_item(true)
+	await _ticks(2)
+	cr.set_item(false)
+	var peak := 0.0
+	for i in 60:
+		await get_tree().physics_frame
+		peak = maxf(peak, r.get_speed_kmh() / 3.6)
+	_check("ítem turbo: se usa con el botón y acelera", r.held_item == null and peak > 30.0, "pico=%.1f m/s" % peak)
+	_fresh(f, r)
+	await _ticks(30)
+
+	# Proyectil recto
+	_give(r, &"missile")
+	r.use_held_item()
+	await _ticks(35)
+	_check("proyectil recto golpea al de delante", f.fx.has(&"spin"), "efectos=%d" % f.fx.instances.size())
+
+	# Escudo bloquea
+	_fresh(f, r)
+	await _ticks(30)
+	f.fx.add(EffectLibrary.get_effect(&"shield"))
+	_give(r, &"missile")
+	r.use_held_item()
+	await _ticks(35)
+	_check("escudo bloquea el proyectil", not f.fx.has(&"spin"))
+
+	# Burbuja reflectante
+	_fresh(f, r)
+	await _ticks(30)
+	f.fx.add(EffectLibrary.get_effect(&"reflect"))
+	_give(r, &"missile")
+	r.use_held_item()
+	await _ticks(85)
+	_check("burbuja reflejo devuelve el proyectil al atacante", r.fx.has(&"spin") and not f.fx.has(&"spin"))
+
+	# Orbitales
+	_fresh(f, r)
+	await _ticks(30)
+	f.fx.add(EffectLibrary.get_effect(&"guard"))
+	_give(r, &"missile")
+	r.use_held_item()
+	await _ticks(35)
+	_check("orbitales absorben un ataque", not f.fx.has(&"spin") and f.fx.total_guard_charges() == 2,
+			"cargas=%d" % f.fx.total_guard_charges())
+
+	# Trampa llevada atrás como escudo
+	_fresh(f, r)
+	await _ticks(30)
+	_give(f, &"mine")
+	_give(r, &"missile")
+	r.use_held_item()
+	await _ticks(35)
+	_check("trampa en mano hace de escudo trasero", f.held_item == null and not f.fx.has(&"spin"))
+
+	# Aceite colocado detrás
+	_fresh(f, r)
+	await _ticks(30)
+	_give(r, &"oil")
+	r.use_held_item(true)  # 3 m detrás de r (z=43)
+	f.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 44.0)))
+	await _ticks(20)
+	_check("aceite: resbalón al pisarlo", f.fx.has(&"oil_slip"))
+
+	# Mina: explota al acercarse y afecta al radio
+	_fresh(f, r)
+	await _ticks(30)
+	_give(r, &"mine")
+	r.use_held_item(true)
+	f.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 44.5)))
+	await _ticks(20)
+	_check("mina: explota y afecta a los cercanos", f.fx.has(&"explode") and r.fx.has(&"explode"),
+			"f=%s r=%s" % [f.fx.has(&"explode"), r.fx.has(&"explode")])
+
+	# Caos
+	_fresh(f, r)
+	await _ticks(30)
+	_give(r, &"slow_ahead")
+	r.use_held_item()
+	_check("caos: ralentiza al de delante", f.fx.has(&"slow") and not r.fx.has(&"slow"))
+	_give(r, &"ink")
+	r.use_held_item()
+	_give(r, &"invert")
+	r.use_held_item()
+	_check("caos: tinta y controles invertidos", f.fx.mods.ink and f.fx.mods.steer_mult == -1.0)
+
+	# Intercambio de posición
+	_fresh(f, r)
+	await _ticks(30)
+	_give(r, &"swap")
+	r.use_held_item()
+	await _ticks(10)
+	_check("intercambio de posición", r.sphere.global_position.z < 30.0 and f.sphere.global_position.z > 35.0,
+			"r.z=%.1f f.z=%.1f" % [r.sphere.global_position.z, f.sphere.global_position.z])
+
+	# Estrella golpea al tocar
+	_fresh(f, r)
+	f.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 38.0)))
+	await _ticks(20)
+	_give(r, &"star")
+	r.use_held_item()
+	await _ticks(10)
+	_check("estrella: golpea al kart que toca", f.fx.has(&"spin") and r.fx.mods.immune)
+
+	# Fantasma y gigante
+	_fresh(f, r)
+	await _ticks(30)
+	_give(r, &"ghost")
+	r.use_held_item()
+	await _ticks(3)
+	_check("fantasma: sin colisión con karts e ignora ataques",
+			r.sphere.collision_mask == 1 and r.take_hit(f, null) == Kart.HitResult.IGNORED)
+	_fresh(f, r)
+	await _ticks(30)
+	_give(r, &"giant")
+	r.use_held_item()
+	await _ticks(40)
+	_check("gigante: crece y pesa más", r.model.global_basis.get_scale().x > 1.5 and r.sphere.mass > 2.5,
+			"escala=%.2f masa=%.1f" % [r.model.global_basis.get_scale().x, r.sphere.mass])
+
+	# Equipos y fuego amigo
+	_fresh(f, r)
+	f.team = 1
+	r.team = 1
+	var ff_off := f.take_hit(r, null)
+	f.friendly_fire = false
+	r.friendly_fire = true
+	var ff_on := f.take_hit(r, null)
+	r.friendly_fire = false
+	_check("equipos: sin fuego amigo por defecto, activable",
+			ff_off == Kart.HitResult.IGNORED and ff_on == Kart.HitResult.HIT)
+	f.team = -1
+	r.team = -1
+
+	# Caja de ítems
+	_fresh(f, r)
+	f.respawn(Transform3D(Basis.IDENTITY, Vector3(12, 0.6, 60)))
+	r.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 50)))  # sobre una caja
+	await _ticks(20)
+	var rolling := r.is_rolling()
+	await _ticks(80)
+	_check("caja de ítems: sortea y entrega un ítem", rolling and r.held_item != null,
+			"ítem=%s" % [r.held_item.id if r.held_item else "ninguno"])
+
+
 func _test_split_screen() -> void:
 	var area := Vector2(1920, 1080)
 	for n in [1, 2, 3, 4]:
@@ -247,6 +480,9 @@ func _run() -> void:
 	# 6. Lobby, asientos y golpes
 	_test_lobby_model()
 	await _test_hits()
+	_test_effects_unit()
+	_test_catalog_and_roller()
+	await _test_items()
 
 	# 7. Versión
 	_check("versión leída de VERSION", GameVersion.current == "0.1.0", GameVersion.current)

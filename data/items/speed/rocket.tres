@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ItemSelfEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/kart_effect.gd" id="1_fx3u7"]
+[ext_resource type="Script" path="res://scripts/items/item_self_effect.gd" id="2_ecsop"]
+
+[sub_resource type="Resource" id="Resource_cpjf7"]
+script = ExtResource("1_fx3u7")
+id = &"rocket"
+display_name = "Cohete"
+duration = 2.8
+speed_mult = 1.9
+accel_mult = 5.0
+steer_mult = 0.6
+force_throttle = true
+
+[resource]
+script = ExtResource("2_ecsop")
+effects = Array[ExtResource("1_fx3u7")]([SubResource("Resource_cpjf7")])
+id = &"rocket"
+display_name = "Cohete"
+icon_color = Color(1, 0.2, 0.1, 1)
+weight_mid = 0.3
+weight_back = 3.0

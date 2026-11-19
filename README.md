@@ -44,3 +44,16 @@ El juego arranca en el lobby. Cada jugador se une pulsando su botón: **A** (man
 - **Izq/Der** cambia de kart (máx. 2 por kart), **Y / E / ;** intercambia conductor y artillero, **B / Q / J** sale, **Start** o **Enter** inicia. Al entrar o salir alguien se reparte de nuevo.
 - Conductor: gira, acelera, frena, derrapa. Artillero: ítems y golpes laterales (LB/RB en mando; Q/E en teclado J1; J/; en J2). Jugador solo: ítem + dirección golpea (en el hito 4 solo sin ítem).
 - Los golpes empujan lateralmente a los karts cercanos (provisional; el sistema de efectos llega en el hito 4). **Esc** vuelve al lobby.
+
+## Ítems y efectos (hito 4)
+- **Cajas de ítems** en la pista de prueba: al tocarlas, ruleta de 1 s y el ítem sale según tu posición (los últimos reciben opciones más fuertes; el 1.º nunca recibe cohete, estrella, etc.).
+- **Usar ítem**: botón X/Y (mando), Espacio (J1), K (J2). Con "atrás" (stick abajo / S / ↓) los ataques salen hacia atrás y las trampas se colocan 3 m detrás; sin él, hacia adelante (trampas a 6 m).
+- **Sin ítem en mano**, el artillero (o jugador solo con botón de ítem + dirección) golpea a los lados.
+- 23 ítems: velocidad (turbo, triple turbo, cohete), defensa (escudo, orbitales, burbuja reflectante), ataque (recto, rebotador, teledirigido, bomba de área, ola de choque), trampas (aceite, clavos, caja falsa, barrera, mina; sin soltar hacen de escudo trasero), invencibilidad (estrella, fantasma, gigante) y caos (tinta, controles invertidos, ralentizar a los de delante, intercambio de posición).
+- **Un único sistema de efectos** (`KartEffect` + `KartEffects`): turbos, giros, escudos, tinta... son recursos `.tres` en `data/effects/`. Los turbos de derrape y aterrizaje también pasan por él.
+- **Añadir un ítem nuevo = crear un `.tres`** en `data/items/` (subclases `ItemSelfEffect`, `ItemProjectile`, `ItemTrap`, `ItemChaos`, `ItemSwap`); el catálogo lo detecta solo. `tools/generate_data.gd` regenera los valores iniciales:
+```powershell
+Godot_console.exe --headless --path . --script tools/generate_data.gd
+```
+- Todos los ataques entran por `Kart.take_hit` (compañeros/fantasma → reflejo → inmunidad → guardias → trampa trasera → efecto). Equipos y fuego amigo ya están soportados (`team`, `friendly_fire`); los equipos se asignan en el hito 5.
+- La clasificación es provisional (avance hacia -Z); en el hito 5 pasa a vueltas y checkpoints.
