@@ -14,7 +14,9 @@ func setup(d: ItemTrap, k: Kart, backwards: bool) -> void:
 	var fwd := k.get_forward()
 	fwd.y = 0.0
 	fwd = fwd.normalized()
-	position = k.sphere.global_position + (-fwd * 3.0 if backwards else fwd * 6.0)
+	# La barrera es sólida: siempre se coloca detrás para no bloquear a su dueño.
+	var behind := backwards or d.kind == ItemTrap.Kind.BARRIER
+	position = k.sphere.global_position + (-fwd * 3.0 if behind else fwd * 6.0)
 
 
 func _ready() -> void:

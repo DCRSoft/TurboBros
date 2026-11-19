@@ -258,6 +258,22 @@ func _test_items() -> void:
 	await _ticks(20)
 	_check("aceite: resbalón al pisarlo", f.fx.has(&"oil_slip"))
 
+	# Barrera: aunque se use hacia adelante, queda detrás (no bloquea al dueño)
+	_fresh(f, r)
+	f.respawn(Transform3D(Basis.IDENTITY, Vector3(12, 0.6, 60)))
+	await _ticks(30)
+	_give(r, &"barrier")
+	r.use_held_item(false)
+	await _ticks(2)
+	var barrier: Trap
+	for n in track.get_children():
+		if n is Trap and n.data.kind == ItemTrap.Kind.BARRIER:
+			barrier = n
+	_check("barrera: siempre se coloca detrás del dueño", barrier != null and barrier.position.z > r.sphere.global_position.z + 2.0,
+			"barrera z=%.1f kart z=%.1f" % [barrier.position.z if barrier else 0.0, r.sphere.global_position.z])
+	if barrier:
+		barrier.queue_free()
+
 	# Mina: explota al acercarse y afecta al radio
 	_fresh(f, r)
 	await _ticks(30)

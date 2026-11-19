@@ -2,6 +2,7 @@ class_name ItemTrap
 extends ItemData
 ## Trampas colocables: aceite, clavos, caja falsa, barrera, mina. Sin soltar, sirven de escudo trasero
 ## (carried_guard = true). Hacia adelante se colocan 6 m delante; hacia atrás, 3 m detrás.
+## La barrera (sólida) siempre se coloca detrás, para no bloquear a su dueño.
 
 enum Kind { OIL, NAILS, FAKE_BOX, BARRIER, MINE }
 
