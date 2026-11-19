@@ -494,7 +494,9 @@ func _update_steering(c: KartControls, delta: float) -> void:
 	var turn: float
 	if drifting:
 		var into := (_steer * drift_dir + 1.0) * 0.5
-		turn = drift_dir * lerpf(0.5, 1.3, into) * stats.handling * 0.6
+		# Hacia dentro (mismo lado del derrape) = 1.3x como antes; stick neutro = 0.73x;
+		# contravolante a tope = 0.15x -> el derrape se abre mucho.
+		turn = drift_dir * lerpf(0.15, 1.3, into) * stats.handling * 0.6
 	else:
 		var speed_ratio := clampf(absf(forward_speed) / stats.max_speed, 0.0, 1.0)
 		turn = _steer * stats.handling * lerpf(1.0, 0.7, speed_ratio)

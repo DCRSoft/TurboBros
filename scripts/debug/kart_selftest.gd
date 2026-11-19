@@ -509,6 +509,26 @@ func _run() -> void:
 			"pico=%.1f m/s" % peak)
 	_check("el derrape giró el kart", absf(heading_before) > 0.5, "heading=%.2f" % heading_before)
 
+	# 2a. Contravolante: el derrape se abre (mismo lado = cerrado, lado contrario = abierto)
+	var turned := {}
+	for counter in [false, true]:
+		_reset()
+		await _ticks(10)
+		ctrl.set_input(0, 1)
+		await _ticks(100)
+		ctrl.set_input(1, 1, 0, true)
+		await _ticks(40)
+		var drifting_ok := kart.drifting
+		var h0 := kart.heading
+		ctrl.set_input(-1 if counter else 1, 1, 0, true)
+		await _ticks(60)
+		turned[counter] = absf(kart.heading - h0)
+		_check("derrape %s: sigue derrapando" % ("con contravolante" if counter else "cerrado"),
+				drifting_ok and kart.drifting)
+	_check("contravolante abre el derrape (gira < 40 % que el cerrado)",
+			turned[true] < turned[false] * 0.4 and turned[false] > 1.0,
+			"cerrado=%.2f rad, abierto=%.2f rad" % [turned[false], turned[true]])
+
 	# 2b. Derrape sin dirección: solo salta, no derrapa
 	_reset()
 	await _ticks(10)

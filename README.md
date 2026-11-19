@@ -71,3 +71,11 @@ Autotest de carrera (1 humano en piloto automático + 3 bots, 2 vueltas):
 ```powershell
 Godot_console.exe --headless --path . res://scenes/debug/race_selftest.tscn
 ```
+
+## Física y estabilidad
+- El proyecto usa **Jolt Physics** (`physics/3d/physics_engine`): con el motor anterior las mallas de colisión del circuito hacían rebotar el kart (≈8 % del tiempo en el aire, ±7 m/s de velocidad vertical); con Jolt 0 % y ±2 m/s.
+- `scenes/debug/stability_probe.tscn` conduce un kart una vuelta y falla si vuelve el rebote:
+```powershell
+Godot_console.exe --headless --path . res://scenes/debug/stability_probe.tscn
+```
+- Derrape: el lado hacia el que giras mantiene el cierre de siempre; con el stick al lado contrario el derrape se abre mucho (gira ≈ 20 % del cerrado).
