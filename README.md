@@ -37,3 +37,10 @@ El único archivo de versión es `VERSION` (semver). Releases con etiqueta `vX.Y
 
 ## Medición de rendimiento
 Tras cada hito, anotar FPS en `docs/PERFORMANCE.md`.
+
+## Lobby y 2 jugadores por kart (hito 3)
+El juego arranca en el lobby. Cada jugador se une pulsando su botón: **A** (mando), **Espacio** (teclado J1) o **K** (teclado J2).
+- Reparto automático: 1=1, 2=1+1, 3=1+1+1, 4=1+1+1+1, 5=1+2+2, 6=2+2+2, 7=1+2+2+2, 8=2+2+2+2 (máx. 4 karts humanos, 2 asientos por kart).
+- **Izq/Der** cambia de kart (máx. 2 por kart), **Y / E / ;** intercambia conductor y artillero, **B / Q / J** sale, **Start** o **Enter** inicia. Al entrar o salir alguien se reparte de nuevo.
+- Conductor: gira, acelera, frena, derrapa. Artillero: ítems y golpes laterales (LB/RB en mando; Q/E en teclado J1; J/; en J2). Jugador solo: ítem + dirección golpea (en el hito 4 solo sin ítem).
+- Los golpes empujan lateralmente a los karts cercanos (provisional; el sistema de efectos llega en el hito 4). **Esc** vuelve al lobby.

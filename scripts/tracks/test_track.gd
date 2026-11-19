@@ -1,5 +1,6 @@
 extends Node3D
-## Pista de prueba: terreno plano, rampas y pilares de referencia. Soporta 1-4 karts en pantalla dividida.
+## Pista de prueba: terreno plano, rampas y pilares de referencia. 1-4 karts en pantalla dividida.
+## Si GameSession.setups trae datos del lobby se usan; si no, modo depuración (F1-F4, un asiento por kart).
 
 const KART_SCENE: PackedScene = preload("res://scenes/kart/kart.tscn")
 const MAX_PLAYERS := 4
@@ -14,43 +15,71 @@ const BODY_COLORS: Array[Color] = [
 @onready var split: SplitScreen = $UI/SplitScreen
 
 var karts: Array[Kart] = []
-var seats: Array[Seat] = []
+var seats: Array[Seat] = []        ## todos los asientos (plano)
+var _debug_mode := true
 var _spawns: Array[Transform3D] = []
 
 
 func _ready() -> void:
 	_spawn_markers()
 	split.render_scale = render_scale
-	InputManager.devices_changed.connect(func() -> void: InputManager.assign_devices(seats))
-	set_player_count(player_count)
+	InputManager.devices_changed.connect(_on_devices_changed)
+	if GameSession.setups.is_empty():
+		set_player_count(player_count)
+	else:
+		_debug_mode = false
+		build_from_setups(GameSession.setups)
 
 
+func _on_devices_changed() -> void:
+	if _debug_mode:
+		InputManager.assign_devices(seats)
+
+
+## Modo depuración: n karts, cada uno con un asiento SOLO y dispositivos por orden.
 func set_player_count(n: int) -> void:
 	player_count = clampi(n, 1, MAX_PLAYERS)
+	var debug_seats: Array[Seat] = []
+	for i in player_count:
+		debug_seats.append(Seat.new())
+	InputManager.assign_devices(debug_seats)
+	var setups: Array[Dictionary] = []
+	for i in player_count:
+		var group: Array[Seat] = [debug_seats[i]]
+		setups.append({"slot": i, "seats": group})
+	build_from_setups(setups)
+	seats = debug_seats
+
+
+## setups: [{"slot": int, "seats": Array[Seat]}, ...] (formato de LobbyModel.build_setups).
+func build_from_setups(setups: Array[Dictionary]) -> void:
 	for k in karts:
 		remove_child(k)
 		k.queue_free()
 	karts.clear()
 	seats.clear()
 	_spawns.clear()
-	for i in player_count:
-		seats.append(Seat.new())
-	InputManager.assign_devices(seats)
-	for i in player_count:
+	var groups: Array = []
+	var n := setups.size()
+	for i in n:
 		var k: Kart = KART_SCENE.instantiate()
-		var t := _spawn_transform(i, player_count)
+		var t := _spawn_transform(i, n)
 		k.transform = t
 		_spawns.append(t)
 		add_child(k)
-		k.set_body_color(BODY_COLORS[i])
+		k.set_body_color(BODY_COLORS[setups[i]["slot"] % BODY_COLORS.size()])
+		var kart_seats: Array[Seat] = []
+		kart_seats.assign(setups[i]["seats"])
 		if attach_player_input:
 			var sc := SeatController.new()
 			sc.name = "PlayerController"
-			sc.seats.append(seats[i])
+			sc.seats.assign(kart_seats)
 			k.add_child(sc)
 			k.controller = sc
+		seats.append_array(kart_seats)
+		groups.append(kart_seats)
 		karts.append(k)
-	split.setup(karts, seats)
+	split.setup(karts, groups)
 
 
 func set_render_scale(s: float) -> void:
@@ -74,12 +103,20 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	match event.keycode:
 		KEY_R: respawn_all()
-		KEY_F1: set_player_count(1)
-		KEY_F2: set_player_count(2)
-		KEY_F3: set_player_count(3)
-		KEY_F4: set_player_count(4)
+		KEY_ESCAPE:
+			GameSession.setups.clear()
+			get_tree().change_scene_to_file("res://scenes/menu/lobby.tscn")
+		KEY_F1: _debug_players(1)
+		KEY_F2: _debug_players(2)
+		KEY_F3: _debug_players(3)
+		KEY_F4: _debug_players(4)
 		KEY_BRACKETLEFT: set_render_scale(render_scale - 0.1)
 		KEY_BRACKETRIGHT: set_render_scale(render_scale + 0.1)
+
+
+func _debug_players(n: int) -> void:
+	if _debug_mode:
+		set_player_count(n)
 
 
 func _spawn_markers() -> void:

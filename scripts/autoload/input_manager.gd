@@ -97,6 +97,8 @@ func _read_joypad(seat: Seat, out: KartControls) -> void:
 		if seat.role == Seat.Role.GUNNER:
 			out.hit_left = lb or lt > 0.5
 			out.hit_right = rb or rt > 0.5
+		else:
+			_solo_hit(out)
 
 
 func _read_keyboard(seat: Seat, out: KartControls) -> void:
@@ -113,3 +115,26 @@ func _read_keyboard(seat: Seat, out: KartControls) -> void:
 		if seat.role == Seat.Role.GUNNER:
 			out.hit_left = down.call("hit_l")
 			out.hit_right = down.call("hit_r")
+		else:
+			_solo_hit(out)
+
+
+## Jugador SOLO: golpea con el botón de ítem + dirección (hito 4: solo si no tiene ítem).
+func _solo_hit(out: KartControls) -> void:
+	if out.item:
+		out.hit_left = out.steer < -0.5
+		out.hit_right = out.steer > 0.5
+
+
+## Entrada de menú de un dispositivo: x (-1..1), confirm, back, swap, start.
+func read_menu(kind: Seat.DeviceKind, id: int) -> Dictionary:
+	if kind == Seat.DeviceKind.JOYPAD:
+		var dpad := int(_btn(id, JOY_BUTTON_DPAD_RIGHT)) - int(_btn(id, JOY_BUTTON_DPAD_LEFT))
+		return {"x": clampf(_dz(Input.get_joy_axis(id, JOY_AXIS_LEFT_X)) + dpad, -1.0, 1.0),
+				"confirm": _btn(id, JOY_BUTTON_A), "back": _btn(id, JOY_BUTTON_B),
+				"swap": _btn(id, JOY_BUTTON_Y), "start": _btn(id, JOY_BUTTON_START)}
+	var k: Dictionary = KEY_SCHEMES[clampi(id, 0, KEY_SCHEMES.size() - 1)]
+	var key := func(name: String) -> bool: return Input.is_physical_key_pressed(k[name])
+	return {"x": float(int(key.call("right")) - int(key.call("left"))),
+			"confirm": key.call("item"), "back": key.call("hit_l"),
+			"swap": key.call("hit_r"), "start": false}

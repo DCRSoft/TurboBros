@@ -11,13 +11,14 @@ config_version=5
 [application]
 
 config/name="TurboBros"
-run/main_scene="res://scenes/tracks/test_track.tscn"
+run/main_scene="res://scenes/menu/lobby.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [autoload]
 
 GameVersion="*res://scripts/autoload/game_version.gd"
 InputManager="*res://scripts/autoload/input_manager.gd"
+GameSession="*res://scripts/autoload/game_session.gd"
 
 [display]
 

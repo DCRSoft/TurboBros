@@ -5,6 +5,8 @@ extends Node3D
 ## Lee SOLO KartControls (nunca hardware).
 
 signal landed(air_time: float)
+signal hit_landed(target: Kart)
+signal got_hit(attacker: Kart)
 signal hop_started
 signal drift_started(direction: int)
 signal drift_level_changed(level: int)
@@ -17,7 +19,11 @@ const DRIFT_COLOR_1 := Color(0.2, 0.5, 1.0)   ## azul
 const DRIFT_COLOR_2 := Color(1.0, 0.55, 0.1)  ## naranja
 const DRIFT_MIN_SPEED := 8.0
 const DRIFT_START_WINDOW := 0.25
-const HOP_SPEED := 3.5      ## m/s hacia arriba al iniciar el derrape
+const HIT_COOLDOWN := 0.6
+const HIT_RANGE_X := 3.2    ## alcance lateral del golpe (m)
+const HIT_RANGE_Z := 2.2    ## tolerancia delante/detrás (m)
+const HIT_IMPULSE := 9.0    ## m/s de empuje lateral a un kart de peso 1
+const HOP_SPEED := 3.5     ## m/s hacia arriba al iniciar el derrape
 const HOP_DURATION := 0.3   ## s mínimos antes de poder aterrizar y empezar a derrapar
 const LANDING_MIN_AIR := 0.3
 const LANDING_BOOST_TIME := 0.7
@@ -48,6 +54,11 @@ var _drift_prev := false
 var _drift_press_window := 0.0
 var _landing_window := 0.0
 var _visual_drift := 0.0
+var _hit_cd := 0.0
+var _swing_t := 0.0
+var _swing: MeshInstance3D
+var _hit_prev_l := false
+var _hit_prev_r := false
 var _hop_t := 0.0
 var _hop_dir := 0
 var hop_active := false  ## salto previo al derrape en curso
@@ -67,6 +78,13 @@ func _ready() -> void:
 		stats = KartStats.new()
 	if character == null:
 		character = CharacterData.new()
+	add_to_group("karts")
+	_swing = MeshInstance3D.new()
+	var swing_mesh := BoxMesh.new()
+	swing_mesh.size = Vector3(1.2, 0.2, 0.3)
+	_swing.mesh = swing_mesh
+	_swing.visible = false
+	body.add_child(_swing)
 	sphere.top_level = true
 	sphere.global_position = global_position
 	sphere.mass = stats.weight
@@ -92,6 +110,7 @@ func _physics_process(delta: float) -> void:
 	_update_drift(c, delta)
 	_update_steering(c, delta)
 	_apply_drive(c, delta)
+	_update_hit(c)
 	_update_model(delta)
 	global_position = sphere.global_position
 
@@ -193,6 +212,9 @@ func _update_timers(delta: float) -> void:
 	_drift_press_window = maxf(_drift_press_window - delta, 0.0)
 	_landing_window = maxf(_landing_window - delta, 0.0)
 	_hop_t = maxf(_hop_t - delta, 0.0)
+	_hit_cd = maxf(_hit_cd - delta, 0.0)
+	_swing_t = maxf(_swing_t - delta, 0.0)
+	_swing.visible = _swing_t > 0.0
 	if boost_time > 0.0:
 		boost_time -= delta
 		if boost_time <= 0.0:
@@ -330,6 +352,38 @@ func _apply_drive(c: KartControls, delta: float) -> void:
 		impulse += -vel * sphere.mass * clampf(8.0 * delta, 0.0, 1.0)
 
 	sphere.apply_central_impulse(impulse)
+
+
+## Golpe lateral (artillero, o jugador solo). Hito 4: solo cuando no hay ítem en mano.
+func _update_hit(c: KartControls) -> void:
+	var left := c.hit_left and not _hit_prev_l
+	var right := c.hit_right and not _hit_prev_r
+	_hit_prev_l = c.hit_left
+	_hit_prev_r = c.hit_right
+	if _hit_cd > 0.0 or not (left or right):
+		return
+	_do_hit(-1 if left else 1)
+
+
+func _do_hit(side: int) -> void:
+	_hit_cd = HIT_COOLDOWN
+	_swing_t = 0.15
+	_swing.position = Vector3(side * 1.1, 0.6, 0.0)
+	var inv := model.global_transform.affine_inverse()
+	for node in get_tree().get_nodes_in_group("karts"):
+		var other := node as Kart
+		if other == null or other == self:
+			continue
+		var local := inv * other.sphere.global_position
+		if local.x * side > 0.4 and absf(local.x) < HIT_RANGE_X and absf(local.z) < HIT_RANGE_Z:
+			other.receive_hit(model.global_basis.x * side, self)
+			hit_landed.emit(other)
+
+
+func receive_hit(dir: Vector3, attacker: Kart) -> void:
+	var power := attacker.stats.hit_power
+	sphere.apply_central_impulse(dir * HIT_IMPULSE * power * sphere.mass)
+	got_hit.emit(attacker)
 
 
 func _update_model(delta: float) -> void:

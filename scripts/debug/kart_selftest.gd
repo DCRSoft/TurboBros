@@ -35,6 +35,77 @@ func _reset() -> void:
 	_landings.clear()
 
 
+func _test_lobby_model() -> void:
+	var expected := {1: [1], 2: [1, 1], 3: [1, 1, 1], 4: [1, 1, 1, 1], 5: [1, 2, 2],
+			6: [2, 2, 2], 7: [1, 2, 2, 2], 8: [2, 2, 2, 2]}
+	for n in expected:
+		var m := LobbyModel.new()
+		for i in n:
+			m.add(Seat.DeviceKind.JOYPAD, i)
+		var sizes: Array = []
+		for s in m.build_setups():
+			sizes.append(s["seats"].size())
+		_check("lobby: %d jugadores -> %s" % [n, expected[n]], sizes == expected[n], str(sizes))
+	var m := LobbyModel.new()
+	for i in 4:
+		m.add(Seat.DeviceKind.JOYPAD, i)
+	var p0 := m.players[0]
+	_check("lobby: mover a un kart ocupado con 1 jugador", m.move(p0, 1) and m.members(1).size() == 2)
+	_check("lobby: no se puede pasar de 2 por kart", not m.move(m.players[2], -1))
+	var duo: Array = m.build_setups()[0]["seats"]
+	_check("lobby: kart de 2 = conductor + artillero",
+			duo.size() == 2 and duo[0].role == Seat.Role.DRIVER and duo[1].role == Seat.Role.GUNNER)
+	m.swap_roles(1)
+	var duo2: Array = m.build_setups()[0]["seats"]
+	_check("lobby: intercambiar roles", duo2[0].role == Seat.Role.GUNNER and duo2[1].role == Seat.Role.DRIVER)
+	m.remove(m.players[3])
+	_check("lobby: al salir alguien se reparte de nuevo", m.players.size() == 3 and m.build_setups().size() == 3)
+
+	var drv := KartControls.new()
+	drv.steer = 0.7
+	drv.throttle = 1.0
+	var gun := KartControls.new()
+	gun.item = true
+	gun.hit_right = true
+	var merged := KartControls.new()
+	merged.merge(drv)
+	merged.merge(gun)
+	_check("conductor + artillero se combinan en los controles del kart",
+			merged.steer == 0.7 and merged.throttle == 1.0 and merged.item and merged.hit_right)
+
+
+func _test_hits() -> void:
+	track.set_player_count(2)
+	await _ticks(60)
+	var a: Kart = track.karts[0]
+	var b: Kart = track.karts[1]
+	a.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 70)))
+	b.respawn(Transform3D(Basis.IDENTITY, Vector3(2.5, 0.6, 70)))  # a la derecha de A
+	var ca := ScriptedController.new()
+	a.add_child(ca)
+	a.controller = ca
+	var landed: Array[bool] = []
+	a.hit_landed.connect(func(_t: Kart) -> void: landed.append(true))
+	await _ticks(30)
+	# golpe a la izquierda: B está a la derecha -> no le afecta
+	ca.set_hit(true, false)
+	await _ticks(3)
+	ca.set_hit(false, false)
+	await _ticks(10)
+	_check("golpe izquierdo no alcanza a un kart a la derecha", landed.is_empty() and b.sphere.linear_velocity.x < 1.0,
+			"vx=%.2f" % b.sphere.linear_velocity.x)
+	await _ticks(40)  # enfriamiento
+	ca.set_hit(false, true)
+	await _ticks(3)
+	ca.set_hit(false, false)
+	var peak_vx := 0.0
+	for i in 20:
+		await get_tree().physics_frame
+		peak_vx = maxf(peak_vx, b.sphere.linear_velocity.x)
+	_check("golpe derecho empuja al kart de la derecha", landed.size() == 1 and peak_vx > 3.0,
+			"golpes=%d vx_max=%.2f" % [landed.size(), peak_vx])
+
+
 func _test_split_screen() -> void:
 	var area := Vector2(1920, 1080)
 	for n in [1, 2, 3, 4]:
@@ -173,7 +244,11 @@ func _run() -> void:
 	# 5. Pantalla dividida
 	await _test_split_screen()
 
-	# 6. Versión
+	# 6. Lobby, asientos y golpes
+	_test_lobby_model()
+	await _test_hits()
+
+	# 7. Versión
 	_check("versión leída de VERSION", GameVersion.current == "0.1.0", GameVersion.current)
 	_check("compare de versiones", GameVersion.compare("v1.2.0", "1.10.0") < 0)
 

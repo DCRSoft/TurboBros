@@ -46,7 +46,8 @@ static func compute_cells(count: int, area: Vector2, gap_px: float) -> Array[Rec
 	return out
 
 
-func setup(karts: Array[Kart], seats: Array[Seat]) -> void:
+## seat_groups[i] = Array[Seat] del kart i (para mostrar conductor/artillero en el HUD).
+func setup(karts: Array[Kart], seat_groups: Array) -> void:
 	clear()
 	for i in karts.size():
 		var c := Cell.new()
@@ -60,7 +61,8 @@ func setup(karts: Array[Kart], seats: Array[Seat]) -> void:
 		c.viewport.add_child(c.camera)
 		c.hud = DebugHud.new()
 		c.hud.kart = karts[i]
-		c.hud.seat = seats[i] if i < seats.size() else null
+		if i < seat_groups.size():
+			c.hud.seats.assign(seat_groups[i])
 		c.hud.show_help = (i == 0)
 		c.hud.info_provider = func() -> String:
 			return "Vista %d: %dx%d (escala %.2f)" % [

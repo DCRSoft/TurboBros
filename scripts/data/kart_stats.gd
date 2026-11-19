@@ -18,5 +18,8 @@ extends Resource
 @export var drift := 1.0            ## rapidez de carga del mini turbo
 @export var drift_grip := 3.0      ## agarre lateral derrapando
 
+@export_group("Golpes")
+@export var hit_power := 1.0        ## empuje del golpe (el artillero lo mejora en el hito 6)
+
 @export_group("Superficie")
 @export var offroad_control := 0.6  ## (se usa cuando existan superficies)
