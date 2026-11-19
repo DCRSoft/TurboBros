@@ -63,6 +63,12 @@ func _think(dt: float) -> void:
 		var lim := circuit.road_half_width * 0.45
 		lane = clampf(lane + _rng.randf_range(-3.0, 3.0), -lim, lim)
 
+	# Esquivar trampas (barreras sólidas, aceite, clavos, minas) que haya delante
+	var dodge := _dodge_lane(pos)
+	if not is_nan(dodge):
+		lane = lerpf(lane, dodge, 0.8)
+		_lane_t = 1.0
+
 	# Dirección hacia el punto de mira
 	var look := int(clampf(10.0 + speed * 0.7, 12.0, 34.0) / circuit.step)
 	var ti := circuit.wrap_index(_idx + look)
@@ -100,6 +106,34 @@ func _think(dt: float) -> void:
 		steer = -steer
 	_controls.steer = steer
 	_think_items(dt)
+
+
+## Carril al que desviarse para esquivar la trampa más cercana por delante (NAN = nada que esquivar).
+func _dodge_lane(pos: Vector3) -> float:
+	var fwd := kart.get_forward()
+	fwd.y = 0.0
+	fwd = fwd.normalized()
+	var right := circuit.rights[_idx]
+	var lat_bot := (pos - circuit.points[_idx]).dot(right)
+	var best := NAN
+	var best_along := 30.0
+	for node in get_tree().get_nodes_in_group("traps"):
+		var t := node as Trap
+		if t == null:
+			continue
+		var d := t.global_position - pos
+		d.y = 0.0
+		var along := d.dot(fwd)
+		if along < 2.0 or along > best_along:
+			continue
+		var lat_trap := lat_bot + d.dot(right)
+		var width := maxf(t.data.trigger_radius, 2.0) + 2.5
+		if absf(lat_trap - lane) < width:
+			best_along = along
+			var limit := circuit.road_half_width - 2.0
+			var side := lat_trap - width if lat_trap > 0.0 else lat_trap + width
+			best = clampf(side, -limit, limit)
+	return best
 
 
 func _unstick(dt: float, speed: float, _steer: float) -> void:

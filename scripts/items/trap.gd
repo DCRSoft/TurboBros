@@ -20,6 +20,7 @@ func setup(d: ItemTrap, k: Kart, backwards: bool) -> void:
 
 
 func _ready() -> void:
+	add_to_group("traps")
 	# Apoya la trampa en el suelo
 	var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(
 			position + Vector3.UP * 3.0, position + Vector3.DOWN * 8.0, 1))

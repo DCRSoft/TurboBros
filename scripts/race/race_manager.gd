@@ -12,6 +12,7 @@ enum State { WAITING, COUNTDOWN, RACING, FINISHED }
 
 const COUNTDOWN_TIME := 3.0
 const HUMAN_GRACE := 25.0      ## s que se espera a los humanos tras llegar el primero
+const BOT_WAIT := 15.0         ## s que se espera a los bots tras llegar el último humano
 const MAX_RACE_TIME := 600.0   ## tope de seguridad
 const POINTS: Array[int] = [15, 12, 10, 8, 6, 4, 3, 2]
 
@@ -218,7 +219,7 @@ func _check_end() -> void:
 			if r.is_human:
 				humans_left = true
 	var end := all_done or race_time >= MAX_RACE_TIME
-	if total_humans() > 0 and not humans_left and race_time - _last_human_finish >= 3.0:
+	if total_humans() > 0 and not humans_left and race_time - _last_human_finish >= BOT_WAIT:
 		end = true
 	if _first_human_finish >= 0.0 and race_time - _first_human_finish >= HUMAN_GRACE:
 		end = true
