@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/kart/kart.gd" id="1_kart"]
 [ext_resource type="Resource" path="res://data/stats/vehicle_default.tres" id="2_stats"]
-[ext_resource type="Resource" path="res://data/characters/test_male.tres" id="3_char"]
 
 [sub_resource type="SphereShape3D" id="shape"]
 radius = 0.5
@@ -42,7 +41,6 @@ albedo_color = Color(0.08, 0.08, 0.08, 1)
 [node name="Kart" type="Node3D"]
 script = ExtResource("1_kart")
 stats = ExtResource("2_stats")
-character = ExtResource("3_char")
 
 [node name="Sphere" type="RigidBody3D" parent="."]
 collision_layer = 2

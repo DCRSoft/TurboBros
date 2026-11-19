@@ -106,6 +106,149 @@ func _test_hits() -> void:
 			"golpes=%d vx_max=%.2f" % [landed.size(), peak_vx])
 
 
+func _test_roster_and_build() -> void:
+	var vs := DataCatalog.vehicles()
+	var cs := DataCatalog.characters()
+	var ids := {}
+	for x in vs:
+		ids[x.id] = true
+	for x in cs:
+		ids[x.id] = true
+	_check("datos: 6 vehículos y 8 personajes con ids únicos", vs.size() == 6 and cs.size() == 8 and ids.size() == 14,
+			"vehículos=%d personajes=%d" % [vs.size(), cs.size()])
+	var v := DataCatalog.vehicle(&"relampago")
+	var aurea := DataCatalog.character(&"aurea")
+	var brutus := DataCatalog.character(&"brutus")
+	# Solo: vehículo + personaje + sinergia (a Áurea le gusta el Relámpago: +2 vel, +2 acel, +2 derrape)
+	var solo := KartBuild.combine(v, aurea)
+	_check("estadísticas: vehículo + personaje + sinergia (solo)",
+			is_equal_approx(solo.speed, 9.0) and is_equal_approx(solo.acceleration, 6.0) and is_equal_approx(solo.drift, 5.0),
+			"vel=%.1f acel=%.1f derrape=%.1f" % [solo.speed, solo.acceleration, solo.drift])
+	# Dos jugadores: golpea y usa ítems el artillero; pesa la mitad de su peso; pagan velocidad/aceleración
+	var duo := KartBuild.combine(v, aurea, brutus)
+	_check("2 jugadores: el artillero aporta golpe/ítems y el conductor el manejo",
+			is_equal_approx(duo.hit_power, 25.0) and is_equal_approx(duo.item_speed, -10.0)
+			and is_equal_approx(duo.handling, solo.handling) and is_equal_approx(duo.weight, -10.0),
+			"golpe=%.0f ítems=%.0f manejo=%.1f peso=%.1f" % [duo.hit_power, duo.item_speed, duo.handling, duo.weight])
+	_check("2 jugadores: coste de llevar dos personas",
+			is_equal_approx(duo.speed, solo.speed + KartBuild.DUO_SPEED)
+			and is_equal_approx(duo.acceleration, solo.acceleration + KartBuild.DUO_ACCELERATION))
+	var bad := KartBuild.combine(v, brutus)  # a Brutus no le sienta el Relámpago
+	_check("sinergia negativa penaliza", is_equal_approx(bad.speed, 4.0) and is_equal_approx(bad.handling, -6.0),
+			"vel=%.1f manejo=%.1f" % [bad.speed, bad.handling])
+	var ks := KartBuild.to_kart_stats(solo)
+	_check("los % se convierten en estadísticas reales", is_equal_approx(ks.max_speed, 28.0 * 1.09)
+			and is_equal_approx(ks.acceleration, 16.0 * 1.06), "vel_max=%.2f" % ks.max_speed)
+	_check("el color del 3.er turbo sale del personaje", aurea.get_final_drift_color() == CharacterData.PINK
+			and brutus.get_final_drift_color() == CharacterData.GOLD)
+
+
+func _test_balance() -> void:
+	var res := BalanceAnalyzer.analyze(DataCatalog.vehicles(), DataCatalog.characters(), 15.0)
+	var n_solo := 0
+	var n_duo := 0
+	for e in res["entries"]:
+		if e["mode"] == "solo":
+			n_solo += 1
+		else:
+			n_duo += 1
+	_check("equilibrio: calcula todas las combinaciones (48 solo, 336 con artillero)", n_solo == 48 and n_duo == 336,
+			"solo=%d duo=%d" % [n_solo, n_duo])
+	_check("equilibrio: ninguna combinación fuera de ±15 % del promedio", res["flagged"].is_empty(),
+			"marcadas=%d" % res["flagged"].size())
+	var s := BalanceAnalyzer.spread(res, "solo")
+	var d := BalanceAnalyzer.spread(res, "duo")
+	_check("equilibrio: hay mejores y peores pero sin diferencias drásticas",
+			s["spread"] > 3.0 and s["spread"] < 12.0 and d["spread"] > 3.0 and d["spread"] < 15.0,
+			"solo=%.1f %% duo=%.1f %%" % [s["spread"], d["spread"]])
+	# El script detecta un vehículo roto
+	var op := VehicleData.new()
+	op.id = &"op"
+	op.display_name = "Roto"
+	op.stats = StatDelta.make(40, 40, 40, 0, 0, 0)
+	var vs: Array = DataCatalog.vehicles().duplicate()
+	vs.append(op)
+	var broken := BalanceAnalyzer.analyze(vs, DataCatalog.characters(), 15.0)
+	_check("equilibrio: marca un vehículo desequilibrado", broken["flagged"].size() > 0,
+			"marcadas=%d" % broken["flagged"].size())
+
+
+func _test_select_model() -> void:
+	var s1: Array[Seat] = [Seat.new()]
+	s1[0].set_joypad(0)
+	var driver := Seat.new()
+	driver.role = Seat.Role.DRIVER
+	driver.set_joypad(1)
+	var gunner := Seat.new()
+	gunner.role = Seat.Role.GUNNER
+	gunner.set_joypad(2)
+	var s2: Array[Seat] = [driver, gunner]
+	var setups: Array[Dictionary] = [{"slot": 0, "seats": s1, "team": -1}, {"slot": 1, "seats": s2, "team": -1}]
+	var m := SelectModel.new(setups)
+	_check("selección: un asiento por jugador (3)", m.entries.size() == 3)
+	var eg := m.find_entry(Seat.DeviceKind.JOYPAD, 2)
+	var ed := m.find_entry(Seat.DeviceKind.JOYPAD, 1)
+	var v_before := m.kart_vehicle[1]
+	_check("selección: el artillero no elige vehículo", not m.cycle_vehicle(eg, 1) and m.kart_vehicle[1] == v_before)
+	_check("selección: el conductor sí elige vehículo", m.cycle_vehicle(ed, 1) and m.kart_vehicle[1] != v_before)
+	var c_before := eg.char_idx
+	m.cycle_character(eg, 1)
+	_check("selección: cada jugador elige su personaje", eg.char_idx == posmod(c_before + 1, m.characters.size()))
+	_check("selección: no todos listos", not m.all_ready())
+	for e in m.entries:
+		m.toggle_ready(e)
+	m.cycle_character(eg, 1)  # estando listo no cambia
+	_check("selección: todos listos y bloqueados", m.all_ready() and eg.char_idx == posmod(c_before + 1, m.characters.size()))
+	m.apply()
+	_check("selección: se guarda en los setups y asientos",
+			setups[1]["vehicle"] == m.vehicle_of(1).id and gunner.character_id == m.characters[eg.char_idx].id
+			and driver.character_id != &"")
+	var solo_delta := m.kart_delta(0)
+	var duo_delta := m.kart_delta(1)
+	_check("selección: estadísticas del kart de 2 usan al artillero", solo_delta != duo_delta)
+
+
+func _test_stat_effects() -> void:
+	var pair := await _setup_pair()
+	var f := pair[0]
+	var r := pair[1]
+	_fresh(f, r)
+	# Rapidez con ítems: la ruleta dura la mitad
+	f.stats = f.stats.duplicate()
+	r.stats = r.stats.duplicate()
+	f.stats.item_speed = 2.0
+	r.stats.item_speed = 1.0
+	f.respawn(Transform3D(Basis.IDENTITY, Vector3(12, 0.6, 60)))
+	r.respawn(Transform3D(Basis.IDENTITY, Vector3(-12, 0.6, 60)))
+	await _ticks(20)
+	var turbo := ItemCatalog.find(&"turbo")
+	f.pickup_item(turbo)
+	r.pickup_item(turbo)
+	await _ticks(40)
+	_check("rapidez con ítems: con item_speed 2 la ruleta acaba antes",
+			f.held_item != null and r.held_item == null and r.is_rolling(),
+			"rápido=%s normal rolling=%s" % [f.held_item != null, r.is_rolling()])
+	# Peso: el golpe empuja menos a un kart pesado
+	_fresh(f, r)
+	f.stats.weight = 1.0
+	r.stats.weight = 2.0
+	f.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 25)))
+	r.respawn(Transform3D(Basis.IDENTITY, Vector3(12, 0.6, 25)))
+	await _ticks(30)
+	var attacker := Kart.new()  # solo necesita stats.hit_power
+	attacker.stats = KartStats.new()
+	f.receive_hit(Vector3.RIGHT, attacker)
+	r.receive_hit(Vector3.RIGHT, attacker)
+	await _ticks(2)
+	var vx_light := f.sphere.linear_velocity.x
+	var vx_heavy := r.sphere.linear_velocity.x
+	attacker.free()
+	_check("peso: el kart pesado se mueve menos con el mismo golpe", vx_heavy < vx_light * 0.7 and vx_light > 3.0,
+			"ligero=%.1f pesado=%.1f" % [vx_light, vx_heavy])
+	f.stats.weight = 1.0
+	r.stats.weight = 1.0
+
+
 func _test_race_options() -> void:
 	var m := LobbyModel.new()
 	m.add(Seat.DeviceKind.JOYPAD, 0)
@@ -151,13 +294,18 @@ func _test_race_options() -> void:
 
 
 func _test_menus_smoke() -> void:
-	for path in ["res://scenes/menu/main_menu.tscn", "res://scenes/menu/lobby.tscn"]:
+	var seats: Array[Seat] = [Seat.new()]
+	seats[0].set_joypad(0)
+	for path in ["res://scenes/menu/main_menu.tscn", "res://scenes/menu/lobby.tscn", "res://scenes/menu/select.tscn"]:
+		if path.ends_with("select.tscn"):
+			GameSession.setups = [{"slot": 0, "seats": seats, "team": -1}]
 		var scene: Node = load(path).instantiate()
 		add_child(scene)
 		await _ticks(5)
 		scene.queue_free()
 		await _ticks(2)
-	_check("menús: principal y lobby cargan y corren", true)
+	GameSession.reset()
+	_check("menús: principal, lobby y selección cargan y corren", true)
 
 
 func _test_effects_unit() -> void:
@@ -573,6 +721,12 @@ func _run() -> void:
 	_test_effects_unit()
 	_test_catalog_and_roller()
 	await _test_items()
+
+	# 6a. Vehículos, personajes, sinergias y equilibrio
+	_test_roster_and_build()
+	_test_balance()
+	_test_select_model()
+	await _test_stat_effects()
 
 	# 6b. Equipos, bots, vueltas, puntos y menús
 	_test_race_options()

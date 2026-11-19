@@ -43,7 +43,8 @@ const LANDING_BOOST_TIME := 0.7
 const BOOST_SPEED_MULT := 1.35
 const OVERSPEED_DECAY := 10.0
 const STEER_SMOOTHING := 9.0
-const ROLL_TIME := 1.0      ## s de "ruleta" al recoger un ítem
+const ROLL_TIME := 1.0      ## s de "ruleta" al recoger un ítem (se divide por stats.item_speed)
+const USE_COOLDOWN := 0.35  ## s mínimos entre usos de ítem (se divide por stats.item_speed)
 const TOUCH_HIT_RADIUS := 2.6
 const SPIN_SPEED := 12.0    ## rad/s del giro visual
 
@@ -91,6 +92,7 @@ var _hop_t := 0.0
 var _hop_dir := 0
 var _item_prev := false
 var _roll_t := 0.0
+var _item_cd := 0.0
 var _roll_item: ItemData
 var _spin_angle := 0.0
 var _scale := 1.0
@@ -298,7 +300,8 @@ func take_hit(attacker: Kart, effect: KartEffect) -> HitResult:
 func receive_hit(dir: Vector3, attacker: Kart) -> void:
 	var res := take_hit(attacker, EffectLibrary.get_effect(&"stumble"))
 	if res == HitResult.HIT:
-		sphere.apply_central_impulse(dir * HIT_IMPULSE * attacker.stats.hit_power * sphere.mass)
+		# Cambio de velocidad independiente de la masa de la víctima -> los pesados se mueven menos.
+		sphere.apply_central_impulse(dir * HIT_IMPULSE * attacker.stats.hit_power)
 
 
 # --- Ítems -----------------------------------------------------------------
@@ -316,7 +319,7 @@ func pickup_item(item: ItemData = null) -> void:
 	_roll_item = item if item != null else ItemRoller.roll(race_position, race_total)
 	if _roll_item == null:
 		return
-	_roll_t = ROLL_TIME
+	_roll_t = ROLL_TIME / maxf(stats.item_speed, 0.5)
 	item_changed.emit()
 
 
@@ -550,9 +553,11 @@ func _update_items(c: KartControls, delta: float) -> void:
 			held_item = _roll_item
 			held_uses = held_item.uses if held_item else 0
 			item_changed.emit()
+	_item_cd = maxf(_item_cd - delta, 0.0)
 	var pressed := c.item and not _item_prev
 	_item_prev = c.item
-	if pressed and held_item != null and _roll_t <= 0.0:
+	if pressed and held_item != null and _roll_t <= 0.0 and _item_cd <= 0.0:
+		_item_cd = USE_COOLDOWN / maxf(stats.item_speed, 0.5)
 		use_held_item(c.item_back)
 
 

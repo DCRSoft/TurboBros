@@ -19,7 +19,8 @@ extends Resource
 @export var drift_grip := 3.0      ## agarre lateral derrapando
 
 @export_group("Golpes")
-@export var hit_power := 1.0        ## empuje del golpe (el artillero lo mejora en el hito 6)
+@export var hit_power := 1.0        ## empuje del golpe (lo aporta el artillero en karts de 2)
+@export var item_speed := 1.0       ## rapidez con ítems: acorta la ruleta y la espera entre usos
 
 @export_group("Superficie")
 @export var offroad_control := 0.6  ## (se usa cuando existan superficies)

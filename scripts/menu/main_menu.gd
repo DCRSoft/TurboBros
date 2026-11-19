@@ -15,15 +15,36 @@ func _ready() -> void:
 	bg.color = Color(0.08, 0.09, 0.12)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
+	# Portada a la izquierda (si el archivo existe; no se sube al repositorio, ver CREDITS.md)
+	var cover_path := "res://assets/ui/cover.jpg"
+	var has_cover := ResourceLoader.exists(cover_path)
+	if has_cover:
+		var ratio := AspectRatioContainer.new()
+		ratio.ratio = 1296.0 / 1750.0
+		ratio.set_anchors_preset(Control.PRESET_LEFT_WIDE)
+		ratio.anchor_right = 0.58
+		ratio.stretch_mode = AspectRatioContainer.STRETCH_FIT
+		ratio.alignment_horizontal = AspectRatioContainer.ALIGNMENT_BEGIN
+		add_child(ratio)
+		var tex := TextureRect.new()
+		tex.texture = load(cover_path)
+		tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tex.stretch_mode = TextureRect.STRETCH_SCALE
+		ratio.add_child(tex)
 	var box := VBoxContainer.new()
-	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.set_anchors_preset(Control.PRESET_CENTER_RIGHT if has_cover else Control.PRESET_CENTER)
 	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	box.grow_vertical = Control.GROW_DIRECTION_BOTH
 	box.add_theme_constant_override("separation", 18)
+	if has_cover:
+		box.anchor_left = 0.72
+		box.anchor_right = 0.72
+		box.offset_left = -200
+		box.offset_right = 200
 	add_child(box)
 	var title := Label.new()
 	title.text = "TurboBros"
-	title.add_theme_font_size_override("font_size", 72)
+	title.add_theme_font_size_override("font_size", 56 if has_cover else 72)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	var ver := Label.new()

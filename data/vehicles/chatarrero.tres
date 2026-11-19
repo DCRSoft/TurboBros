@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/vehicle_data.gd" id="1_glhxf"]
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="2_3vb7r"]
+
+[sub_resource type="Resource" id="Resource_udfog"]
+script = ExtResource("2_3vb7r")
+speed = -2.0
+acceleration = -4.0
+handling = -4.0
+weight = 12.0
+drift = -2.0
+offroad = 8.0
+
+[resource]
+script = ExtResource("1_glhxf")
+id = &"chatarrero"
+display_name = "Chatarrero"
+description = "Pesado y blindado con chatarra. Aguanta los choques, le cuesta arrancar y girar."
+body_color = Color(0.45, 0.28, 0.18, 1)
+stats = SubResource("Resource_udfog")

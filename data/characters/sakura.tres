@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_p8nnu"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_fucl5"]
+
+[sub_resource type="Resource" id="Resource_2gtn0"]
+script = ExtResource("1_p8nnu")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_hq5h6"]
+script = ExtResource("1_p8nnu")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_f3mup"]
+script = ExtResource("1_p8nnu")
+speed = -2.0
+acceleration = 3.0
+handling = 5.0
+weight = -4.0
+drift = 3.0
+offroad = -2.0
+hit_power = -10.0
+item_speed = 20.0
+
+[resource]
+script = ExtResource("2_fucl5")
+id = &"sakura"
+display_name = "Sakura"
+description = "Piloto ágil de coletas rosas. Manejo fino y manos rápidas con los ítems."
+gender = 1
+stats = SubResource("Resource_f3mup")
+likes = Array[StringName]([&"escorpion"])
+like_bonus = SubResource("Resource_hq5h6")
+dislikes = Array[StringName]([&"chatarrero"])
+dislike_penalty = SubResource("Resource_2gtn0")

@@ -3,7 +3,7 @@ extends Control
 ## Reparte automáticamente en karts (ver LobbyModel) y permite cambiar de kart, rol, equipo, bots, vueltas y
 ## fuego amigo.
 
-const RACE := "res://scenes/race/race.tscn"
+const SELECT := "res://scenes/menu/select.tscn"
 const MAIN_MENU := "res://scenes/menu/main_menu.tscn"
 const KART_COLORS: Array[Color] = [
 	Color(0.85, 0.15, 0.15), Color(0.2, 0.4, 0.9), Color(0.2, 0.75, 0.3), Color(0.95, 0.8, 0.15),
@@ -111,7 +111,7 @@ func start_race() -> void:
 	if not model.is_valid():
 		return
 	model.apply_to_session()
-	get_tree().change_scene_to_file(RACE)
+	get_tree().change_scene_to_file(SELECT)
 
 
 func _device_name(p: LobbyModel.Player) -> String:

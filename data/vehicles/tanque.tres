@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/vehicle_data.gd" id="1_vtvbo"]
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="2_lx05o"]
+
+[sub_resource type="Resource" id="Resource_ufhma"]
+script = ExtResource("2_lx05o")
+speed = -4.0
+handling = -2.0
+weight = 10.0
+drift = -3.0
+offroad = 12.0
+
+[resource]
+script = ExtResource("1_vtvbo")
+id = &"tanque"
+display_name = "Tanque"
+description = "Camión todoterreno: lento pero se come los baches."
+body_color = Color(0.3, 0.42, 0.25, 1)
+stats = SubResource("Resource_ufhma")

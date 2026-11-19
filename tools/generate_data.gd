@@ -17,6 +17,7 @@ func _init() -> void:
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ITEM_DIR + sub))
 	_effects()
 	_items()
+	_roster()
 	print("Datos generados.")
 	quit()
 
@@ -55,6 +56,77 @@ func _effects() -> void:
 	_e("oil_slip", "Resbalón", 2.0, {"grip_mult": 0.15, "steer_mult": 0.6})
 	_e("flat_tire", "Rueda pinchada", 3.0, {"speed_mult": 0.55, "accel_mult": 0.5})
 	_e("explode", "Explosión", 1.6, {"lock_control": true, "spin": true, "speed_mult": 0.2, "grip_mult": 0.3})
+
+
+const VEHICLE_DIR := "res://data/vehicles/"
+const CHARACTER_DIR := "res://data/characters/"
+
+
+func _vehicle(id: String, name: String, desc: String, color: Color, s: StatDelta) -> void:
+	var v := VehicleData.new()
+	v.id = StringName(id)
+	v.display_name = name
+	v.description = desc
+	v.body_color = color
+	v.stats = s
+	var err := ResourceSaver.save(v, VEHICLE_DIR + id + ".tres")
+	if err != OK:
+		push_error("No se pudo guardar el vehículo %s (%d)" % [id, err])
+
+
+func _character(id: String, name: String, desc: String, gender: CharacterData.Gender, s: StatDelta,
+		likes: Array[StringName], like_bonus: StatDelta, dislikes: Array[StringName], dislike_penalty: StatDelta) -> void:
+	var c := CharacterData.new()
+	c.id = StringName(id)
+	c.display_name = name
+	c.description = desc
+	c.gender = gender
+	c.stats = s
+	c.likes = likes
+	c.like_bonus = like_bonus
+	c.dislikes = dislikes
+	c.dislike_penalty = dislike_penalty
+	var err := ResourceSaver.save(c, CHARACTER_DIR + id + ".tres")
+	if err != OK:
+		push_error("No se pudo guardar el personaje %s (%d)" % [id, err])
+
+
+# StatDelta.make(velocidad, aceleración, manejo, peso, derrape, fuera de pista, fuerza de golpe, rapidez ítems)
+func _roster() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(VEHICLE_DIR))
+	var SD := StatDelta
+	_vehicle("chatarrero", "Chatarrero", "Pesado y blindado con chatarra. Aguanta los choques, le cuesta arrancar y girar.",
+			Color(0.45, 0.28, 0.18), SD.make(-2, -4, -4, 12, -2, 8))
+	_vehicle("azulon", "Azulón", "El equilibrado de la parrilla: sin puntos débiles.",
+			Color(0.2, 0.4, 0.85), SD.make(0, 0, 1, 0, 1, 0))
+	_vehicle("relampago", "Relámpago", "Ligero y veloz, pero se asusta fuera del asfalto y en los choques.",
+			Color(0.95, 0.78, 0.15), SD.make(6, 2, 0, -10, 1, -8))
+	_vehicle("escorpion", "Escorpión", "Hecho para derrapar: carga los mini turbos enseguida.",
+			Color(0.55, 0.2, 0.7), SD.make(-2, 1, 3, -4, 8, -4))
+	_vehicle("tanque", "Tanque", "Camión todoterreno: lento pero se come los baches.",
+			Color(0.3, 0.42, 0.25), SD.make(-4, 0, -2, 10, -3, 12))
+	_vehicle("cohete", "Cohete", "Velocidad punta altísima; acelera y gira con pereza.",
+			Color(0.85, 0.2, 0.15), SD.make(9, -4, -6, -2, -1, -4))
+
+	var like := SD.make(2, 2, 0, 0, 2, 0)      # bono genérico "me siento a gusto"
+	var dislike := SD.make(-2, -2, -2, 0, 0, 0)  # penalización genérica
+	var G := CharacterData.Gender
+	_character("brutus", "Brutus", "Armadura de pinchos y minigun. Pega durísimo y es pesado como un yunque.", G.MALE,
+			SD.make(0, -3, -4, 6, -2, 4, 25, -10), [&"chatarrero"], SD.make(0, 3, 3, 0, 2, 0), [&"relampago"], dislike)
+	_character("crimson", "Crimson", "Veterano de armadura roja. Equilibrado con buena pegada.", G.MALE,
+			SD.make(2, 0, 0, 2, 0, 0, 10, 0), [&"azulon"], like, [&"escorpion"], dislike)
+	_character("azur", "Azur", "Soldado de armadura azul con rifle de rayos. Preciso y rápido con los ítems.", G.MALE,
+			SD.make(-2, 0, 1, 1, 0, 0, 15, 10), [&"tanque"], like, [&"cohete"], dislike)
+	_character("titan", "Titán", "Un gigante. Casi nadie lo mueve y casi nadie lo gira.", G.MALE,
+			SD.make(-3, -4, -5, 10, -2, 6, 30, -15), [&"tanque"], SD.make(0, 3, 3, 0, 2, 0), [&"escorpion"], dislike)
+	_character("sakura", "Sakura", "Piloto ágil de coletas rosas. Manejo fino y manos rápidas con los ítems.", G.FEMALE,
+			SD.make(-2, 3, 5, -4, 3, -2, -10, 20), [&"escorpion"], like, [&"chatarrero"], dislike)
+	_character("aurea", "Áurea", "Casco y armadura dorados. Muy buen manejo y arranque.", G.FEMALE,
+			SD.make(1, 2, 2, -3, 2, -3, -5, 10), [&"relampago"], like, [&"tanque"], dislike)
+	_character("violeta", "Violeta", "Artillera de pelo morado: derrapa mucho y dispara ítems a toda prisa.", G.FEMALE,
+			SD.make(-3, 0, 1, -4, 4, 0, 0, 25), [&"escorpion"], like, [&"chatarrero"], dislike)
+	_character("chispa", "Chispa", "Impulsiva y veloz en recta. Poco peso y menos control.", G.FEMALE,
+			SD.make(4, -2, -3, -2, 0, -2, 0, 5), [&"cohete"], like, [&"azulon"], dislike)
 
 
 func _save(item: ItemData, sub: String) -> void:

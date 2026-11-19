@@ -47,12 +47,21 @@ func _ready() -> void:
 	var grid := 0
 	for i in humans:
 		var team: int = setups[i]["team"]
-		var k := _spawn(grid, _color(team, HUMAN_COLORS[setups[i]["slot"] % 4]))
-		grid += 1
-		k.team = team
-		k.racer_name = "Kart %d" % (int(setups[i]["slot"]) + 1)
 		var kart_seats: Array[Seat] = []
 		kart_seats.assign(setups[i]["seats"])
+		var vehicle := DataCatalog.vehicle(setups[i].get("vehicle", &""))
+		var driver: CharacterData = null
+		var gunner: CharacterData = null
+		for s in kart_seats:
+			var ch := DataCatalog.character(s.character_id)
+			if s.role == Seat.Role.GUNNER:
+				gunner = ch
+			else:
+				driver = ch
+		var k := _spawn(grid, _color(team, vehicle.body_color), vehicle, driver, gunner)
+		grid += 1
+		k.team = team
+		k.racer_name = "Kart %d (%s)" % [int(setups[i]["slot"]) + 1, driver.display_name]
 		if autopilot_humans:
 			_attach_bot(k, i)
 		elif attach_player_input:
@@ -63,13 +72,19 @@ func _ready() -> void:
 			k.controller = sc
 		groups.append(kart_seats)
 		human_karts.append(k)
+	var pick := RandomNumberGenerator.new()
+	pick.randomize()
+	var all_v := DataCatalog.vehicles()
+	var all_c := DataCatalog.characters()
 	for b in bots:
 		var team := bot_teams[b]
-		var k := _spawn(grid, _color(team, BOT_COLORS[b % BOT_COLORS.size()]))
+		var vehicle := all_v[pick.randi() % all_v.size()]
+		var driver := all_c[pick.randi() % all_c.size()]
+		var k := _spawn(grid, _color(team, vehicle.body_color), vehicle, driver, null)
 		grid += 1
 		k.team = team
 		k.is_bot = true
-		k.racer_name = "Bot %d" % (b + 1)
+		k.racer_name = "Bot %d (%s)" % [b + 1, driver.display_name]
 		_attach_bot(k, humans + b)
 		bot_karts.append(k)
 
@@ -87,10 +102,12 @@ func _color(team: int, fallback: Color) -> Color:
 	return GameSession.TEAM_COLORS[team] if team >= 0 else fallback
 
 
-func _spawn(grid_slot: int, color: Color) -> Kart:
+func _spawn(grid_slot: int, color: Color, vehicle: VehicleData, driver: CharacterData, gunner: CharacterData) -> Kart:
 	var k: Kart = KART_SCENE.instantiate()
 	k.transform = circuit.grid_transform(grid_slot)
 	k.friendly_fire = GameSession.friendly_fire
+	k.stats = KartBuild.to_kart_stats(KartBuild.combine(vehicle, driver, gunner))
+	k.character = driver
 	add_child(k)
 	k.set_body_color(color)
 	karts.append(k)

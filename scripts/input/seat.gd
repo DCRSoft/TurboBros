@@ -9,6 +9,7 @@ enum DeviceKind { NONE, JOYPAD, KEYBOARD }
 var role: Role = Role.SOLO
 var kind: DeviceKind = DeviceKind.NONE
 var device_id := -1  ## id del mando, o índice del esquema de teclado
+var character_id: StringName = &""  ## personaje elegido (pantalla de selección)
 
 
 func set_joypad(id: int) -> void:

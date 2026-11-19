@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/vehicle_data.gd" id="1_fed1m"]
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="2_6te57"]
+
+[sub_resource type="Resource" id="Resource_00ts2"]
+script = ExtResource("2_6te57")
+speed = 6.0
+acceleration = 2.0
+weight = -10.0
+drift = 1.0
+offroad = -8.0
+
+[resource]
+script = ExtResource("1_fed1m")
+id = &"relampago"
+display_name = "Relámpago"
+description = "Ligero y veloz, pero se asusta fuera del asfalto y en los choques."
+body_color = Color(0.95, 0.78, 0.15, 1)
+stats = SubResource("Resource_00ts2")

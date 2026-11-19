@@ -29,7 +29,8 @@ func _run() -> void:
 	GameSession.reset()
 	GameSession.laps = LAPS
 	var seats: Array[Seat] = [Seat.new()]
-	GameSession.setups = [{"slot": 0, "seats": seats, "team": -1}]
+	seats[0].character_id = &"aurea"
+	GameSession.setups = [{"slot": 0, "seats": seats, "team": -1, "vehicle": &"relampago"}]
 	GameSession.bot_teams = [-1, -1, -1]
 	var race: Node3D = load("res://scenes/race/race.tscn").instantiate()
 	race.autopilot_humans = true
@@ -49,6 +50,16 @@ func _run() -> void:
 	_check("circuito: parrilla mira en el sentido de la carrera", fwd.dot(circuit.tangents[0]) > 0.95,
 			"dot=%.3f" % fwd.dot(circuit.tangents[0]))
 	_check("carrera: 1 humano + 3 bots", race.karts.size() == 4 and race.human_karts.size() == 1 and race.bot_karts.size() == 3)
+	var hk: Kart = race.human_karts[0]
+	var expected := KartBuild.to_kart_stats(KartBuild.combine(DataCatalog.vehicle(&"relampago"), DataCatalog.character(&"aurea")))
+	_check("carrera: el kart usa las estadísticas del vehículo y personaje elegidos",
+			is_equal_approx(hk.stats.max_speed, expected.max_speed) and hk.character.id == &"aurea"
+			and hk.get_drift_color(3) == CharacterData.PINK,
+			"vel_max=%.2f (esperada %.2f)" % [hk.stats.max_speed, expected.max_speed])
+	var distinct := {}
+	for b in race.bot_karts:
+		distinct[b.stats.max_speed] = true
+	_check("carrera: los bots también tienen vehículo y personaje", race.bot_karts[0].character != null and distinct.size() >= 1)
 
 	# --- Cuenta atrás: karts congelados (Engine.time_scale = 4 -> cada fotograma son ~4 ticks físicos) ---
 	_check("parrilla: progreso inicial negativo (detrás de la meta)", manager.racers[0].progress < 0.0,

@@ -7,6 +7,11 @@ comprobar que su licencia permite publicarlo en un repositorio público y anotar
 |-------|----------------------|----------|---------------------|
 | _(ninguno todavía)_ | | | |
 
+## Arte propio (pendiente de licencia)
+- `assets/ui/cover.jpg` — portada del juego, aportada por el autor. **No se sube al repositorio público**
+  (está en `.gitignore`) hasta decidir su licencia. El menú principal funciona sin ella (muestra solo el texto).
+  Comprobar también cómo se generó (herramienta/modelo) y si esa licencia permite publicarla.
+
 ## Motor
 - Godot Engine — MIT License — https://godotengine.org
 
