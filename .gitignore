@@ -1,0 +1,32 @@
+# Godot 4
+.godot/
+.import/
+*.translation
+export_credentials.cfg
+export.cfg
+
+# Builds
+/builds/
+/dist/
+*.exe
+*.pck
+*.zip
+
+# Secretos: este repositorio es PUBLICO. Nunca subir claves ni tokens.
+.env
+.env.*
+*.key
+*.pem
+*.pfx
+*.keystore
+secrets/
+
+# Editor / SO
+.vscode/
+.idea/
+*.tmp
+Thumbs.db
+.DS_Store
+
+# Claude Code (config local)
+.claude/settings.local.json
