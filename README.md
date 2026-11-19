@@ -8,7 +8,7 @@ Hasta 8 jugadores locales con mandos USB/Bluetooth. Licencia del código: MIT (v
 ## Ejecutar
 1. Abrir la carpeta con Godot 4.7 (`project.godot`) y pulsar F5.
 2. Controles del hito 1:
-   - **Mando**: stick izq. girar · RT/A acelerar · LT/B frenar · LB/RB derrapar (pulsar con el stick inclinado).
+   - **Mando**: stick izq. girar · RT/A acelerar · LT/B frenar · LB/RB derrapar (salto + derrape) (pulsar con el stick inclinado).
    - **Teclado (solo desarrollo)**: WASD, Shift = derrape, R = reiniciar.
 
 ## Pantalla dividida (hito 2)

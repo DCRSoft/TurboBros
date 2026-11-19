@@ -5,6 +5,7 @@ extends Node3D
 ## Lee SOLO KartControls (nunca hardware).
 
 signal landed(air_time: float)
+signal hop_started
 signal drift_started(direction: int)
 signal drift_level_changed(level: int)
 signal boost_started(source: StringName, duration: float)
@@ -16,6 +17,8 @@ const DRIFT_COLOR_1 := Color(0.2, 0.5, 1.0)   ## azul
 const DRIFT_COLOR_2 := Color(1.0, 0.55, 0.1)  ## naranja
 const DRIFT_MIN_SPEED := 8.0
 const DRIFT_START_WINDOW := 0.25
+const HOP_SPEED := 3.5      ## m/s hacia arriba al iniciar el derrape
+const HOP_DURATION := 0.3   ## s mínimos antes de poder aterrizar y empezar a derrapar
 const LANDING_MIN_AIR := 0.3
 const LANDING_BOOST_TIME := 0.7
 const BOOST_SPEED_MULT := 1.35
@@ -45,7 +48,9 @@ var _drift_prev := false
 var _drift_press_window := 0.0
 var _landing_window := 0.0
 var _visual_drift := 0.0
-var _hop := 0.0
+var _hop_t := 0.0
+var _hop_dir := 0
+var hop_active := false  ## salto previo al derrape en curso
 var _idle_controls := KartControls.new()
 var _spark_mat: StandardMaterial3D
 
@@ -147,6 +152,8 @@ func respawn(t: Transform3D) -> void:
 	PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_ANGULAR_VELOCITY, Vector3.ZERO)
 	global_position = t.origin
 	drifting = false
+	hop_active = false
+	_hop_t = 0.0
 	drift_level = 0
 	drift_time = 0.0
 	boost_time = 0.0
@@ -185,7 +192,7 @@ func _on_landing(t: float) -> void:
 func _update_timers(delta: float) -> void:
 	_drift_press_window = maxf(_drift_press_window - delta, 0.0)
 	_landing_window = maxf(_landing_window - delta, 0.0)
-	_hop = maxf(_hop - 2.0 * delta, 0.0)
+	_hop_t = maxf(_hop_t - delta, 0.0)
 	if boost_time > 0.0:
 		boost_time -= delta
 		if boost_time <= 0.0:
@@ -194,9 +201,27 @@ func _update_timers(delta: float) -> void:
 
 
 func _update_drift(c: KartControls, delta: float) -> void:
-	if c.drift and not _drift_prev:
-		_drift_press_window = DRIFT_START_WINDOW
+	var pressed := c.drift and not _drift_prev
 	_drift_prev = c.drift
+
+	# El derrape NO empieza directo: pulsar derrape en el suelo hace un salto (hop) y el derrape
+	# arranca al aterrizar si se mantiene el botón y hay dirección (stick o la fijada durante el salto).
+	if pressed and not drifting and not hop_active:
+		if grounded and forward_speed > DRIFT_MIN_SPEED:
+			_start_hop(c)
+		else:
+			_drift_press_window = DRIFT_START_WINDOW  # en el aire: puede derrapar al aterrizar
+
+	if hop_active:
+		if absf(c.steer) > 0.2:
+			_hop_dir = 1 if c.steer > 0.0 else -1
+		if not c.drift:
+			hop_active = false  # soltó el botón: solo fue un saltito
+		elif _hop_t <= 0.0 and grounded:
+			hop_active = false
+			if _hop_dir != 0 and forward_speed > DRIFT_MIN_SPEED * 0.75:
+				_begin_drift(_hop_dir)
+		return
 
 	if not drifting:
 		var can_start := _drift_press_window > 0.0 or _landing_window > 0.0
@@ -221,12 +246,21 @@ func _update_drift(c: KartControls, delta: float) -> void:
 			drift_level_changed.emit(lvl)
 
 
+func _start_hop(c: KartControls) -> void:
+	hop_active = true
+	_hop_t = HOP_DURATION
+	_hop_dir = 0
+	if absf(c.steer) > 0.2:
+		_hop_dir = 1 if c.steer > 0.0 else -1
+	sphere.apply_central_impulse(Vector3.UP * HOP_SPEED * sphere.mass)
+	hop_started.emit()
+
+
 func _begin_drift(dir: int) -> void:
 	drifting = true
 	drift_dir = dir
 	drift_time = 0.0
 	drift_level = 0
-	_hop = 0.25
 	_drift_press_window = 0.0
 	_landing_window = 0.0
 	drift_started.emit(dir)
@@ -308,7 +342,6 @@ func _update_model(delta: float) -> void:
 	_visual_drift = lerpf(_visual_drift, (drift_dir * 0.4) if drifting else 0.0,
 			clampf(delta * 10.0, 0.0, 1.0))
 	body.rotation.y = -_visual_drift
-	body.position.y = _hop
 
 	var show_sparks := drifting and drift_level > 0 and grounded
 	if show_sparks:

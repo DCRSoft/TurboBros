@@ -108,8 +108,16 @@ func _run() -> void:
 	ctrl.set_input(0, 1)
 	await _ticks(100)
 	ctrl.set_input(1, 1, 0, true)
-	await _ticks(10)
-	_check("inicia derrape", kart.drifting, "drifting=%s" % kart.drifting)
+	await _ticks(4)
+	_check("el derrape empieza con un salto, no directo", kart.hop_active and not kart.drifting,
+			"hop=%s drifting=%s" % [kart.hop_active, kart.drifting])
+	var hop_peak := 0.0
+	for i in 26:
+		await get_tree().physics_frame
+		hop_peak = maxf(hop_peak, kart.sphere.global_position.y)
+	_check("el salto despega del suelo", hop_peak > 0.62, "y_max=%.2f (suelo 0.49)" % hop_peak)
+	_check("inicia derrape al aterrizar", kart.drifting and not kart.hop_active,
+			"drifting=%s hop=%s" % [kart.drifting, kart.hop_active])
 	await _ticks(200)
 	_check("alcanza nivel 3 en ~3 s", kart.drift_level == 3, "nivel=%d niveles=%s" % [kart.drift_level, _levels])
 	var heading_before := kart.heading
@@ -126,6 +134,16 @@ func _run() -> void:
 	_check("el turbo lleva la velocidad por encima del máximo", peak > kart.stats.max_speed * 1.1,
 			"pico=%.1f m/s" % peak)
 	_check("el derrape giró el kart", absf(heading_before) > 0.5, "heading=%.2f" % heading_before)
+
+	# 2b. Derrape sin dirección: solo salta, no derrapa
+	_reset()
+	await _ticks(10)
+	ctrl.set_input(0, 1)
+	await _ticks(100)
+	ctrl.set_input(0, 1, 0, true)
+	await _ticks(60)
+	_check("sin dirección solo hay salto (no derrapa)", not kart.drifting and not kart.hop_active,
+			"drifting=%s" % kart.drifting)
 
 	# 3. Rampa: aterrizaje con mini turbo
 	_reset()
