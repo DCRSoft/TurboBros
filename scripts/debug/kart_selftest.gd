@@ -302,6 +302,52 @@ func _test_stat_effects() -> void:
 	r.stats.weight = 1.0
 
 
+func _test_net_spec() -> void:
+	var peer_a := {"name": "Anfitrión", "vehicle": "azulon", "driver": "brutus", "gunner": "sakura", "seats": 2, "ready": true}
+	var peer_b := {"name": "Jugador 2", "vehicle": "tanque", "driver": "end", "gunner": "violeta", "seats": 1, "ready": true}
+	var roster := {"peers": {5: peer_b, 1: peer_a}, "laps": 2, "bots": 3, "friendly_fire": true}
+	var s1 := NetSession.build_spec(roster, 42)
+	var s2 := NetSession.build_spec(roster, 42)
+	var kl: Array = s1["karts"]
+	_check("red: la especificación es determinista (mismos datos y semilla = mismo resultado)", str(s1) == str(s2))
+	_check("red: 2 equipos + 3 bots = 5 karts con ids 0..4 y el anfitrión en la parrilla 0",
+			kl.size() == 5 and kl[0]["owner"] == 1 and kl[1]["owner"] == 5 and kl[4]["kart_id"] == 4
+			and kl[2]["bot"] and kl[2]["owner"] == 1, "karts=%d" % kl.size())
+	_check("red: el artillero solo viaja si el equipo juega 2 en el kart", kl[0]["gunner"] == "sakura" and kl[1]["gunner"] == ""
+			and kl[0]["seats"] == 2 and kl[1]["seats"] == 1)
+	_check("red: vueltas y fuego amigo van en la especificación", s1["laps"] == 2 and s1["friendly_fire"])
+	var many := {"peers": {1: peer_a, 2: peer_b, 3: peer_b}, "laps": 1, "bots": 9, "friendly_fire": false}
+	_check("red: máximo 8 karts en total", NetSession.build_spec(many, 1)["karts"].size() == 8)
+	_check("red: fuera de línea no hay sesión en línea", not NetSession.online and not NetSession.is_host() and NetSession.my_id() == 1)
+
+
+func _test_net_puppet() -> void:
+	var pair := await _setup_pair()
+	var f := pair[0]
+	var r := pair[1]
+	_fresh(f, r)
+	var base := Vector3(30, 0.6, 20)
+	r.respawn(Transform3D(Basis.IDENTITY, base))
+	await _ticks(10)
+	r.make_remote()
+	_check("marioneta: un kart remoto ignora los ataques (los resuelve su dueño)",
+			r.take_hit(f, EffectLibrary.get_effect(&"spin")) == Kart.HitResult.IGNORED and not r.fx.has(&"spin"))
+	var target := base + Vector3(25, 0, -8)
+	var vel := Vector3(16, 0, 0)
+	r.net_apply_state(target, vel, -1.0, 1, PackedStringArray(["star"]))
+	_check("marioneta: refleja los efectos de su dueño (estrella)", r.fx.has(&"star"))
+	await _ticks(90)
+	var expected := target + vel * 0.25
+	_check("marioneta: sigue la posición recibida (interpolada/extrapolada)",
+			r.sphere.global_position.distance_to(expected) < 1.0, "error=%.2f m" % r.sphere.global_position.distance_to(expected))
+	_check("marioneta: el rumbo converge", absf(angle_difference(r.heading, -1.0)) < 0.05, "heading=%.2f" % r.heading)
+	_check("marioneta: los efectos reflejados caducan si el dueño deja de enviarlos", not r.fx.has(&"star"))
+	r.set_motion_state(Vector3(0, 5, 0), Vector3.ZERO, 0.0)
+	_check("marioneta: no se deja teletransportar desde fuera", r.sphere.global_position.distance_to(expected) < 1.0)
+	r.net_remote = false
+	r.sphere.freeze = false
+
+
 func _test_updater() -> void:
 	var sha := "a".repeat(64)
 	var release := {
@@ -358,7 +404,7 @@ func _test_sfx() -> void:
 			bad += " %s(peak=%.2f,bytes=%d)" % [n, peak, s.data.size()]
 	_check("sonidos: los %d efectos sintetizados existen y no están en silencio" % SfxLibrary.names().size(), ok, bad)
 	var eng := SfxLibrary.get_stream(&"engine")
-	var cycles := eng.loop_end * 110.0 / float(SfxLibrary.RATE)  # ciclos enteros = el bucle empalma sin clic
+	var cycles := eng.loop_end * SfxLibrary.ENGINE_FREQ / float(SfxLibrary.RATE)  # ciclos enteros = el bucle empalma sin clic
 	_check("sonidos: el motor es un bucle con ciclos enteros", eng.loop_mode == AudioStreamWAV.LOOP_FORWARD
 			and absf(cycles - roundf(cycles)) < 0.02 and eng.loop_end == eng.data.size() / 2,
 			"ciclos=%.3f" % cycles)
@@ -375,7 +421,7 @@ func _test_audio_manager() -> void:
 	ctrl.set_input(0, 1)
 	await _ticks(180)
 	var fast_pitch: float = AudioManager._engines[0]["player"].pitch_scale
-	_check("sonido: el motor de un kart humano suena y sube de tono con la velocidad", engines == 1 and fast_pitch > idle_pitch + 0.5,
+	_check("sonido: el motor de un kart humano suena y sube de tono con la velocidad", engines == 1 and fast_pitch > idle_pitch + 0.2,
 			"parado=%.2f rápido=%.2f" % [idle_pitch, fast_pitch])
 	AudioManager.play(&"hit")
 	AudioManager.play(&"boost")
@@ -953,6 +999,10 @@ func _run() -> void:
 	_test_balance()
 	_test_select_model()
 	await _test_stat_effects()
+
+	# 6f. Red (unidades; la prueba de dos procesos está en tools/net_test.ps1)
+	_test_net_spec()
+	await _test_net_puppet()
 
 	# 6e. Actualizaciones
 	_test_updater()

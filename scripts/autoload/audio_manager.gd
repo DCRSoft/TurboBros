@@ -5,8 +5,8 @@ extends Node
 const POOL_SIZE := 12
 const SETTINGS_PATH := "user://settings.cfg"
 
-var sfx_volume := 0.8     ## 0..1
-var engine_volume := 0.5  ## 0..1
+var sfx_volume := 0.5     ## 0..1
+var engine_volume := 0.2  ## 0..1 (0 = sin motor)
 
 var _pool: Array[AudioStreamPlayer] = []
 var _engines: Array[Dictionary] = []   ## {"kart": Kart, "player": AudioStreamPlayer}
@@ -32,8 +32,8 @@ func _process(_delta: float) -> void:
 			continue
 		var kart: Kart = e["kart"]
 		var ratio := clampf(kart.get_speed_kmh() / (kart.stats.max_speed * 3.6), 0.0, 1.6)
-		player.pitch_scale = 0.55 + ratio * 1.5 + (0.25 if kart.is_boosting() else 0.0)
-		var vol := engine_volume * (0.35 + 0.65 * minf(ratio, 1.0)) / sqrt(float(humans))
+		player.pitch_scale = 0.8 + ratio * 0.7 + (0.12 if kart.is_boosting() else 0.0)
+		var vol := engine_volume * (0.5 + 0.5 * minf(ratio, 1.0)) / sqrt(float(humans))
 		player.volume_db = linear_to_db(maxf(vol, 0.0001))
 
 
@@ -56,19 +56,19 @@ func play(name: StringName, volume := 1.0, pitch := 1.0) -> void:
 ## Conecta los sonidos de un kart humano (y su motor).
 func attach_kart(kart: Kart) -> void:
 	kart.boost_started.connect(func(source: StringName, _d: float) -> void:
-		if source != &"landing":
-			play(&"boost", 0.6))
+		if source != &"landing" and source != &"drift":
+			play(&"boost", 0.4))
 	kart.drift_level_changed.connect(func(level: int) -> void:
 		if level > 0:
-			play(&"drift_tick", 0.5, 0.9 + level * 0.15))
-	kart.landed.connect(func(_t: float) -> void: play(&"landing", 0.7))
-	kart.got_hit.connect(func(_a: Kart) -> void: play(&"hit", 0.9))
-	kart.hit_landed.connect(func(_t: Kart) -> void: play(&"hit", 0.5, 1.2))
-	kart.guard_absorbed.connect(func() -> void: play(&"absorb"))
-	kart.item_used.connect(func(_i: ItemData) -> void: play(&"use_item"))
+			play(&"drift_tick", 0.3, 0.9 + level * 0.12))
+	kart.landed.connect(func(_t: float) -> void: play(&"landing", 0.5))
+	kart.got_hit.connect(func(_a: Kart) -> void: play(&"hit", 0.7))
+	kart.hit_landed.connect(func(_t: Kart) -> void: play(&"hit", 0.4, 1.2))
+	kart.guard_absorbed.connect(func() -> void: play(&"absorb", 0.6))
+	kart.item_used.connect(func(_i: ItemData) -> void: play(&"use_item", 0.6))
 	kart.item_changed.connect(func() -> void:
 		if kart.is_rolling():
-			play(&"pickup", 0.8))
+			play(&"pickup", 0.6))
 	var engine := AudioStreamPlayer.new()
 	engine.stream = SfxLibrary.get_stream(&"engine")
 	engine.volume_db = linear_to_db(maxf(engine_volume * 0.35, 0.0001))
@@ -114,5 +114,5 @@ func load_settings() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SETTINGS_PATH) != OK:
 		return
-	sfx_volume = clampf(float(cfg.get_value("audio", "sfx_volume", 0.8)), 0.0, 1.0)
-	engine_volume = clampf(float(cfg.get_value("audio", "engine_volume", 0.5)), 0.0, 1.0)
+	sfx_volume = clampf(float(cfg.get_value("audio", "sfx_volume", 0.5)), 0.0, 1.0)
+	engine_volume = clampf(float(cfg.get_value("audio", "engine_volume", 0.2)), 0.0, 1.0)

@@ -10,7 +10,8 @@ func use(kart: Kart, _backwards: bool) -> void:
 			ahead = rival
 	if ahead == null:
 		return
-	if ahead.take_hit(kart, null) != Kart.HitResult.HIT:
+	# En línea cada equipo solo mueve sus propios karts; el rival remoto se resuelve en su máquina.
+	if not ahead.net_remote and ahead.take_hit(kart, null) != Kart.HitResult.HIT:
 		return  # protegido
 	var p1 := kart.sphere.global_position
 	var v1 := kart.sphere.linear_velocity

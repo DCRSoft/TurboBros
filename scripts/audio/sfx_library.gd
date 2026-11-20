@@ -27,7 +27,7 @@ static func _build(name: StringName) -> AudioStreamWAV:
 		&"use_item": return _wav(_sweep(700.0, 350.0, 0.18, 0.1, 5.0))
 		&"hit": return _wav(_mix(_tone(90.0, 0.25, 0.0, 9.0), _noise(0.25, 10.0), 0.6))
 		&"explosion": return _wav(_mix(_sweep(140.0, 40.0, 0.7, 0.2, 4.0), _noise(0.7, 4.0), 0.9))
-		&"drift_tick": return _wav(_tone(1200.0, 0.05, 0.0, 12.0))
+		&"drift_tick": return _wav(_tone(620.0, 0.07, 0.0, 9.0))
 		&"landing": return _wav(_mix(_tone(70.0, 0.18, 0.0, 12.0), _noise(0.1, 20.0), 0.3))
 		&"absorb": return _wav(_arpeggio([880.0, 660.0], 0.06))
 		&"engine": return _engine_loop()
@@ -95,18 +95,18 @@ static func _mix(a: PackedFloat32Array, b: PackedFloat32Array, b_gain: float) ->
 	return out
 
 
-## Motor: diente de sierra suave de 110 Hz con ciclos enteros (el bucle no hace "clic").
+## Motor: zumbido grave y suave (senos de 90 Hz y sus armónicos) con ciclos enteros: el bucle no hace "clic".
+const ENGINE_FREQ := 90.0
+
 static func _engine_loop() -> AudioStreamWAV:
-	var freq := 110.0
-	var cycles := 11
-	var n := int(round(RATE * cycles / freq))
+	var cycles := 9
+	var n := int(round(RATE * cycles / ENGINE_FREQ))
 	var out := PackedFloat32Array()
 	out.resize(n)
 	for i in n:
-		var ph := fmod(float(i) * freq / RATE, 1.0)
-		var saw := ph * 2.0 - 1.0
-		var tri := absf(ph * 4.0 - 2.0) - 1.0
-		out[i] = (saw * 0.45 + tri * 0.35 + sin(ph * TAU * 2.0) * 0.2) * 0.5
+		var ph := float(i) * ENGINE_FREQ / RATE
+		out[i] = (sin(ph * TAU) * 0.6 + sin(ph * TAU * 2.0) * 0.25 + sin(ph * TAU * 3.0) * 0.1
+				+ sin(ph * TAU * 5.0) * 0.05) * 0.32
 	var w := _wav(out)
 	w.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	w.loop_begin = 0

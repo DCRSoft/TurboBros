@@ -92,7 +92,7 @@ func _rebuild() -> void:
 		_ids.append(&"update")
 	elif _state == &"ready":
 		_ids.append(&"install")
-	_ids.append_array([&"play", &"options", &"quit"])
+	_ids.append_array([&"play", &"online", &"options", &"quit"])
 	for id in _ids:
 		var l := Label.new()
 		l.add_theme_font_size_override("font_size", 34)
@@ -107,7 +107,8 @@ func _text_for(id: StringName) -> String:
 	match id:
 		&"update": return "⬇ Actualizar a v%s" % Updater.latest.get("version", "?")
 		&"install": return "⟳ Instalar y reiniciar"
-		&"play": return "Jugar"
+		&"play": return "Jugar (local)"
+		&"online": return "En línea"
 		&"options": return "Opciones"
 		&"quit": return "Salir"
 	return str(id)
@@ -174,6 +175,8 @@ func _activate() -> void:
 	match _ids[_sel]:
 		&"play":
 			get_tree().change_scene_to_file(LOBBY)
+		&"online":
+			get_tree().change_scene_to_file("res://scenes/menu/online_menu.tscn")
 		&"options":
 			get_tree().change_scene_to_file(OPTIONS)
 		&"quit":

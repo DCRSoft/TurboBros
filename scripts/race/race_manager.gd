@@ -39,6 +39,7 @@ var state: State = State.WAITING
 var race_time := 0.0
 var results: Array[Dictionary] = []
 
+var net_client := false    ## en línea y NO anfitrión: las llegadas y los resultados los decide el anfitrión
 var _countdown_left := 0.0
 var _last_beep := -1
 var _finished_count := 0
@@ -50,6 +51,7 @@ var _by_kart := {}
 func setup(c: Circuit, karts: Array[Kart], total_laps: int) -> void:
 	circuit = c
 	laps = total_laps
+	net_client = NetSession.online and not NetSession.is_host()
 	racers.clear()
 	_by_kart.clear()
 	for k in karts:
@@ -147,7 +149,8 @@ func _update_progress(r: Racer, delta: float) -> void:
 	var k := r.kart
 	var pos := k.sphere.global_position
 	if pos.y < circuit.min_y - 25.0 and state == State.RACING:
-		respawn_kart(k)
+		if not k.net_remote:
+			respawn_kart(k)
 		return
 	if r.finished:
 		return
@@ -176,7 +179,7 @@ func _update_progress(r: Racer, delta: float) -> void:
 		r.wrong_t = 0.0
 	r.wrong_way = r.wrong_t > 1.0
 
-	if r.progress >= laps * circuit.length:
+	if r.progress >= laps * circuit.length and not net_client:
 		_finish(r)
 
 
@@ -190,11 +193,58 @@ func _finish(r: Racer) -> void:
 		if _first_human_finish < 0.0:
 			_first_human_finish = race_time
 		_autopilot(r)
+	NetSession.send_finish(r.kart.net_id, r.place, r.finish_time)
 	kart_finished.emit(r.kart, r.place)
+
+
+## Cliente en línea: el anfitrión anuncia que un kart cruzó la meta.
+func apply_net_finish(kart: Kart, place: int, time: float) -> void:
+	var r := get_racer(kart)
+	if r == null or r.finished:
+		return
+	r.finished = true
+	r.place = place
+	r.finish_time = time
+	_finished_count = maxi(_finished_count, place)
+	if r.is_human:
+		_autopilot(r)
+	kart_finished.emit(kart, place)
+
+
+## Cliente en línea: resultados finales decididos por el anfitrión (cada entrada trae "kart_id").
+func apply_net_results(net_results: Array, karts: Array[Kart]) -> void:
+	if state == State.FINISHED:
+		return
+	state = State.FINISHED
+	results.clear()
+	for e in net_results:
+		var entry: Dictionary = e.duplicate()
+		var kid: int = entry.get("kart_id", -1)
+		entry["kart"] = karts[kid] if kid >= 0 and kid < karts.size() else null
+		results.append(entry)
+	for r in racers:
+		var match_entry := results.filter(func(en: Dictionary) -> bool: return en["kart"] == r.kart)
+		if not match_entry.is_empty():
+			r.place = match_entry[0]["place"]
+	_rank()
+	race_finished.emit(results)
+
+
+## Un equipo se desconectó: su kart sale de la carrera.
+func remove_kart(kart: Kart) -> void:
+	var r := get_racer(kart)
+	if r != null:
+		racers.erase(r)
+	_by_kart.erase(kart)
+	if is_instance_valid(kart):
+		kart.queue_free()
+	_rank()
 
 
 ## Al terminar, un kart humano pasa a piloto automático (no se queda parado estorbando).
 func _autopilot(r: Racer) -> void:
+	if r.kart.net_remote:
+		return  # en línea cada equipo conduce el suyo
 	var bot := BotController.new()
 	bot.setup(r.kart, circuit, self, 0)
 	r.kart.add_child(bot)
@@ -217,6 +267,8 @@ func _rank() -> void:
 
 
 func _check_end() -> void:
+	if net_client:
+		return  # el anfitrión decide cuándo acaba
 	var all_done := true
 	var humans_left := false
 	for r in racers:
@@ -247,12 +299,19 @@ func _end_race() -> void:
 	results.clear()
 	var sorted := racers.duplicate()
 	sorted.sort_custom(func(a: Racer, b: Racer) -> bool: return a.place < b.place)
+	var net_list: Array = []
 	for r: Racer in sorted:
 		results.append({
 			"name": r.kart.racer_name, "kart": r.kart, "team": r.kart.team, "place": r.place,
 			"time": r.finish_time, "finished": r.finish_time >= 0.0, "points": points_for(r.place),
 			"human": r.is_human,
 		})
+		net_list.append({
+			"name": r.kart.racer_name, "kart_id": r.kart.net_id, "team": r.kart.team, "place": r.place,
+			"time": r.finish_time, "finished": r.finish_time >= 0.0, "points": points_for(r.place),
+			"human": r.is_human,
+		})
+	NetSession.send_results(net_list)  # no hace nada fuera de línea
 	race_finished.emit(results)
 
 

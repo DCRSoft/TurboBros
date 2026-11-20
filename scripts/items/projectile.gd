@@ -20,12 +20,14 @@ var _spent := false      ## ya explotó / ya terminó; solo queda el anillo visu
 var _ring_t := 0.0
 var _mesh: MeshInstance3D
 var _backwards := false
+var net_id := -1   ## identificador igual en todos los equipos (kart.net_id * 1000 + nº de uso); -1 = sin red
 
 
 func setup(d: ItemProjectile, k: Kart, backwards: bool) -> void:
 	data = d
 	owner_kart = k
 	_backwards = backwards
+	net_id = k.net_id * 1000 + k.use_seq if k.net_id >= 0 else -1
 	_bounces_left = d.bounces
 	var fwd := k.get_forward()
 	fwd.y = 0.0
@@ -38,6 +40,16 @@ func setup(d: ItemProjectile, k: Kart, backwards: bool) -> void:
 		velocity = dir * spd * 0.5 + Vector3.UP * 9.0
 	if d.kind == ItemProjectile.Kind.SHOCKWAVE:
 		position = k.sphere.global_position
+
+
+func _ready() -> void:
+	if net_id >= 0:
+		NetSession.register_object(net_id, self)
+
+
+func _exit_tree() -> void:
+	if net_id >= 0:
+		NetSession.unregister_object(net_id, self)
 
 
 func launch() -> void:
@@ -144,8 +156,9 @@ func _on_contact(k: Kart) -> void:
 			_age = 0.0
 			_target = null
 		Kart.HitResult.IGNORED:
-			pass  # fantasma o compañero: lo atraviesa
+			pass  # fantasma, compañero o kart remoto (lo resuelve su dueño): lo atraviesa
 		_:
+			NetSession.announce_dead(net_id)  # que las copias en los demás equipos también desaparezcan
 			queue_free()
 
 

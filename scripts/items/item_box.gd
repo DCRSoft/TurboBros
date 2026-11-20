@@ -35,7 +35,7 @@ func _physics_process(delta: float) -> void:
 		return
 	for node in get_tree().get_nodes_in_group("karts"):
 		var k := node as Kart
-		if k == null or not k.can_pickup():
+		if k == null or k.net_remote or not k.can_pickup():
 			continue
 		var d := k.sphere.global_position - global_position
 		var dy := absf(d.y - 1.0)

@@ -66,4 +66,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _back() -> void:
 	_shown = false
-	get_tree().change_scene_to_file(LOBBY)
+	if NetSession.online:
+		NetSession.finish_race()  # se conserva la conexión: vuelta a la sala en línea
+		get_tree().change_scene_to_file("res://scenes/menu/online_lobby.tscn")
+	else:
+		get_tree().change_scene_to_file(LOBBY)

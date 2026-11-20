@@ -11,7 +11,7 @@ Hasta 8 jugadores locales con mandos USB/Bluetooth.
 1. Abrir la carpeta con Godot 4.7 (`project.godot`) y pulsar F5.
 2. Controles del hito 1:
    - **Mando**: stick izq. girar · RT/A acelerar · LT/B frenar · LB/RB derrapar (salto + derrape) (pulsar con el stick inclinado).
-   - **Teclado (solo desarrollo)**: WASD, Shift = derrape, R = reiniciar.
+   - **Teclado** (control adicional, se puede combinar con mandos y con otros teclados): J1 = WASD + Shift (derrape) + Espacio (ítem) + Q/E (golpes del artillero); J2 = flechas + L (derrape) + K (ítem) + J/; (golpes). R = reiniciar.
 
 ## Pantalla dividida (hito 2)
 - **F1–F4**: número de karts (1 a 4). 2 = arriba/abajo, 3–4 = cuadrícula 2×2.
@@ -113,3 +113,9 @@ Godot_console.exe --headless --path . --script tools/balance.gd -- --write
 - **Sonido**: efectos sintetizados por código (propios, sin licencias de terceros) y motor con tono según la velocidad. Música: pendiente.
 - **Exportar y publicar**: `docs/UPDATES.md` (flujo de GitHub Actions por etiqueta `vX.Y.Z`, zip + SHA-256, actualizaciones automáticas y evaluación de Velopack). Probar el export en local: `powershell -File tools/export_local.ps1`.
 - Para medir FPS en otro equipo: `git clone`, abrir con Godot 4.7.2, jugar con F4 (4 vistas) y anotar el FPS (HUD arriba a la izquierda) en `docs/PERFORMANCE.md`.
+
+## Teclado y multijugador en línea (hito 8)
+- **Teclado como control adicional**: dos esquemas (J1: WASD + Shift/Espacio/Q/E; J2: flechas + L/K/J/;) que se unen al lobby igual que un mando (Espacio / K), se pueden mezclar con mandos y sirven para conducir, usar ítems y golpear. Los menús también se manejan con teclado.
+- **En línea** (menú principal → En línea): multijugador de alto nivel de Godot sobre **ENet**; **1 o 2 jugadores por PC con una sola vista**, hasta 8 karts con bots. Entradas separadas de la lógica: en red solo viaja el estado de cada kart (~20 Hz), los ataques se replican como eventos y cada PC resuelve los impactos de sus propios karts. Detalles, limitaciones y cómo abrir el puerto UDP 24680 en `docs/ONLINE.md`.
+- Prueba de red real (anfitrión + cliente en dos procesos, carrera completa, resultados idénticos): `powershell -File tools/net_test.ps1`.
+- Sonido más suave: motor grave sin diente de sierra, volúmenes por defecto 50 % (efectos) y 20 % (motor), ajustables en Opciones.

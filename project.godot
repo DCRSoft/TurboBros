@@ -22,6 +22,7 @@ GameSession="*res://scripts/autoload/game_session.gd"
 GraphicsSettings="*res://scripts/autoload/graphics_settings.gd"
 AudioManager="*res://scripts/autoload/audio_manager.gd"
 Updater="*res://scripts/autoload/updater.gd"
+NetSession="*res://scripts/net/net_session.gd"
 
 [display]
 

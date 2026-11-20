@@ -4,6 +4,7 @@ extends Node3D
 
 var data: ItemTrap
 var owner_kart: Kart
+var net_id := -1
 var _age := 0.0
 var _victim_cd := {}   ## instance_id del kart -> s restantes (las persistentes no repiten cada tick)
 
@@ -11,6 +12,7 @@ var _victim_cd := {}   ## instance_id del kart -> s restantes (las persistentes 
 func setup(d: ItemTrap, k: Kart, backwards: bool) -> void:
 	data = d
 	owner_kart = k
+	net_id = k.net_id * 1000 + k.use_seq if k.net_id >= 0 else -1
 	var fwd := k.get_forward()
 	fwd.y = 0.0
 	fwd = fwd.normalized()
@@ -19,8 +21,15 @@ func setup(d: ItemTrap, k: Kart, backwards: bool) -> void:
 	position = k.sphere.global_position + (-fwd * 3.0 if behind else fwd * 6.0)
 
 
+func _exit_tree() -> void:
+	if net_id >= 0:
+		NetSession.unregister_object(net_id, self)
+
+
 func _ready() -> void:
 	add_to_group("traps")
+	if net_id >= 0:
+		NetSession.register_object(net_id, self)
 	# Apoya la trampa en el suelo
 	var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(
 			position + Vector3.UP * 3.0, position + Vector3.DOWN * 8.0, 1))
@@ -105,6 +114,7 @@ func _physics_process(delta: float) -> void:
 		d.y = 0.0
 		if d.length() < data.trigger_radius * k.fx.mods.scale_mult and dy < 1.5:
 			if _trigger(k):
+				NetSession.announce_dead(net_id)
 				queue_free()
 				return
 

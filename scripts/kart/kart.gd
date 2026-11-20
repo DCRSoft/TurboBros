@@ -77,6 +77,17 @@ var frozen := false       ## cuenta atrás: no responde a los controles
 var is_bot := false
 var racer_name := ""
 
+# Multijugador en línea (ver NetSession / NetSync). Offline: net_id = -1 y net_remote = false.
+var net_id := -1          ## índice del kart en la carrera (igual en todos los equipos)
+var net_owner := 1        ## id de red del equipo que lo simula (los bots los simula el anfitrión)
+var net_remote := false   ## marioneta: lo simula otro equipo; aquí solo se interpola su estado
+var use_seq := 0          ## contador de usos de ítem (identifica proyectiles/trampas entre equipos)
+var last_use_back := false
+var _net_pos := Vector3.ZERO
+var _net_vel := Vector3.ZERO
+var _net_heading := 0.0
+var _net_age := 0.0
+
 var _steer := 0.0
 var _smooth_up := Vector3.UP
 var _drift_prev := false
@@ -218,6 +229,9 @@ func _build_visual_extras() -> void:
 
 func _physics_process(delta: float) -> void:
 	fx.tick(delta)
+	if net_remote:
+		_remote_step(delta)
+		return
 	var c: KartControls = controller.get_controls() if controller else _idle_controls
 	if fx.mods.lock_control or frozen:
 		c = _idle_controls
@@ -308,6 +322,8 @@ func can_hurt(other: Kart) -> bool:
 ## Punto único de entrada de TODOS los ataques (proyectiles, trampas, golpes, caos).
 ## Orden: compañero/fantasma -> reflejo -> inmunidad -> guardias -> trampa trasera -> efecto.
 func take_hit(attacker: Kart, effect: KartEffect) -> HitResult:
+	if net_remote:
+		return HitResult.IGNORED  # el equipo dueño de este kart resuelve sus propios impactos
 	if attacker != null and not attacker.can_hurt(self):
 		return HitResult.IGNORED
 	if fx.mods.ghost:
@@ -333,6 +349,9 @@ func take_hit(attacker: Kart, effect: KartEffect) -> HitResult:
 
 ## Golpe cuerpo a cuerpo (artillero / jugador solo): empuja y hace tropezar.
 func receive_hit(dir: Vector3, attacker: Kart) -> void:
+	if net_remote:
+		NetSession.send_melee(self, dir, attacker)  # lo aplica el equipo dueño del kart golpeado
+		return
 	var res := take_hit(attacker, EffectLibrary.get_effect(&"stumble"))
 	if res == HitResult.HIT:
 		# Cambio de velocidad independiente de la masa de la víctima -> los pesados se mueven menos.
@@ -366,13 +385,24 @@ func use_held_item(backwards := false) -> void:
 	if held_uses <= 0:
 		held_item = null
 		held_uses = 0
+	use_seq += 1
+	last_use_back = backwards
 	it.use(self, backwards)
 	item_used.emit(it)
 	item_changed.emit()
 
 
+## Réplica del uso de un ítem de OTRO equipo: se ejecuta igual (proyectiles, trampas, caos...) pero cada equipo
+## solo modifica sus propios karts, así que la víctima aplica el efecto en su máquina.
+func replay_item(it: ItemData, backwards: bool, seq: int) -> void:
+	use_seq = seq
+	it.use(self, backwards)
+
+
 ## Teletransporta la esfera (intercambio de posición) conservando o fijando velocidad y rumbo.
 func set_motion_state(pos: Vector3, vel: Vector3, new_heading: float) -> void:
+	if net_remote:
+		return  # un kart remoto lo mueve su equipo
 	var rid := sphere.get_rid()
 	PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_TRANSFORM, Transform3D(Basis.IDENTITY, pos))
 	PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY, vel)
@@ -398,6 +428,60 @@ func respawn(t: Transform3D) -> void:
 	_smooth_up = Vector3.UP
 	forward_speed = 0.0
 	_spin_angle = 0.0
+
+
+# --- Red: karts remotos (marionetas) ---------------------------------------------
+
+## Convierte este kart en una marioneta: no simula física ni lee controles; sigue el estado que envía su dueño.
+func make_remote() -> void:
+	net_remote = true
+	sphere.freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
+	sphere.freeze = true
+	_net_pos = sphere.global_position
+	_net_heading = heading
+
+
+## Instantánea del estado para enviar a los demás equipos.
+func net_collect_state() -> Array:
+	var flags := int(grounded) | (int(drifting) << 1) | (int(drift_dir > 0) << 2) | (drift_level << 3)
+	var ids := PackedStringArray()
+	for i in fx.instances:
+		ids.append(String(i.data.id))
+	return [sphere.global_position, sphere.linear_velocity, heading, flags, ids]
+
+
+func net_apply_state(pos: Vector3, vel: Vector3, h: float, flags: int, effect_ids: PackedStringArray) -> void:
+	_net_pos = pos
+	_net_vel = vel
+	_net_heading = h
+	_net_age = 0.0
+	grounded = (flags & 1) != 0
+	drifting = (flags & 2) != 0
+	drift_dir = (1 if (flags & 4) != 0 else -1) if drifting else 0
+	drift_level = (flags >> 3) & 3
+	for id in effect_ids:  # efectos reflejados con vida corta: caducan solos si el dueño deja de enviarlos
+		var e := EffectLibrary.get_effect(StringName(id))
+		if e != null:
+			fx.add(e, 0.35)
+
+
+func _remote_step(delta: float) -> void:
+	_net_age = minf(_net_age + delta, 0.25)
+	var target := _net_pos + _net_vel * _net_age  # extrapola un poco entre instantáneas
+	var cur := sphere.global_position
+	var np := target if cur.distance_to(target) > 6.0 else cur.lerp(target, clampf(delta * 14.0, 0.0, 1.0))
+	sphere.global_position = np
+	heading = lerp_angle(heading, _net_heading, clampf(delta * 14.0, 0.0, 1.0))
+	forward_speed = _net_vel.dot(get_forward())
+	ground_ray.force_raycast_update()
+	if ground_ray.is_colliding():
+		ground_normal = ground_ray.get_collision_normal()
+	_smooth_up = _smooth_up.slerp(ground_normal if grounded else Vector3.UP, clampf(delta * 10.0, 0.0, 1.0)).normalized()
+	_update_timers(delta)
+	_update_touch_hits(delta)   # una marioneta con estrella/gigante golpea a MIS karts (los suyos los resuelve su dueño)
+	_update_model(delta)
+	_update_effect_visuals(delta)
+	global_position = sphere.global_position
 
 
 # --- Internos --------------------------------------------------------------
