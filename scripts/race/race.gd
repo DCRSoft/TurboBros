@@ -28,6 +28,8 @@ var bot_karts: Array[Kart] = []
 
 
 func _ready() -> void:
+	_apply_graphics()
+	GraphicsSettings.changed.connect(_apply_graphics)
 	split.render_scale = render_scale
 	var setups: Array[Dictionary] = GameSession.setups
 	var bot_teams: Array[int] = GameSession.bot_teams
@@ -88,6 +90,10 @@ func _ready() -> void:
 		_attach_bot(k, humans + b)
 		bot_karts.append(k)
 
+	AudioManager.stop_engines()
+	for hk in human_karts:
+		AudioManager.attach_kart(hk)
+	AudioManager.attach_race(manager)
 	manager.setup(circuit, karts, laps)
 	split.setup(human_karts, groups, manager)
 	manager.race_finished.connect(func(_r: Array) -> void: results.show_results(manager))
@@ -96,6 +102,10 @@ func _ready() -> void:
 		box.position = pos
 		add_child(box)
 	manager.start()
+
+
+func _apply_graphics() -> void:
+	GraphicsSettings.apply_to_scene(self)
 
 
 func _color(team: int, fallback: Color) -> Color:
@@ -132,6 +142,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			for k in human_karts:
 				manager.respawn_kart(k)
 		KEY_ESCAPE:
+			AudioManager.stop_engines()
 			get_tree().change_scene_to_file(LOBBY)
 		KEY_BRACKETLEFT: split.render_scale -= 0.1
 		KEY_BRACKETRIGHT: split.render_scale += 0.1

@@ -1,0 +1,86 @@
+name: Release
+
+# Al subir una etiqueta de versión (v1.2.0): pasa las pruebas, exporta el build de Windows (Godot headless),
+# lo comprime y lo adjunta al Release junto con su SHA-256.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.7.2-stable"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Godot (verificado con SHA-512)
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}"
+          mkdir -p "$RUNNER_TEMP/godot" && cd "$RUNNER_TEMP/godot"
+          curl -fsSL -O "$BASE/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          curl -fsSL -O "$BASE/SHA512-SUMS.txt"
+          grep -E "Godot_v${GODOT_VERSION}_linux.x86_64.zip$" SHA512-SUMS.txt | sha512sum -c -
+          unzip -q "Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot && chmod +x godot
+          echo "GODOT=$RUNNER_TEMP/godot/godot" >> "$GITHUB_ENV"
+      - name: Importar proyecto
+        run: $GODOT --headless --path . --import
+      - name: Autotest del kart, ítems, lobby, equilibrio...
+        run: $GODOT --headless --path . res://scenes/debug/selftest.tscn
+      - name: Autotest de carrera con bots
+        run: $GODOT --headless --path . res://scenes/debug/race_selftest.tscn
+      - name: Prueba de estabilidad física
+        run: $GODOT --headless --path . res://scenes/debug/stability_probe.tscn
+
+  build-windows:
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: La etiqueta debe coincidir con el archivo VERSION
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          FILE="$(tr -d '[:space:]' < VERSION)"
+          if [ "$TAG" != "$FILE" ]; then
+            echo "La etiqueta ($TAG) no coincide con VERSION ($FILE)"; exit 1
+          fi
+      - name: Instalar Godot y plantillas de exportación (verificados con SHA-512)
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}"
+          mkdir -p "$RUNNER_TEMP/godot" && cd "$RUNNER_TEMP/godot"
+          curl -fsSL -O "$BASE/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          curl -fsSL -O "$BASE/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          curl -fsSL -O "$BASE/SHA512-SUMS.txt"
+          grep -E "Godot_v${GODOT_VERSION}_(linux.x86_64.zip|export_templates.tpz)$" SHA512-SUMS.txt | sha512sum -c -
+          unzip -q "Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot && chmod +x godot
+          TPL_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION/-/.}"
+          mkdir -p "$TPL_DIR" tpl
+          unzip -q "Godot_v${GODOT_VERSION}_export_templates.tpz" -d tpl
+          mv tpl/templates/* "$TPL_DIR/"
+          echo "GODOT=$RUNNER_TEMP/godot/godot" >> "$GITHUB_ENV"
+      - name: Exportar Windows (headless)
+        run: |
+          mkdir -p build
+          $GODOT --headless --path . --import
+          $GODOT --headless --path . --export-release "Windows Desktop" build/TurboBros.exe
+          ls -la build
+      - name: Comprimir y calcular SHA-256
+        shell: pwsh
+        run: ./tools/package_release.ps1 -Version "${{ github.ref_name }}"
+      - name: Publicar el Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "build/TurboBros-${GITHUB_REF_NAME}-windows.zip" \
+            "build/TurboBros-${GITHUB_REF_NAME}-windows.zip.sha256" \
+            --title "TurboBros ${GITHUB_REF_NAME}" --generate-notes

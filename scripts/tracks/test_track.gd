@@ -21,6 +21,8 @@ var _spawns: Array[Transform3D] = []
 
 
 func _ready() -> void:
+	_apply_graphics()
+	GraphicsSettings.changed.connect(_apply_graphics)
 	_spawn_markers()
 	_spawn_item_boxes()
 	split.render_scale = render_scale
@@ -30,6 +32,10 @@ func _ready() -> void:
 	else:
 		_debug_mode = false
 		build_from_setups(GameSession.setups)
+
+
+func _apply_graphics() -> void:
+	GraphicsSettings.apply_to_scene(self)
 
 
 func _physics_process(_delta: float) -> void:

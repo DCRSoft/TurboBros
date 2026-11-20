@@ -105,6 +105,8 @@ var _carry: MeshInstance3D
 var _carry_mat: StandardMaterial3D
 var _idle_controls := KartControls.new()
 var _spark_mat: StandardMaterial3D
+var _blob: MeshInstance3D            ## sombra tipo blob (calidad baja: sin sombras reales)
+static var _blob_texture: GradientTexture2D
 
 @onready var sphere: RigidBody3D = $Sphere
 @onready var ground_ray: RayCast3D = $Sphere/GroundRay
@@ -139,6 +141,31 @@ func _ready() -> void:
 
 
 func _build_visual_extras() -> void:
+	if _blob_texture == null:
+		var g := Gradient.new()
+		g.colors = PackedColorArray([Color(0, 0, 0, 0.6), Color(0, 0, 0, 0.0)])
+		g.offsets = PackedFloat32Array([0.0, 1.0])
+		_blob_texture = GradientTexture2D.new()
+		_blob_texture.gradient = g
+		_blob_texture.fill = GradientTexture2D.FILL_RADIAL
+		_blob_texture.fill_from = Vector2(0.5, 0.5)
+		_blob_texture.fill_to = Vector2(1.0, 0.5)
+		_blob_texture.width = 64
+		_blob_texture.height = 64
+	_blob = MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(2.6, 3.0)
+	_blob.mesh = plane
+	var blob_mat := StandardMaterial3D.new()
+	blob_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	blob_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	blob_mat.albedo_texture = _blob_texture
+	blob_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_blob.material_override = blob_mat
+	_blob.top_level = true
+	_blob.visible = false
+	add_child(_blob)
+
 	_swing = MeshInstance3D.new()
 	var swing_mesh := BoxMesh.new()
 	swing_mesh.size = Vector3(1.2, 0.2, 0.3)
@@ -632,6 +659,14 @@ func _update_model(delta: float) -> void:
 		_spark_mat.albedo_color = get_drift_color(drift_level)
 	for s in sparks:
 		s.visible = show_sparks
+
+	# Sombra tipo blob cuando la calidad no usa sombras reales
+	var blob_on: bool = grounded and not bool(GraphicsSettings.get_value("shadows"))
+	_blob.visible = blob_on
+	if blob_on:
+		var n := ground_normal
+		_blob.global_position = ground_ray.get_collision_point() + n * 0.04
+		_blob.global_basis = Basis(r, n, r.cross(n)).scaled(Vector3.ONE * _scale)
 
 
 func _update_effect_visuals(delta: float) -> void:

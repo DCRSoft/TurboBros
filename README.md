@@ -95,3 +95,21 @@ Godot_console.exe --headless --path . --script tools/balance.gd -- --write
   Resultado actual: ninguna marcada; diferencia mejor/peor 5.8 % (solo) y 8.8 % (con artillero).
 - Los datos se regeneran con `tools/generate_data.gd` (también crea vehículos y personajes).
 - La portada (`assets/ui/cover.jpg`) se muestra en el menú principal pero **no está en el repositorio** hasta decidir su licencia (ver `CREDITS.md`).
+
+## Calidades gráficas, sonido, exportación y actualizaciones (hito 7)
+**Opciones** (menú principal): calidad Alta / Media / Baja, escala máxima de render, auto-ajuste de escala, FPS desbloqueados, pantalla completa y volúmenes. Se guardan en `user://settings.cfg`. En el primer arranque la calidad se elige según la GPU (Intel UHD → Baja, Iris Xe/Arc → Media, el resto → Alta).
+
+| | Baja | Media | Alta |
+|---|---|---|---|
+| Sombras | tipo blob (sin sombras reales) | reales hasta 35 m | reales hasta 90 m |
+| Antialiasing | ninguno | FXAA | MSAA 2x + FXAA |
+| Post-procesado | ninguno | tono | brillo + tono |
+| Distancia de dibujado / LOD | 160 m / x4 | 320 m / x2 | 700 m / x1 |
+| Presupuesto de píxeles (todas las vistas) | ≈0,9 M | ≈1,6 M | sin límite |
+| Escala base | 0,75 | 0,90 | 1,0 |
+
+- Mismos modelos en las tres calidades. Con 4 vistas en 1080p la calidad Baja renderiza ≈900.000 píxeles internos en total.
+- **Auto-ajuste**: si los FPS bajan de 60 durante 2 s seguidos, la escala baja un 5 % (mínimo 40 %); tras 20 s estables vuelve a subir despacio.
+- **Sonido**: efectos sintetizados por código (propios, sin licencias de terceros) y motor con tono según la velocidad. Música: pendiente.
+- **Exportar y publicar**: `docs/UPDATES.md` (flujo de GitHub Actions por etiqueta `vX.Y.Z`, zip + SHA-256, actualizaciones automáticas y evaluación de Velopack). Probar el export en local: `powershell -File tools/export_local.ps1`.
+- Para medir FPS en otro equipo: `git clone`, abrir con Godot 4.7.2, jugar con F4 (4 vistas) y anotar el FPS (HUD arriba a la izquierda) en `docs/PERFORMANCE.md`.

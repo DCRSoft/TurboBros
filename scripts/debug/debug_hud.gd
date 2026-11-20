@@ -9,6 +9,7 @@ var info_provider := Callable() ## devuelve texto extra (p. ej. resolución de l
 var race: RaceManager           ## si hay carrera: vueltas, tiempo y mensajes centrales
 var _label: Label
 var _center: Label
+var _warn: Label
 var _ink: Control
 
 
@@ -46,6 +47,17 @@ func _ready() -> void:
 	_center.add_theme_constant_override("outline_size", 12)
 	_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_center)
+	# Aviso de efectos que alteran el control (controles invertidos, ralentización...)
+	_warn = Label.new()
+	_warn.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_warn.offset_top = 60
+	_warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_warn.add_theme_font_size_override("font_size", 34)
+	_warn.add_theme_color_override("font_color", Color(1.0, 0.45, 1.0))
+	_warn.add_theme_color_override("font_outline_color", Color.BLACK)
+	_warn.add_theme_constant_override("outline_size", 10)
+	_warn.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_warn)
 
 
 func _process(_delta: float) -> void:
@@ -85,6 +97,12 @@ func _process(_delta: float) -> void:
 	if not fx_names.is_empty():
 		lines.append("Efectos: " + ", ".join(fx_names))
 	_ink.visible = kart.fx.mods.ink
+	var warns := PackedStringArray()
+	if kart.fx.mods.steer_mult < 0.0:
+		warns.append("⇄ ¡CONTROLES INVERTIDOS!")
+	if kart.fx.mods.lock_control:
+		warns.append("¡SIN CONTROL!")
+	_warn.text = "\n".join(warns)
 	for s in seats:
 		var role := ""
 		if s.role == Seat.Role.DRIVER:

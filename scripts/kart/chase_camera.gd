@@ -21,7 +21,18 @@ func _ready() -> void:
 	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	add_child(camera)
 	camera.current = true
+	_apply_quality()
+	GraphicsSettings.changed.connect(_apply_quality)
 	snap()
+
+
+func _exit_tree() -> void:
+	if GraphicsSettings.changed.is_connected(_apply_quality):
+		GraphicsSettings.changed.disconnect(_apply_quality)
+
+
+func _apply_quality() -> void:
+	camera.far = float(GraphicsSettings.get_value("far"))  # distancia de dibujado según la calidad
 
 
 func snap() -> void:

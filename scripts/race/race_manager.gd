@@ -5,6 +5,7 @@ extends Node
 ## muestra más cercana es local, así que no se puede "saltar" tramos para ahorrar vueltas.
 
 signal race_started
+signal countdown_beep(number: int)
 signal kart_finished(kart: Kart, place: int)
 signal race_finished(results: Array)
 
@@ -39,6 +40,7 @@ var race_time := 0.0
 var results: Array[Dictionary] = []
 
 var _countdown_left := 0.0
+var _last_beep := -1
 var _finished_count := 0
 var _last_human_finish := -1.0
 var _first_human_finish := -1.0
@@ -124,6 +126,10 @@ func _physics_process(delta: float) -> void:
 	match state:
 		State.COUNTDOWN:
 			_countdown_left -= delta
+			var n := ceili(_countdown_left)
+			if n != _last_beep and n > 0:
+				_last_beep = n
+				countdown_beep.emit(n)
 			if _countdown_left <= 0.0:
 				state = State.RACING
 				for r in racers:

@@ -18,10 +18,24 @@ class Cell:
 		_relayout()
 
 var cells: Array[Cell] = []
+var applied_scale := 1.0   ## escala de render realmente aplicada (calidad, presupuesto de píxeles, auto-ajuste)
 
 
 func _ready() -> void:
 	resized.connect(_relayout)
+	GraphicsSettings.changed.connect(_on_graphics_changed)
+
+
+func _exit_tree() -> void:
+	GraphicsSettings.measuring = false
+	if GraphicsSettings.changed.is_connected(_on_graphics_changed):
+		GraphicsSettings.changed.disconnect(_on_graphics_changed)
+
+
+func _on_graphics_changed() -> void:
+	for c in cells:
+		GraphicsSettings.apply_to_viewport(c.viewport)
+	_relayout()
 
 
 func _draw() -> void:
@@ -55,6 +69,7 @@ func setup(karts: Array[Kart], seat_groups: Array, race: RaceManager = null) -> 
 		c.viewport = SubViewport.new()
 		c.viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		c.viewport.size = Vector2i(640, 360)
+		GraphicsSettings.apply_to_viewport(c.viewport)
 		add_child(c.viewport)
 		c.camera = ChaseCamera.new()
 		c.camera.target = karts[i]
@@ -66,8 +81,9 @@ func setup(karts: Array[Kart], seat_groups: Array, race: RaceManager = null) -> 
 		c.hud.show_help = (i == 0)
 		c.hud.race = race
 		c.hud.info_provider = func() -> String:
-			return "Vista %d: %dx%d (escala %.2f)" % [
-					karts.find(c.kart) + 1, c.viewport.size.x, c.viewport.size.y, render_scale]
+			return "Vista %d: %dx%d (escala %.2f, calidad %s)" % [
+					karts.find(c.kart) + 1, c.viewport.size.x, c.viewport.size.y, applied_scale,
+					GraphicsSettings.quality_name()]
 		c.viewport.add_child(c.hud)
 		c.view = TextureRect.new()
 		c.view.texture = c.viewport.get_texture()
@@ -75,6 +91,7 @@ func setup(karts: Array[Kart], seat_groups: Array, race: RaceManager = null) -> 
 		c.view.stretch_mode = TextureRect.STRETCH_SCALE
 		add_child(c.view)
 		cells.append(c)
+	GraphicsSettings.measuring = not cells.is_empty()
 	_relayout()
 
 
@@ -83,6 +100,7 @@ func clear() -> void:
 		c.viewport.queue_free()
 		c.view.queue_free()
 	cells.clear()
+	GraphicsSettings.measuring = false
 
 
 ## Píxeles internos totales que se están renderizando (para el presupuesto de calidad).
@@ -97,10 +115,14 @@ func _relayout() -> void:
 	if cells.is_empty() or size.x < 1.0 or size.y < 1.0:
 		return
 	var rects := compute_cells(cells.size(), size, gap)
+	var total_px := 0.0
+	for r in rects:
+		total_px += r.size.x * r.size.y
+	applied_scale = GraphicsSettings.effective_scale(total_px, render_scale)
 	for i in cells.size():
 		var r := rects[i]
 		cells[i].view.position = r.position
 		cells[i].view.size = r.size
 		cells[i].viewport.size = Vector2i(
-				maxi(16, roundi(r.size.x * render_scale)), maxi(16, roundi(r.size.y * render_scale)))
+				maxi(16, roundi(r.size.x * applied_scale)), maxi(16, roundi(r.size.y * applied_scale)))
 	queue_redraw()

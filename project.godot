@@ -19,6 +19,9 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 GameVersion="*res://scripts/autoload/game_version.gd"
 InputManager="*res://scripts/autoload/input_manager.gd"
 GameSession="*res://scripts/autoload/game_session.gd"
+GraphicsSettings="*res://scripts/autoload/graphics_settings.gd"
+AudioManager="*res://scripts/autoload/audio_manager.gd"
+Updater="*res://scripts/autoload/updater.gd"
 
 [display]
 

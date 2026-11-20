@@ -31,3 +31,7 @@ Thumbs.db
 # Claude Code (config local)
 .claude/settings.local.json
 
+
+# Builds locales del juego y pruebas temporales
+/build/
+.tmp_updater_test/

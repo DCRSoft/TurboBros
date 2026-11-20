@@ -302,6 +302,178 @@ func _test_stat_effects() -> void:
 	r.stats.weight = 1.0
 
 
+func _test_updater() -> void:
+	var sha := "a".repeat(64)
+	var release := {
+		"tag_name": "v9.0.0", "body": "Notas",
+		"assets": [
+			{"name": "TurboBros-v9.0.0-windows.zip", "browser_download_url": "https://example.test/TurboBros-v9.0.0-windows.zip",
+				"size": 52428800, "digest": "sha256:" + sha},
+			{"name": "TurboBros-v9.0.0-windows.zip.sha256", "browser_download_url": "https://example.test/x.sha256", "size": 90},
+			{"name": "otro.txt", "browser_download_url": "https://example.test/otro", "size": 1},
+		],
+	}
+	var info := Updater.parse_release(release, "0.1.0")
+	_check("actualizador: detecta una versión más nueva y su asset de Windows",
+			info["available"] and info["version"] == "9.0.0" and info["zip_name"] == "TurboBros-v9.0.0-windows.zip"
+			and info["sha256"] == sha and info["zip_size"] == 52428800, str(info["available"]))
+	_check("actualizador: no ofrece la misma versión ni una anterior",
+			not Updater.parse_release(release, "9.0.0")["available"] and not Updater.parse_release(release, "10.0.0")["available"])
+	var no_hash := {"tag_name": "v9.0.0", "assets": [
+		{"name": "TurboBros-v9.0.0-windows.zip", "browser_download_url": "u", "size": 1}]}
+	_check("actualizador: sin hash verificable no ofrece la actualización", not Updater.parse_release(no_hash, "0.1.0")["available"])
+	var with_file := {"tag_name": "v9.0.0", "assets": [
+		{"name": "TurboBros-v9.0.0-windows.zip", "browser_download_url": "u1", "size": 1},
+		{"name": "TurboBros-v9.0.0-windows.zip.sha256", "browser_download_url": "u2", "size": 1}]}
+	var info2 := Updater.parse_release(with_file, "0.1.0")
+	_check("actualizador: acepta el hash en el archivo .sha256 adjunto", info2["available"] and info2["sha_url"] == "u2")
+	_check("actualizador: lee el .sha256 (formato sha256sum)",
+			Updater.parse_sha_text("%s  TurboBros-v9.0.0-windows.zip\n" % sha, "TurboBros-v9.0.0-windows.zip") == sha
+			and Updater.parse_sha_text(sha) == sha and Updater.parse_sha_text("basura") == "")
+	# Verificación SHA-256 de un archivo real
+	var path := "user://selftest_update.bin"
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_string("contenido de prueba")
+	f.close()
+	var real := FileAccess.get_sha256(path)
+	_check("actualizador: verifica el SHA-256 del archivo descargado",
+			Updater.verify_file(path, real) and not Updater.verify_file(path, "0".repeat(64)) and not Updater.verify_file(path, "corto"))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	var args := Updater.build_apply_args("s.ps1", 123, "z.zip", "C:/juego", "TurboBros.exe", sha)
+	_check("actualizador: argumentos del actualizador externo", args.has("-ProcessId") and args.has("123")
+			and args.has("-ExpectedSha256") and args.has(sha) and args.has("-InstallDir"))
+	_check("actualizador: desde el editor no lanza el actualizador externo", not Updater.launch_pending())
+
+
+func _test_sfx() -> void:
+	var ok := true
+	var bad := ""
+	for n in SfxLibrary.names():
+		var s := SfxLibrary.get_stream(n)
+		var peak := 0.0
+		for i in range(0, s.data.size() - 1, 2):
+			peak = maxf(peak, absf(s.data.decode_s16(i)) / 32767.0)
+		if s.data.size() < 100 or peak < 0.05 or peak > 1.0:
+			ok = false
+			bad += " %s(peak=%.2f,bytes=%d)" % [n, peak, s.data.size()]
+	_check("sonidos: los %d efectos sintetizados existen y no están en silencio" % SfxLibrary.names().size(), ok, bad)
+	var eng := SfxLibrary.get_stream(&"engine")
+	var cycles := eng.loop_end * 110.0 / float(SfxLibrary.RATE)  # ciclos enteros = el bucle empalma sin clic
+	_check("sonidos: el motor es un bucle con ciclos enteros", eng.loop_mode == AudioStreamWAV.LOOP_FORWARD
+			and absf(cycles - roundf(cycles)) < 0.02 and eng.loop_end == eng.data.size() / 2,
+			"ciclos=%.3f" % cycles)
+
+
+func _test_audio_manager() -> void:
+	var pair := await _setup_pair()
+	var k := pair[1]
+	AudioManager.attach_kart(k)
+	await _ticks(2)
+	var engines: int = AudioManager._engines.size()
+	var ctrl: ScriptedController = k.controller
+	var idle_pitch: float = AudioManager._engines[0]["player"].pitch_scale
+	ctrl.set_input(0, 1)
+	await _ticks(180)
+	var fast_pitch: float = AudioManager._engines[0]["player"].pitch_scale
+	_check("sonido: el motor de un kart humano suena y sube de tono con la velocidad", engines == 1 and fast_pitch > idle_pitch + 0.5,
+			"parado=%.2f rápido=%.2f" % [idle_pitch, fast_pitch])
+	AudioManager.play(&"hit")
+	AudioManager.play(&"boost")
+	var any_playing := false
+	for p in AudioManager._pool:
+		any_playing = any_playing or p.playing
+	_check("sonido: los efectos usan el grupo de reproductores", any_playing or DisplayServer.get_name() == "headless")
+	AudioManager.stop_engines()
+	ctrl.set_input(0, 0)
+
+
+func _test_graphics_settings() -> void:
+	var Q := GraphicsSettings.Quality
+	var P := GraphicsSettings.PRESETS
+	_check("calidades: Baja sin sombras reales ni post-procesado, Alta con todo",
+			not P[Q.LOW]["shadows"] and not P[Q.LOW]["tonemap"] and not P[Q.LOW]["glow"] and not P[Q.LOW]["fxaa"]
+			and P[Q.HIGH]["shadows"] and P[Q.HIGH]["glow"] and P[Q.HIGH]["fxaa"] and int(P[Q.HIGH]["msaa"]) >= 2
+			and P[Q.MEDIUM]["shadows"] and P[Q.MEDIUM]["tonemap"] and not P[Q.MEDIUM]["glow"])
+	_check("calidades: distancia de dibujado, LOD y partículas escalan Baja < Media < Alta",
+			P[Q.LOW]["far"] < P[Q.MEDIUM]["far"] and P[Q.MEDIUM]["far"] < P[Q.HIGH]["far"]
+			and P[Q.LOW]["lod"] > P[Q.MEDIUM]["lod"] and P[Q.MEDIUM]["lod"] > P[Q.HIGH]["lod"]
+			and P[Q.LOW]["particles"] < P[Q.MEDIUM]["particles"] and P[Q.MEDIUM]["particles"] < P[Q.HIGH]["particles"])
+	# Presupuesto de la calidad baja: ~900.000 píxeles internos en total con 4 vistas (ventana 1080p)
+	var total_1080 := 1920.0 * 1080.0
+	var s_low := GraphicsSettings.budget_scale(Q.LOW, total_1080)
+	_check("presupuesto Baja: 4 vistas en 1080p ≈ 900.000 píxeles internos",
+			absf(total_1080 * s_low * s_low - 900000.0) < 9000.0, "px=%.0f escala=%.3f" % [total_1080 * s_low * s_low, s_low])
+	_check("presupuesto Alta: sin límite", GraphicsSettings.budget_scale(Q.HIGH, total_1080) == 1.0)
+	_check("presupuesto Baja a 720p con 4 vistas casi no recorta (≈0.99)",
+			GraphicsSettings.budget_scale(Q.LOW, 1280.0 * 720.0) > 0.98)
+	_check("GPU: Intel UHD = Baja, Iris Xe = Media, Radeon = Alta",
+			GraphicsSettings.detect_quality("Intel(R) UHD Graphics") == Q.LOW
+			and GraphicsSettings.detect_quality("Intel(R) Iris(R) Xe Graphics") == Q.MEDIUM
+			and GraphicsSettings.detect_quality("AMD Radeon RX 6700 XT") == Q.HIGH)
+	# Auto-ajuste de escala
+	var sc := ScaleController.new()
+	sc.tick(40.0)
+	var after_1 := sc.scale
+	sc.tick(40.0)
+	_check("auto-ajuste: baja la escala tras 2 s por debajo de 60 FPS", after_1 == 1.0 and is_equal_approx(sc.scale, 0.95),
+			"%.2f -> %.2f" % [after_1, sc.scale])
+	for i in 60:
+		sc.tick(30.0)
+	_check("auto-ajuste: no baja del mínimo", is_equal_approx(sc.scale, sc.min_scale), "%.2f" % sc.scale)
+	var low_scale := sc.scale
+	for i in ScaleController.UP_AFTER:
+		sc.tick(60.0)
+	_check("auto-ajuste: sube despacio tras 20 s estables", sc.scale > low_scale and sc.scale - low_scale < 0.05,
+			"%.3f -> %.3f" % [low_scale, sc.scale])
+	var steady := ScaleController.new()
+	for i in 100:
+		steady.tick(60.0)
+	_check("auto-ajuste: con 60 FPS no cambia nada", steady.scale == 1.0)
+
+
+func _test_quality_effects() -> void:
+	var Q := GraphicsSettings.Quality
+	var root := Node3D.new()
+	var we := WorldEnvironment.new()
+	we.environment = Environment.new()
+	var sun := DirectionalLight3D.new()
+	root.add_child(we)
+	root.add_child(sun)
+	add_child(root)
+	GraphicsSettings.set_quality(Q.LOW)
+	GraphicsSettings.apply_to_scene(root)
+	var low_ok := not sun.shadow_enabled and not we.environment.glow_enabled
+	GraphicsSettings.set_quality(Q.HIGH)
+	GraphicsSettings.apply_to_scene(root)
+	var high_ok := sun.shadow_enabled and we.environment.glow_enabled
+	_check("calidades: aplican sombras y post-procesado a la escena", low_ok and high_ok,
+			"baja=%s alta=%s" % [low_ok, high_ok])
+	root.queue_free()
+	var vp := SubViewport.new()
+	add_child(vp)
+	GraphicsSettings.set_quality(Q.LOW)
+	GraphicsSettings.apply_to_viewport(vp)
+	var low_vp := vp.msaa_3d == Viewport.MSAA_DISABLED and vp.screen_space_aa == Viewport.SCREEN_SPACE_AA_DISABLED
+	GraphicsSettings.set_quality(Q.HIGH)
+	GraphicsSettings.apply_to_viewport(vp)
+	var high_vp := vp.msaa_3d == Viewport.MSAA_2X and vp.screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA
+	_check("calidades: antialiasing por viewport (Baja sin AA, Alta MSAA+FXAA)", low_vp and high_vp)
+	vp.queue_free()
+
+	# Sombra blob solo en calidad baja
+	var pair := await _setup_pair()
+	var k := pair[1]
+	GraphicsSettings.set_quality(Q.LOW)
+	await _ticks(10)
+	var blob_low: bool = k._blob.visible
+	GraphicsSettings.set_quality(Q.HIGH)
+	await _ticks(10)
+	var blob_high: bool = k._blob.visible
+	_check("sombra blob: visible en Baja y oculta en Alta (sombras reales)", blob_low and not blob_high,
+			"baja=%s alta=%s" % [blob_low, blob_high])
+	GraphicsSettings.set_quality(Q.HIGH)
+
+
 func _test_race_options() -> void:
 	var m := LobbyModel.new()
 	m.add(Seat.DeviceKind.JOYPAD, 0)
@@ -349,7 +521,8 @@ func _test_race_options() -> void:
 func _test_menus_smoke() -> void:
 	var seats: Array[Seat] = [Seat.new()]
 	seats[0].set_joypad(0)
-	for path in ["res://scenes/menu/main_menu.tscn", "res://scenes/menu/lobby.tscn", "res://scenes/menu/select.tscn"]:
+	for path in ["res://scenes/menu/main_menu.tscn", "res://scenes/menu/lobby.tscn", "res://scenes/menu/select.tscn",
+			"res://scenes/menu/options.tscn"]:
 		if path.ends_with("select.tscn"):
 			GameSession.setups = [{"slot": 0, "seats": seats, "team": -1}]
 		var scene: Node = load(path).instantiate()
@@ -780,6 +953,17 @@ func _run() -> void:
 	_test_balance()
 	_test_select_model()
 	await _test_stat_effects()
+
+	# 6e. Actualizaciones
+	_test_updater()
+
+	# 6d. Sonido
+	_test_sfx()
+	await _test_audio_manager()
+
+	# 6c. Calidades gráficas
+	_test_graphics_settings()
+	await _test_quality_effects()
 
 	# 6b. Equipos, bots, vueltas, puntos y menús
 	_test_race_options()
