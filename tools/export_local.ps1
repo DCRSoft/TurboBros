@@ -15,7 +15,11 @@ $version = (Get-Content VERSION -Raw).Trim()
 $backup = Get-Content export_presets.cfg -Raw
 try {
 	$tpl = $Template.Replace("\", "/")
-	($backup -replace 'custom_template/release=""', "custom_template/release=`"$tpl`"") | Set-Content export_presets.cfg -NoNewline -Encoding utf8
+	$tplDebug = $tpl.Replace("windows_release_", "windows_debug_")
+	$patched = $backup -replace 'custom_template/release=""', "custom_template/release=`"$tpl`"" `
+		-replace 'custom_template/debug=""', "custom_template/debug=`"$tplDebug`""
+	# UTF-8 SIN BOM (con BOM Godot no reconoce el preset)
+	[IO.File]::WriteAllText((Join-Path $root "export_presets.cfg"), $patched, (New-Object Text.UTF8Encoding $false))
 	New-Item -ItemType Directory -Force build | Out-Null
 	& $Godot --headless --path . --import | Out-Null
 	& $Godot --headless --path . --export-release "Windows Desktop" "build/TurboBros.exe"

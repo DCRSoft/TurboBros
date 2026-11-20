@@ -9,6 +9,10 @@ func _ready() -> void:
 	var f := FileAccess.open("res://VERSION", FileAccess.READ)
 	if f:
 		current = f.get_as_text().strip_edges()
+	# Verificación del build exportado:  TurboBros.exe --headless -- --version-info
+	if OS.get_cmdline_user_args().has("--version-info"):
+		print("TurboBros ", current)
+		get_tree().quit()
 
 
 ## Devuelve >0 si a > b, <0 si a < b, 0 si iguales. Acepta "v1.2.0" o "1.2.0".
