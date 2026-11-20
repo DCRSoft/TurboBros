@@ -121,6 +121,27 @@ func _run() -> void:
 	_check("bots sin atascos graves", respawns <= 2, "reapariciones=%d" % respawns)
 	_check("el humano pasó a piloto automático al terminar", manager.racers[0].kart.controller is BotController)
 
+	# Modo prueba de rendimiento: 4 vistas + 4 bots conducidos por la IA
+	race.queue_free()
+	await _ticks(3)
+	GameSession.setup_benchmark()
+	var bench: Node3D = load("res://scenes/race/race.tscn").instantiate()
+	add_child(bench)
+	await _ticks(2)
+	_check("prueba de rendimiento: 4 vistas, 8 karts, todos con IA",
+			bench.karts.size() == 8 and bench.human_karts.size() == 4 and bench.split.cells.size() == 4
+			and bench.human_karts[0].controller is BotController,
+			"karts=%d vistas=%d" % [bench.karts.size(), bench.split.cells.size()])
+	await _ticks(60)
+	var moving := 0
+	for k in bench.karts:
+		if k.sphere.linear_velocity.length() > 5.0:
+			moving += 1
+	_check("prueba de rendimiento: los 8 karts corren", moving >= 7, "en movimiento=%d/8" % moving)
+	GameSession.reset()
+	bench.queue_free()
+	await _ticks(10)  # salir de la carrera no debe dar errores (sonido, HUD, cámaras)
+
 	Engine.time_scale = 1.0
 	print("RESULTADO: %s" % ("TODO OK" if failures == 0 else "%d FALLOS" % failures))
 	get_tree().quit(failures)

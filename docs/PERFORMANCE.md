@@ -11,7 +11,7 @@ Objetivo: 60 FPS estables en calidad baja en Worker mobile.
 ## Cómo medir (hito 7)
 1. `git clone https://github.com/DCRSoft/TurboBros.git` y abrir con Godot 4.7.2, o usar el `.exe` exportado de un Release.
 2. Opciones → elegir la calidad (el primer arranque la elige según la GPU) y dejar el auto-ajuste activado.
-3. Jugar con F4 (4 vistas) con bots y mirar el HUD (arriba a la izquierda): FPS, resolución de cada vista y escala aplicada.
+3. En el lobby pulsar **F9** (prueba de rendimiento: 4 vistas + 4 bots, todos conducidos por la IA, sin necesidad de 4 mandos) y mirar el HUD (arriba a la izquierda): FPS, resolución de cada vista y escala aplicada. Dejar correr una carrera completa.
 4. Anotar aquí el FPS sostenido y la escala final que dejó el auto-ajuste.
 
 | Hito | Fecha | Equipo | Calidad | Vistas | FPS medio / mínimo | Escala final | Notas |

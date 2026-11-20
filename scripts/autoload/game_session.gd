@@ -14,6 +14,7 @@ var setups: Array[Dictionary] = []
 var bot_teams: Array[int] = []   ## un elemento por bot (-1 = sin equipo)
 var laps := 3
 var friendly_fire := false
+var benchmark := false   ## prueba de rendimiento: 4 vistas + 4 bots, todos conducidos por la IA
 
 
 func reset() -> void:
@@ -21,3 +22,15 @@ func reset() -> void:
 	bot_teams.clear()
 	laps = 3
 	friendly_fire = false
+	benchmark = false
+
+
+## 4 karts "humanos" (con vista, sin dispositivo, pilotados por la IA) + 4 bots, 3 vueltas.
+func setup_benchmark() -> void:
+	reset()
+	benchmark = true
+	for i in 4:
+		var seats: Array[Seat] = [Seat.new()]
+		setups.append({"slot": i, "seats": seats, "team": -1})
+	for _b in 4:
+		bot_teams.append(-1)

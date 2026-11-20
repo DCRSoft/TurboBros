@@ -43,6 +43,8 @@ func _ready() -> void:
 		for _b in demo_bots:
 			bot_teams.append(-1)
 
+	if GameSession.benchmark:
+		autopilot_humans = true
 	var humans := setups.size()
 	var bots := mini(bot_teams.size(), GameSession.MAX_KARTS - humans)
 	var groups: Array = []

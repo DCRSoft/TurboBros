@@ -104,6 +104,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_BRACKETLEFT: model.set_laps(model.laps - 1)
 		KEY_BRACKETRIGHT: model.set_laps(model.laps + 1)
 		KEY_F: model.toggle_friendly_fire()
+		KEY_F9:  # prueba de rendimiento (4 vistas + 4 bots, todo con IA)
+			GameSession.setup_benchmark()
+			get_tree().change_scene_to_file("res://scenes/race/race.tscn")
 		KEY_ESCAPE: get_tree().change_scene_to_file(MAIN_MENU)
 
 
@@ -144,4 +147,4 @@ func _refresh() -> void:
 	_options.text = "Bots: %d (máx. %d)    Vueltas: %d    Fuego amigo: %s    Jugadores: %d" % [
 			model.bots, model.max_bots(), model.laps, "sí" if model.friendly_fire else "no", model.players.size()]
 	_help.text = "Unirse: A (mando) / Espacio (J1) / K (J2)   ·   Izq/Der: kart   ·   Arriba/Abajo: equipo   ·   Y / E / ; : conductor↔artillero   ·   B / Q / J: salir\n" \
-		+ "LB/RB o -/+ : bots   ·   LT/RT o [ ] : vueltas   ·   Select o F: fuego amigo   ·   Start o Enter: iniciar   ·   Esc: menú"
+		+ "LB/RB o -/+ : bots   ·   LT/RT o [ ] : vueltas   ·   Select o F: fuego amigo   ·   Start o Enter: iniciar   ·   F9: prueba de rendimiento   ·   Esc: menú"

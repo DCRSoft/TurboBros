@@ -24,12 +24,13 @@ func _process(_delta: float) -> void:
 	var humans := maxi(_engines.size(), 1)
 	for i in range(_engines.size() - 1, -1, -1):
 		var e := _engines[i]
-		var kart: Kart = e["kart"]
 		var player: AudioStreamPlayer = e["player"]
-		if not is_instance_valid(kart):
-			player.queue_free()
+		if not is_instance_valid(e["kart"]):  # el kart ya se liberó (se salió de la carrera)
+			if is_instance_valid(player):
+				player.queue_free()
 			_engines.remove_at(i)
 			continue
+		var kart: Kart = e["kart"]
 		var ratio := clampf(kart.get_speed_kmh() / (kart.stats.max_speed * 3.6), 0.0, 1.6)
 		player.pitch_scale = 0.55 + ratio * 1.5 + (0.25 if kart.is_boosting() else 0.0)
 		var vol := engine_volume * (0.35 + 0.65 * minf(ratio, 1.0)) / sqrt(float(humans))
@@ -84,7 +85,8 @@ func attach_race(manager: RaceManager) -> void:
 
 func stop_engines() -> void:
 	for e in _engines:
-		(e["player"] as AudioStreamPlayer).queue_free()
+		if is_instance_valid(e["player"]):
+			(e["player"] as AudioStreamPlayer).queue_free()
 	_engines.clear()
 
 
