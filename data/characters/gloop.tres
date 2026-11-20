@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_eroq4"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_0wjad"]
+
+[sub_resource type="Resource" id="Resource_xx0n0"]
+script = ExtResource("1_eroq4")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_oubfh"]
+script = ExtResource("1_eroq4")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_s6kg3"]
+script = ExtResource("1_eroq4")
+speed = -2.0
+handling = 4.0
+weight = -2.0
+drift = 2.0
+offroad = 9.0
+hit_power = -4.0
+item_speed = 6.0
+
+[resource]
+script = ExtResource("2_0wjad")
+id = &"gloop"
+display_name = "Gloop"
+description = "Slime verde y blandengue: se pega a cualquier terreno y rebota con gracia."
+gender = 2
+color = Color(0.5, 0.9, 0.3, 1)
+look = {
+"eye": Color(0.05, 0.1, 0.05, 1),
+"skin": Color(0.55, 0.9, 0.3, 1),
+"species": "slime",
+"weapon": "blaster"
+}
+stats = SubResource("Resource_s6kg3")
+likes = Array[StringName]([&"azulon"])
+like_bonus = SubResource("Resource_oubfh")
+dislikes = Array[StringName]([&"cohete"])
+dislike_penalty = SubResource("Resource_xx0n0")

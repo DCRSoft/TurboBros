@@ -84,11 +84,11 @@ Godot_console.exe --headless --path . res://scenes/debug/stability_probe.tscn
 
 ## Vehículos, personajes y equilibrio (hito 6)
 - Tras el lobby hay una **pantalla de selección**: cada jugador elige su **personaje** (Izq/Der) y el jugador solo o el conductor elige el **vehículo** (Arriba/Abajo). A/confirmar = listo; cuando todos lo están, arranca la carrera. Muestra las estadísticas finales del kart en vivo.
-- **6 vehículos** (`data/vehicles/`: Chatarrero, Azulón, Relámpago, Escorpión, Tanque, Cohete) y **14 personajes** (`data/characters/`: Brutus, Crimson, Azur, Titán, Sakura, Áurea, Violeta, Chispa, DranCr, Agnelopolus, EnD, ClarStar, PoleWar, FerChaos). Añadir un `.tres` = opción nueva.
+- **6 vehículos** (`data/vehicles/`: Chatarrero, Azulón, Relámpago, Escorpión, Tanque, Cohete) y **16 personajes** (`data/characters/`: DranCr, ClarStar, FerChaos, EnD, Agnelopolus y PoleWar de la portada, más Grunk, Zorp, Xyla, Ojón, Tornillo, Huesos, Gloop, Brasa, Fungo y Kraki). Añadir un `.tres` = opción nueva.
 - **Estadísticas** (% sobre la base): velocidad, aceleración, manejo, peso, derrape, fuera de pista, fuerza de golpe y rapidez con ítems. Kart final = vehículo + personaje + **sinergia** (a cada personaje le gustan o le sientan mal ciertos vehículos). *Fuera de pista* se activará cuando haya superficies; el circuito actual tiene muros.
 - **Kart de 2 jugadores**: el conductor aporta manejo y estadísticas de conducción; el artillero aporta fuerza de golpe, rapidez con ítems y la mitad de su peso. Llevar dos personas cuesta -2 % de velocidad y -3 % de aceleración.
 - **Rapidez con ítems** acorta la ruleta y la espera entre usos; **peso** reduce lo que te empuja un golpe. El color del 3.er mini turbo sigue saliendo del personaje del conductor.
-- **Equilibrio**: `tools/balance.gd` calcula TODAS las combinaciones (84 en solitario y 1092 con artillero), marca las que se salen de ±15 % del promedio y escribe `docs/BALANCE.md`:
+- **Equilibrio**: `tools/balance.gd` calcula TODAS las combinaciones (96 en solitario y 1440 con artillero), marca las que se salen de ±15 % del promedio y escribe `docs/BALANCE.md`:
 ```powershell
 Godot_console.exe --headless --path . --script tools/balance.gd -- --write
 ```
@@ -119,3 +119,12 @@ Godot_console.exe --headless --path . --script tools/balance.gd -- --write
 - **En línea** (menú principal → En línea): multijugador de alto nivel de Godot sobre **ENet**; **1 o 2 jugadores por PC con una sola vista**, hasta 8 karts con bots. Entradas separadas de la lógica: en red solo viaja el estado de cada kart (~20 Hz), los ataques se replican como eventos y cada PC resuelve los impactos de sus propios karts. Detalles, limitaciones y cómo abrir el puerto UDP 24680 en `docs/ONLINE.md`.
 - Prueba de red real (anfitrión + cliente en dos procesos, carrera completa, resultados idénticos): `powershell -File tools/net_test.ps1`.
 - Sonido más suave: motor grave sin diente de sierra, volúmenes por defecto 50 % (efectos) y 20 % (motor), ajustables en Opciones.
+
+## Arte: personajes y vehículos (hito 7)
+Todo el arte 3D se **genera por código** (low poly, color por vértice, sin texturas ni assets de terceros): `scripts/art/` (`MeshBuilder`, `CharacterModel`, `VehicleModel`, `KartVisual`). Cada figura es **una sola malla** y cada kart son 3 mallas en total (vehículo + conductor + artillero), compartidas entre karts: barato para el i3.
+- **16 personajes con mucha variedad** (11 especies: humanos, ogro, gris alienígena, insectoide, cíclope, robot, esqueleto, slime, dragona, hongo y kraken). Los de la portada tienen su aspecto: **DranCr** (marrón, casco de púas) con **ClarStar** (coletas rosas); **FerChaos** (casco dorado y trenzas) con **EnD** (armadura azul, visor y rifle de rayos); **Agnelopolus** (rojo, casco integral y barba) con **PoleWar** (pelo morado y ametralladora giratoria). En un kart de 2, la pareja original recibe un pequeño bono.
+- **6 vehículos** con modelo propio: Chatarrero (púas y escapes), Azulón, Relámpago (aleta), Escorpión (cola y pinzas), Tanque (camión de ruedas enormes) y Cohete.
+- La selección de personaje y la sala en línea muestran una **vista previa 3D giratoria** del kart con su conductor y artillero.
+- Imágenes: `docs/art/` (`personajes.png`, `vehiculos.png`, `parejas.png`, `seleccion.png`, `carrera.png`, `carrera_duo.png`). Se regeneran con `res://scenes/debug/art_sheet.tscn`, `select_shot.tscn` y `race_shot.tscn` (necesitan render, no `--headless`).
+- Añadir un personaje: editar `tools/generate_roster.gd` (estadísticas + `look`) y ejecutar `Godot_console.exe --headless --path . --script tools/generate_roster.gd`; luego `tools/balance.gd`.
+- Licencia: los diseños de personajes y las imágenes son © DCRSoft, todos los derechos reservados (`LICENSE-ASSETS.md`); el código generador es MIT.

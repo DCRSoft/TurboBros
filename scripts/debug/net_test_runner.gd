@@ -53,7 +53,7 @@ func _run() -> void:
 		NetSession.test_autopilot = true
 		var joined := await _wait(func() -> bool: return NetSession.peer_count() >= 2, 40.0)
 		_check("anfitrión: el cliente se une a la sala", joined, "equipos=%d" % NetSession.peer_count())
-		NetSession.set_choice({"vehicle": "relampago", "driver": "drancr", "gunner": "sakura", "seats": 1, "ready": true})
+		NetSession.set_choice({"vehicle": "relampago", "driver": "drancr", "gunner": "clarstar", "seats": 1, "ready": true})
 		NetSession.set_host_config(1, 2, false)
 		var ready := await _wait(func() -> bool: return NetSession.can_start(), 40.0)
 		_check("anfitrión: todos listos (se puede dar la salida)", ready)
@@ -67,7 +67,7 @@ func _run() -> void:
 		NetSession.test_autopilot = true
 		var in_room := await _wait(func() -> bool: return NetSession.roster["peers"].size() >= 2, 40.0)
 		_check("cliente: recibe la sala", in_room, "equipos=%d" % NetSession.roster["peers"].size())
-		NetSession.set_choice({"vehicle": "tanque", "driver": "end", "gunner": "violeta", "seats": 1, "ready": true})
+		NetSession.set_choice({"vehicle": "tanque", "driver": "end", "gunner": "polewar", "seats": 1, "ready": true})
 
 	var started := await _wait(func() -> bool: return not NetSession.spec.is_empty(), 60.0)
 	_check("la carrera arranca en ambos equipos", started)

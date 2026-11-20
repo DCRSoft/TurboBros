@@ -116,6 +116,7 @@ var _carry: MeshInstance3D
 var _carry_mat: StandardMaterial3D
 var _idle_controls := KartControls.new()
 var _spark_mat: StandardMaterial3D
+var _look: Node3D                    ## modelo 3D (vehículo + personajes)
 var _blob: MeshInstance3D            ## sombra tipo blob (calidad baja: sin sombras reales)
 static var _blob_texture: GradientTexture2D
 
@@ -297,6 +298,16 @@ func get_drift_color(level: int) -> Color:
 func start_boost(source: StringName, duration: float, mult := BOOST_SPEED_MULT) -> void:
 	fx.add(EffectLibrary.get_effect(&"boost"), duration, mult)
 	boost_started.emit(source, duration)
+
+
+## Aspecto 3D: vehículo + conductor (+ artillero) generados por código; sustituye al modelo básico.
+func apply_look(vehicle: VehicleData, driver: CharacterData, gunner: CharacterData, body_color: Color) -> void:
+	for n in [chassis, cabin, $Model/Body/WheelFL, $Model/Body/WheelFR, $Model/Body/WheelRL, $Model/Body/WheelRR]:
+		(n as Node3D).visible = false
+	if _look != null:
+		_look.queue_free()
+	_look = KartVisual.build(vehicle, driver, gunner, body_color)
+	body.add_child(_look)
 
 
 ## Color del personaje en la cabina del kart.

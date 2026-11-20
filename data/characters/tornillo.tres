@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_2f0b4"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_xiqpb"]
+
+[sub_resource type="Resource" id="Resource_h2iyl"]
+script = ExtResource("1_2f0b4")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_x4sf2"]
+script = ExtResource("1_2f0b4")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_l0o0x"]
+script = ExtResource("1_2f0b4")
+speed = 3.0
+acceleration = 3.0
+weight = 2.0
+drift = -2.0
+offroad = -2.0
+
+[resource]
+script = ExtResource("2_xiqpb")
+id = &"tornillo"
+display_name = "Tornillo"
+description = "Robot de chatarra con visor verde: fiable y equilibrado, sin sorpresas."
+gender = 2
+color = Color(0.85, 0.5, 0.2, 1)
+look = {
+"outfit": Color(0.85, 0.5, 0.2, 1),
+"outfit2": Color(0.35, 0.36, 0.4, 1),
+"skin": Color(0.4, 1, 0.6, 1),
+"species": "robot",
+"weapon": "minigun"
+}
+stats = SubResource("Resource_l0o0x")
+likes = Array[StringName]([&"azulon"])
+like_bonus = SubResource("Resource_x4sf2")
+dislikes = Array[StringName]([&"escorpion"])
+dislike_penalty = SubResource("Resource_h2iyl")

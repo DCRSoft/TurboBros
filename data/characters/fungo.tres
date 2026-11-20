@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_l6l5v"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_rsrhp"]
+
+[sub_resource type="Resource" id="Resource_38ks7"]
+script = ExtResource("1_l6l5v")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_sfl16"]
+script = ExtResource("1_l6l5v")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_vew4w"]
+script = ExtResource("1_l6l5v")
+speed = -3.0
+acceleration = -1.0
+handling = 1.0
+weight = 2.0
+drift = 3.0
+offroad = 8.0
+hit_power = -4.0
+item_speed = 14.0
+
+[resource]
+script = ExtResource("2_rsrhp")
+id = &"fungo"
+display_name = "Fungo"
+description = "Hongo con sombrero de lunares: reparte los ítems con calma y se siente en casa en el barro."
+gender = 2
+color = Color(0.8, 0.25, 0.55, 1)
+look = {
+"eye": Color(0.1, 0.1, 0.1, 1),
+"outfit": Color(0.8, 0.2, 0.5, 1),
+"outfit2": Color(0.6, 0.35, 0.2, 1),
+"scale": 0.95,
+"skin": Color(0.95, 0.88, 0.75, 1),
+"species": "mushroom",
+"weapon": "staff"
+}
+stats = SubResource("Resource_vew4w")
+likes = Array[StringName]([&"tanque"])
+like_bonus = SubResource("Resource_sfl16")
+dislikes = Array[StringName]([&"cohete"])
+dislike_penalty = SubResource("Resource_38ks7")

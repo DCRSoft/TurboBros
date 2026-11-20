@@ -28,6 +28,21 @@ func _init(p_setups: Array[Dictionary], p_vehicles: Array[VehicleData] = [], p_c
 			e.seat = seat
 			e.char_idx = entries.size() % characters.size()
 			entries.append(e)
+	# En un kart de 2, el artillero empieza siendo la pareja de la portada del conductor (si la tiene)
+	for i in setups.size():
+		var drv: Entry = null
+		var gun: Entry = null
+		for e in entries:
+			if e.kart_index == i:
+				if e.seat.role == Seat.Role.GUNNER:
+					gun = e
+				else:
+					drv = e
+		if drv != null and gun != null:
+			var partner := characters[drv.char_idx].partner
+			for ci in characters.size():
+				if partner != &"" and characters[ci].id == partner:
+					gun.char_idx = ci
 
 
 func find_entry(kind: Seat.DeviceKind, device_id: int) -> Entry:

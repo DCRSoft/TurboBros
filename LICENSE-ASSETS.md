@@ -31,3 +31,8 @@ El código puede reutilizarse libremente, pero **no** incluye los derechos sobre
 ## Contacto
 
 dcrsoft.com.mx
+
+## Modelos 3D
+Los modelos 3D de personajes y vehículos se generan por código a partir de los datos de `data/characters/` y `data/vehicles/`.
+El **diseño** resultante (aspecto, nombres, estadísticas) está cubierto por esta licencia de derechos reservados;
+el **código generador** (`scripts/art/`, `tools/`) es MIT.

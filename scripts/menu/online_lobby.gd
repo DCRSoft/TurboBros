@@ -7,6 +7,8 @@ const MAIN_MENU := "res://scenes/menu/main_menu.tscn"
 var _input := MenuInput.new()
 var _roster_label: Label
 var _me_label: Label
+var _preview: CharacterPreview
+var _preview_key := ""
 var _help: Label
 var _veh_idx := 0
 var _driver_idx := 0
@@ -40,11 +42,16 @@ func _ready() -> void:
 	_roster_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_roster_label.add_theme_font_size_override("font_size", 20)
 	root.add_child(_roster_label)
+	var me_box := VBoxContainer.new()
+	me_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root.add_child(me_box)
+	_preview = CharacterPreview.new()
+	_preview.custom_minimum_size = Vector2(0, 220)
+	me_box.add_child(_preview)
 	_me_label = Label.new()
-	_me_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_me_label.add_theme_font_size_override("font_size", 17)
+	_me_label.add_theme_font_size_override("font_size", 16)
 	_me_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	root.add_child(_me_label)
+	me_box.add_child(_me_label)
 	_help = Label.new()
 	_help.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_help.offset_top = -84
@@ -208,6 +215,11 @@ func _refresh() -> void:
 			"sí" if NetSession.roster["friendly_fire"] else "no"])
 	_roster_label.text = "\n".join(L)
 
+	var pv_gunner: CharacterData = _characters[_gunner_idx] if _seats == 2 else null
+	var key := "%s:%s:%s" % [_vehicles[_veh_idx].id, _characters[_driver_idx].id, pv_gunner.id if pv_gunner else ""]
+	if key != _preview_key:
+		_preview_key = key
+		_preview.show_kart(_vehicles[_veh_idx], _characters[_driver_idx], pv_gunner, _vehicles[_veh_idx].body_color)
 	var M := PackedStringArray()
 	M.append("TU KART")
 	M.append("Vehículo: ◀▲ %s ▼" % _vehicles[_veh_idx].display_name)

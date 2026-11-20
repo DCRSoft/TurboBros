@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_j5c4j"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_fuc0j"]
+
+[sub_resource type="Resource" id="Resource_dbgpw"]
+script = ExtResource("1_j5c4j")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_od0qc"]
+script = ExtResource("1_j5c4j")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_hpx0s"]
+script = ExtResource("1_j5c4j")
+speed = -2.0
+acceleration = -4.0
+handling = -5.0
+weight = 11.0
+drift = -2.0
+offroad = 6.0
+hit_power = 24.0
+item_speed = -12.0
+
+[resource]
+script = ExtResource("2_fuc0j")
+id = &"grunk"
+display_name = "Grunk"
+description = "Ogro verde de colmillos y garrote. Casi nadie lo mueve y casi nadie lo gira."
+color = Color(0.35, 0.65, 0.25, 1)
+look = {
+"extras": ["tusks"],
+"eye": Color(0.9, 0.2, 0.1, 1),
+"outfit": Color(0.45, 0.3, 0.18, 1),
+"outfit2": Color(0.3, 0.2, 0.1, 1),
+"scale": 1.15,
+"skin": Color(0.4, 0.62, 0.3, 1),
+"species": "ogre",
+"weapon": "club"
+}
+stats = SubResource("Resource_hpx0s")
+likes = Array[StringName]([&"chatarrero"])
+like_bonus = SubResource("Resource_od0qc")
+dislikes = Array[StringName]([&"relampago"])
+dislike_penalty = SubResource("Resource_dbgpw")

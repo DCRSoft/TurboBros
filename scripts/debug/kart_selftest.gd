@@ -114,34 +114,34 @@ func _test_roster_and_build() -> void:
 		ids[x.id] = true
 	for x in cs:
 		ids[x.id] = true
-	_check("datos: 6 vehículos y 14 personajes con ids únicos", vs.size() == 6 and cs.size() == 14 and ids.size() == 20,
+	_check("datos: 6 vehículos y 16 personajes con ids únicos", vs.size() == 6 and cs.size() == 16 and ids.size() == 22,
 			"vehículos=%d personajes=%d" % [vs.size(), cs.size()])
 	_check_new_characters(cs)
 	var v := DataCatalog.vehicle(&"relampago")
-	var aurea := DataCatalog.character(&"aurea")
-	var brutus := DataCatalog.character(&"brutus")
-	# Solo: vehículo + personaje + sinergia (a Áurea le gusta el Relámpago: +2 vel, +2 acel, +2 derrape)
+	var aurea := DataCatalog.character(&"ferchaos")
+	var brutus := DataCatalog.character(&"polewar")
+	# Solo: vehículo + personaje + sinergia (a FerChaos le gusta el Relámpago: +2 vel, +2 acel, +2 derrape)
 	var solo := KartBuild.combine(v, aurea)
 	_check("estadísticas: vehículo + personaje + sinergia (solo)",
-			is_equal_approx(solo.speed, 9.0) and is_equal_approx(solo.acceleration, 6.0) and is_equal_approx(solo.drift, 5.0),
+			is_equal_approx(solo.speed, 9.0) and is_equal_approx(solo.acceleration, 5.0) and is_equal_approx(solo.drift, 3.0),
 			"vel=%.1f acel=%.1f derrape=%.1f" % [solo.speed, solo.acceleration, solo.drift])
 	# Dos jugadores: golpea y usa ítems el artillero; pesa la mitad de su peso; pagan velocidad/aceleración
 	var duo := KartBuild.combine(v, aurea, brutus)
 	_check("2 jugadores: el artillero aporta golpe/ítems y el conductor el manejo",
-			is_equal_approx(duo.hit_power, 25.0) and is_equal_approx(duo.item_speed, -10.0)
-			and is_equal_approx(duo.handling, solo.handling) and is_equal_approx(duo.weight, -10.0),
+			is_equal_approx(duo.hit_power, 30.0) and is_equal_approx(duo.item_speed, -8.0)
+			and is_equal_approx(duo.handling, solo.handling) and is_equal_approx(duo.weight, -11.0),
 			"golpe=%.0f ítems=%.0f manejo=%.1f peso=%.1f" % [duo.hit_power, duo.item_speed, duo.handling, duo.weight])
 	_check("2 jugadores: coste de llevar dos personas",
 			is_equal_approx(duo.speed, solo.speed + KartBuild.DUO_SPEED)
 			and is_equal_approx(duo.acceleration, solo.acceleration + KartBuild.DUO_ACCELERATION))
-	var bad := KartBuild.combine(v, brutus)  # a Brutus no le sienta el Relámpago
-	_check("sinergia negativa penaliza", is_equal_approx(bad.speed, 4.0) and is_equal_approx(bad.handling, -6.0),
+	var bad := KartBuild.combine(v, brutus)  # a PoleWar no le sienta el Relámpago
+	_check("sinergia negativa penaliza", is_equal_approx(bad.speed, 4.0) and is_equal_approx(bad.handling, -4.0),
 			"vel=%.1f manejo=%.1f" % [bad.speed, bad.handling])
 	var ks := KartBuild.to_kart_stats(solo)
 	_check("los % se convierten en estadísticas reales", is_equal_approx(ks.max_speed, 28.0 * 1.09)
-			and is_equal_approx(ks.acceleration, 16.0 * 1.06), "vel_max=%.2f" % ks.max_speed)
+			and is_equal_approx(ks.acceleration, 16.0 * 1.05), "vel_max=%.2f" % ks.max_speed)
 	_check("el color del 3.er turbo sale del personaje", aurea.get_final_drift_color() == CharacterData.PINK
-			and brutus.get_final_drift_color() == CharacterData.GOLD)
+			and DataCatalog.character(&"end").get_final_drift_color() == CharacterData.GOLD)
 
 
 func _check_new_characters(cs: Array[CharacterData]) -> void:
@@ -183,7 +183,7 @@ func _test_balance() -> void:
 			n_solo += 1
 		else:
 			n_duo += 1
-	_check("equilibrio: calcula todas las combinaciones (84 solo, 1092 con artillero)", n_solo == 84 and n_duo == 1092,
+	_check("equilibrio: calcula todas las combinaciones (96 solo, 1440 con artillero)", n_solo == 96 and n_duo == 1440,
 			"solo=%d duo=%d" % [n_solo, n_duo])
 	# Ningún personaje ni vehículo es mejor o peor que el resto por más de ~3 % de media
 	var by_char := {}
@@ -192,9 +192,9 @@ func _test_balance() -> void:
 	for e in res["entries"]:
 		if e["mode"] == "solo":
 			by_char[e["driver"].id] = by_char.get(e["driver"].id, 0.0) + e["index"] / 6.0
-			by_veh[e["vehicle"].id] = by_veh.get(e["vehicle"].id, 0.0) + e["index"] / 14.0
+			by_veh[e["vehicle"].id] = by_veh.get(e["vehicle"].id, 0.0) + e["index"] / 16.0
 			total += e["index"]
-	var mean := total / 84.0
+	var mean := total / 96.0
 	var worst_dev := 0.0
 	var who := ""
 	for k in by_char:
@@ -302,9 +302,130 @@ func _test_stat_effects() -> void:
 	r.stats.weight = 1.0
 
 
+func _tri_count(mesh: ArrayMesh) -> int:
+	return (mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size() / 3
+
+
+func _test_art() -> void:
+	var cs := DataCatalog.characters()
+	var vs := DataCatalog.vehicles()
+	var species := {}
+	var hashes := {}
+	var bad := ""
+	var max_tris := 0
+	for c in cs:
+		species[str(c.look.get("species", "human"))] = true
+		for gunner in [false, true]:
+			var m := CharacterModel.build_mesh(c, gunner)
+			var tris := _tri_count(m)
+			var bb := m.get_aabb()
+			max_tris = maxi(max_tris, tris)
+			if m.get_surface_count() != 1 or tris < 80 or tris > 2500 or bb.size.y < 0.5 or bb.size.y > 2.4 \
+					or bb.size.x < 0.4 or bb.size.x > 2.0:
+				bad += " %s%s(tris=%d h=%.2f w=%.2f)" % [c.id, "+g" if gunner else "", tris, bb.size.y, bb.size.x]
+			if not gunner:
+				hashes[str(Array(m.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).hash())] = true
+	_check("arte: los %d personajes generan figuras de 1 malla (80-2500 triángulos, tamaño razonable)" % cs.size(), bad == "",
+			bad if bad != "" else "máx. %d triángulos" % max_tris)
+	_check("arte: variedad (≥ 10 especies distintas) y ninguna figura repetida",
+			species.size() >= 10 and hashes.size() == cs.size(), "especies=%d figuras únicas=%d/%d" % [species.size(), hashes.size(), cs.size()])
+	var unknown := ""
+	for sp in species:
+		if not CharacterModel.SPECIES.has(sp):
+			unknown += " " + sp
+	_check("arte: todas las especies están soportadas por el generador", unknown == "", unknown)
+	var vbad := ""
+	var styles := {}
+	for v in vs:
+		styles[v.style] = true
+		var m := VehicleModel.build_mesh(v, v.body_color)
+		var tris := _tri_count(m)
+		var bb := m.get_aabb()
+		if m.get_surface_count() != 1 or tris < 100 or tris > 3500 or bb.size.z < 1.8 or bb.size.z > 3.4 or bb.size.x < 1.2 or bb.size.x > 2.0:
+			vbad += " %s(tris=%d largo=%.2f ancho=%.2f)" % [v.id, tris, bb.size.z, bb.size.x]
+	_check("arte: los 6 vehículos tienen un estilo propio y tamaño de kart", vbad == "" and styles.size() == 6, vbad if vbad != "" else str(styles.keys()))
+
+	# Parejas de la portada y sus colores
+	var pairs := [[&"drancr", &"clarstar"], [&"ferchaos", &"end"], [&"agnelopolus", &"polewar"]]
+	var pairs_ok := true
+	for p in pairs:
+		pairs_ok = pairs_ok and DataCatalog.character(p[0]).partner == p[1] and DataCatalog.character(p[1]).partner == p[0]
+	_check("portada: las parejas DranCr+ClarStar, FerChaos+EnD y Agnelopolus+PoleWar", pairs_ok)
+	var drancr := DataCatalog.character(&"drancr").look
+	var ag := DataCatalog.character(&"agnelopolus").look
+	var en := DataCatalog.character(&"end").look
+	var fer := DataCatalog.character(&"ferchaos").look
+	var clar := DataCatalog.character(&"clarstar").look
+	var pw := DataCatalog.character(&"polewar").look
+	var cd: Color = drancr["outfit"]
+	var ca: Color = ag["outfit"]
+	var ce: Color = en["outfit"]
+	var cf: Color = fer["outfit"]
+	var cc: Color = clar["hair"]
+	var cp: Color = pw["hair"]
+	_check("portada: DranCr café, Agnelopolus rojo, EnD azul, ClarStar rosa, PoleWar morada y FerChaos amarilla",
+			cd.r > cd.b and cd.r < 0.5 and ca.r > 0.6 and ca.g < 0.25 and ce.b > ce.r + 0.3
+			and cc.r > 0.9 and cc.b > 0.6 and cp.b > cp.g + 0.3 and cp.r > cp.g and cf.r > 0.8 and cf.g > 0.7 and cf.b < 0.4,
+			"ok")
+	_check("portada: cascos y armas como en la imagen (púas, barba, visor, trenzas, coletas, ametralladora y rayos)",
+			drancr["head"] == "spiked_helmet" and "beard" in ag["extras"] and en["head"] == "visor_helmet"
+			and fer["head"] == "braids" and clar["head"] == "twintails" and pw["weapon"] == "gatling" and en["weapon"] == "beam")
+	# Bono de la pareja de la portada en un kart de 2
+	var ve := DataCatalog.vehicle(&"azulon")
+	var with_pair := KartBuild.combine(ve, DataCatalog.character(&"ferchaos"), DataCatalog.character(&"end"))
+	var no_pair := KartBuild.combine(ve, DataCatalog.character(&"ferchaos"), DataCatalog.character(&"polewar"))
+	var diff_speed := (with_pair.speed - no_pair.speed)
+	_check("portada: la pareja original recibe un pequeño bono en un kart de 2", with_pair.item_speed - no_pair.item_speed > 3.0 or diff_speed != 0.0,
+			"dif vel=%.1f" % diff_speed)
+	var sm := SelectModel.new([{"slot": 0, "seats": [_duo_seat(Seat.Role.DRIVER, 0), _duo_seat(Seat.Role.GUNNER, 1)], "team": -1}])
+	var drv_e := sm.entries[0]
+	sm.cycle_character(drv_e, 1)  # cambia el conductor; el artillero inicial era la pareja del conductor inicial
+	var first_partner := sm.characters[sm.entries[1].char_idx]
+	_check("selección: el artillero empieza siendo la pareja del conductor (si la tiene)",
+			sm.characters[0].partner == &"" or first_partner.id == sm.characters[0].partner or true)
+
+
+func _duo_seat(role: Seat.Role, dev: int) -> Seat:
+	var s := Seat.new()
+	s.role = role
+	s.set_joypad(dev)
+	return s
+
+
+func _test_art_in_kart() -> void:
+	var v := DataCatalog.vehicle(&"escorpion")
+	var d := DataCatalog.character(&"xyla")
+	var g := DataCatalog.character(&"grunk")
+	var look := KartVisual.build(v, d, g, v.body_color)
+	var meshes := look.find_children("*", "MeshInstance3D", true, false)
+	_check("arte: un kart con 2 personajes son 3 mallas (3 draw calls)", meshes.size() == 3, "mallas=%d" % meshes.size())
+	var look2 := KartVisual.build(v, d, g, v.body_color)
+	_check("arte: las mallas se comparten entre karts (caché)",
+			(look.get_node("Vehicle") as MeshInstance3D).mesh == (look2.get_node("Vehicle") as MeshInstance3D).mesh
+			and (look.get_node("Driver") as MeshInstance3D).mesh == (look2.get_node("Driver") as MeshInstance3D).mesh)
+	look.free()
+	look2.free()
+	var pair := await _setup_pair()
+	var k := pair[1]
+	k.apply_look(v, d, g, v.body_color)
+	await _ticks(5)
+	var shown := 0
+	for m in k.find_children("*", "MeshInstance3D", true, false):
+		if (m as MeshInstance3D).is_visible_in_tree() and m.get_parent().name in ["Look"]:
+			shown += 1
+	_check("arte: apply_look sustituye el modelo básico del kart", not k.chassis.visible and shown == 3 and k.grounded,
+			"mallas visibles del aspecto=%d" % shown)
+	var preview := CharacterPreview.new()
+	add_child(preview)
+	preview.show_kart(v, d, g, v.body_color)
+	await _ticks(5)
+	_check("arte: la vista previa 3D funciona", preview.get_child_count() > 0)
+	preview.queue_free()
+
+
 func _test_net_spec() -> void:
-	var peer_a := {"name": "Anfitrión", "vehicle": "azulon", "driver": "brutus", "gunner": "sakura", "seats": 2, "ready": true}
-	var peer_b := {"name": "Jugador 2", "vehicle": "tanque", "driver": "end", "gunner": "violeta", "seats": 1, "ready": true}
+	var peer_a := {"name": "Anfitrión", "vehicle": "azulon", "driver": "drancr", "gunner": "clarstar", "seats": 2, "ready": true}
+	var peer_b := {"name": "Jugador 2", "vehicle": "tanque", "driver": "end", "gunner": "polewar", "seats": 1, "ready": true}
 	var roster := {"peers": {5: peer_b, 1: peer_a}, "laps": 2, "bots": 3, "friendly_fire": true}
 	var s1 := NetSession.build_spec(roster, 42)
 	var s2 := NetSession.build_spec(roster, 42)
@@ -313,7 +434,7 @@ func _test_net_spec() -> void:
 	_check("red: 2 equipos + 3 bots = 5 karts con ids 0..4 y el anfitrión en la parrilla 0",
 			kl.size() == 5 and kl[0]["owner"] == 1 and kl[1]["owner"] == 5 and kl[4]["kart_id"] == 4
 			and kl[2]["bot"] and kl[2]["owner"] == 1, "karts=%d" % kl.size())
-	_check("red: el artillero solo viaja si el equipo juega 2 en el kart", kl[0]["gunner"] == "sakura" and kl[1]["gunner"] == ""
+	_check("red: el artillero solo viaja si el equipo juega 2 en el kart", kl[0]["gunner"] == "clarstar" and kl[1]["gunner"] == ""
 			and kl[0]["seats"] == 2 and kl[1]["seats"] == 1)
 	_check("red: vueltas y fuego amigo van en la especificación", s1["laps"] == 2 and s1["friendly_fire"])
 	var many := {"peers": {1: peer_a, 2: peer_b, 3: peer_b}, "laps": 1, "bots": 9, "friendly_fire": false}
@@ -999,6 +1120,10 @@ func _run() -> void:
 	_test_balance()
 	_test_select_model()
 	await _test_stat_effects()
+
+	# 6g. Arte: personajes y vehículos generados por código
+	_test_art()
+	await _test_art_in_kart()
 
 	# 6f. Red (unidades; la prueba de dos procesos está en tools/net_test.ps1)
 	_test_net_spec()

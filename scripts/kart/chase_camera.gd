@@ -3,9 +3,9 @@ extends Node3D
 ## Cámara de persecución. Una por viewport (pantalla dividida en el hito 2).
 
 @export var target: Kart
-@export var distance := 6.5
-@export var height := 2.8
-@export var look_height := 1.0
+@export var distance := 5.3   ## más cerca que antes para que se vean bien los personajes
+@export var height := 2.5
+@export var look_height := 1.1
 @export var position_lag := 8.0
 @export var heading_lag := 3.5
 @export var base_fov := 70.0

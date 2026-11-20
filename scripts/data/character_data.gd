@@ -14,6 +14,11 @@ const GOLD := Color(1.0, 0.82, 0.2)
 @export var color := Color.WHITE   ## color del personaje (acento del kart y tarjeta de selección)
 @export var use_custom_drift_color := false
 @export var custom_drift_color := Color.WHITE
+@export_group("Aspecto 3D")
+## {species, skin, outfit, outfit2, hair, eye, head, extras[], weapon, scale}: ver CharacterModel.
+@export var look: Dictionary = {}
+## Pareja de la portada: en un kart de 2 jugadores conductor + pareja dan un pequeño bono (KartBuild.PAIR_BONUS).
+@export var partner: StringName = &""
 @export_group("Estadísticas")
 @export var stats: StatDelta
 @export_group("Sinergias con vehículos")

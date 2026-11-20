@@ -10,6 +10,8 @@ var model: SelectModel
 var _input := MenuInput.new()
 var _cards: Array[Label] = []
 var _bars: Array[ColorRect] = []
+var _previews: Array[CharacterPreview] = []
+var _prev_keys: Array[String] = []
 var _info: Label
 var _ready_timer := 0.0
 
@@ -51,8 +53,13 @@ func _ready() -> void:
 		bar.custom_minimum_size = Vector2(0, 8)
 		box.add_child(bar)
 		_bars.append(bar)
+		var preview := CharacterPreview.new()
+		preview.custom_minimum_size = Vector2(0, 150 if model.entries.size() <= 4 else 105)
+		box.add_child(preview)
+		_previews.append(preview)
+		_prev_keys.append("")
 		var lbl := Label.new()
-		lbl.add_theme_font_size_override("font_size", 15)
+		lbl.add_theme_font_size_override("font_size", 15 if model.entries.size() <= 4 else 13)
 		box.add_child(lbl)
 		_cards.append(lbl)
 		grid.add_child(panel)
@@ -122,6 +129,12 @@ func _refresh() -> void:
 		var v := model.vehicle_of(e.kart_index)
 		var team: int = model.setups[e.kart_index].get("team", -1)
 		_bars[idx].color = GameSession.TEAM_COLORS[team] if team >= 0 else ch.color
+		var drv := model.driver_character(e.kart_index)
+		var gun := model.gunner_character(e.kart_index)
+		var key := "%s:%s:%s" % [v.id, drv.id if drv else "", gun.id if gun else ""]
+		if key != _prev_keys[idx]:   # el modelo solo se reconstruye cuando cambia la elección
+			_prev_keys[idx] = key
+			_previews[idx].show_kart(v, drv, gun, GameSession.TEAM_COLORS[team] if team >= 0 else v.body_color)
 		var role := ""
 		match e.seat.role:
 			Seat.Role.DRIVER: role = " · Conductor"
@@ -129,15 +142,12 @@ func _refresh() -> void:
 		var L := PackedStringArray()
 		L.append("Kart %d%s    %s" % [e.kart_index + 1, role, "✔ LISTO" if e.ready else ""])
 		L.append(_device_name(e.seat))
-		L.append("")
 		L.append("◀ %s ▶" % ch.display_name)
-		L.append(ch.description)
 		L.append("")
 		if e.seat.role == Seat.Role.GUNNER:
 			L.append("Vehículo: %s (lo elige el conductor)" % v.display_name)
 		else:
 			L.append("▲ Vehículo: %s ▼" % v.display_name)
-		L.append(v.description)
 		L.append("")
 		var d := model.kart_delta(e.kart_index)
 		for i in StatDelta.KEYS.size():

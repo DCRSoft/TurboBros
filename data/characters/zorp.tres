@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_tv387"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_erfjl"]
+
+[sub_resource type="Resource" id="Resource_cmvv8"]
+script = ExtResource("1_tv387")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_7wo8t"]
+script = ExtResource("1_tv387")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_epsqv"]
+script = ExtResource("1_tv387")
+speed = -1.0
+acceleration = 1.0
+handling = 2.0
+weight = -5.0
+drift = 1.0
+hit_power = -8.0
+item_speed = 24.0
+
+[resource]
+script = ExtResource("2_erfjl")
+id = &"zorp"
+display_name = "Zorp"
+description = "Alienígena gris de ojos enormes: manos rapidísimas con los ítems, poco peso y poco aguante."
+gender = 1
+color = Color(0.75, 0.8, 0.85, 1)
+look = {
+"outfit": Color(0.5, 0.6, 0.75, 1),
+"outfit2": Color(0.3, 0.35, 0.5, 1),
+"scale": 0.9,
+"skin": Color(0.72, 0.78, 0.8, 1),
+"species": "grey",
+"weapon": "blaster"
+}
+stats = SubResource("Resource_epsqv")
+likes = Array[StringName]([&"cohete"])
+like_bonus = SubResource("Resource_7wo8t")
+dislikes = Array[StringName]([&"tanque"])
+dislike_penalty = SubResource("Resource_cmvv8")

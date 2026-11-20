@@ -3,19 +3,19 @@
 [ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_tq2do"]
 [ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_hcohn"]
 
-[sub_resource type="Resource" id="Resource_2gtn0"]
+[sub_resource type="Resource" id="Resource_s3bsv"]
 script = ExtResource("1_tq2do")
 speed = -2.0
 acceleration = -2.0
 handling = -2.0
 
-[sub_resource type="Resource" id="Resource_hq5h6"]
+[sub_resource type="Resource" id="Resource_cdtq1"]
 script = ExtResource("1_tq2do")
 speed = 2.0
 acceleration = 2.0
 drift = 2.0
 
-[sub_resource type="Resource" id="Resource_s3bsv"]
+[sub_resource type="Resource" id="Resource_4o2te"]
 script = ExtResource("1_tq2do")
 speed = -3.0
 acceleration = 9.0
@@ -27,10 +27,22 @@ offroad = -2.0
 script = ExtResource("2_hcohn")
 id = &"agnelopolus"
 display_name = "Agnelopolus"
-description = "Especialista en aceleración: sale disparado de cada curva aunque su punta sea modesta."
+description = "El rojo de casco integral y barba: especialista en aceleración, sale disparado de cada curva."
 color = Color(0.9, 0.1, 0.1, 1)
-stats = SubResource("Resource_s3bsv")
-likes = Array[StringName]([&"relampago"])
-like_bonus = SubResource("Resource_hq5h6")
+look = {
+"extras": ["beard", "pads"],
+"eye": Color(0.1, 0.1, 0.1, 1),
+"hair": Color(0.35, 0.2, 0.1, 1),
+"head": "full_helmet",
+"outfit": Color(0.75, 0.12, 0.1, 1),
+"outfit2": Color(0.4, 0.05, 0.05, 1),
+"skin": Color(0.85, 0.65, 0.5, 1),
+"species": "human",
+"weapon": "cannon"
+}
+partner = &"polewar"
+stats = SubResource("Resource_4o2te")
+likes = Array[StringName]([&"azulon"])
+like_bonus = SubResource("Resource_cdtq1")
 dislikes = Array[StringName]([&"chatarrero"])
-dislike_penalty = SubResource("Resource_2gtn0")
+dislike_penalty = SubResource("Resource_s3bsv")

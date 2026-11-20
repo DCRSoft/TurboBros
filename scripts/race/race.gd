@@ -187,9 +187,7 @@ func _spawn(grid_slot: int, color: Color, vehicle: VehicleData, driver: Characte
 	k.stats = KartBuild.to_kart_stats(KartBuild.combine(vehicle, driver, gunner))
 	k.character = driver
 	add_child(k)
-	k.set_body_color(color)
-	if driver != null:
-		k.set_accent_color(driver.color)
+	k.apply_look(vehicle, driver, gunner, color)
 	karts.append(k)
 	return k
 

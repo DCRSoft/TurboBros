@@ -3,19 +3,19 @@
 [ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_7uohd"]
 [ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_iiemo"]
 
-[sub_resource type="Resource" id="Resource_2gtn0"]
+[sub_resource type="Resource" id="Resource_rlfi0"]
 script = ExtResource("1_7uohd")
 speed = -2.0
 acceleration = -2.0
 handling = -2.0
 
-[sub_resource type="Resource" id="Resource_rlfi0"]
+[sub_resource type="Resource" id="Resource_6g8fx"]
 script = ExtResource("1_7uohd")
 speed = 2.0
 acceleration = 2.0
-handling = 2.0
+drift = 2.0
 
-[sub_resource type="Resource" id="Resource_6g8fx"]
+[sub_resource type="Resource" id="Resource_qgktg"]
 script = ExtResource("1_7uohd")
 speed = -3.0
 acceleration = -3.0
@@ -30,10 +30,22 @@ item_speed = -6.0
 script = ExtResource("2_iiemo")
 id = &"end"
 display_name = "EnD"
-description = "El tanque del grupo: pesado, resistente y de golpe durísimo; lento de reflejos."
+description = "El de la armadura azul y el rifle de rayos, el que va con FerChaos: el tanque del grupo, pesado, resistente y de golpe durísimo."
 color = Color(0.15, 0.35, 0.95, 1)
-stats = SubResource("Resource_6g8fx")
-likes = Array[StringName]([&"chatarrero"])
-like_bonus = SubResource("Resource_rlfi0")
+look = {
+"extras": ["pads"],
+"eye": Color(0.1, 0.1, 0.15, 1),
+"hair": Color(0.15, 0.1, 0.1, 1),
+"head": "visor_helmet",
+"outfit": Color(0.15, 0.3, 0.7, 1),
+"outfit2": Color(0.1, 0.15, 0.4, 1),
+"skin": Color(0.8, 0.62, 0.5, 1),
+"species": "human",
+"weapon": "beam"
+}
+partner = &"ferchaos"
+stats = SubResource("Resource_qgktg")
+likes = Array[StringName]([&"tanque"])
+like_bonus = SubResource("Resource_6g8fx")
 dislikes = Array[StringName]([&"cohete"])
-dislike_penalty = SubResource("Resource_2gtn0")
+dislike_penalty = SubResource("Resource_rlfi0")

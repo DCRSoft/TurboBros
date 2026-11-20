@@ -3,19 +3,19 @@
 [ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_7lybl"]
 [ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_kt2yd"]
 
-[sub_resource type="Resource" id="Resource_2gtn0"]
+[sub_resource type="Resource" id="Resource_ycxa8"]
 script = ExtResource("1_7lybl")
 speed = -2.0
 acceleration = -2.0
 handling = -2.0
 
-[sub_resource type="Resource" id="Resource_hq5h6"]
+[sub_resource type="Resource" id="Resource_2eaim"]
 script = ExtResource("1_7lybl")
 speed = 2.0
 acceleration = 2.0
 drift = 2.0
 
-[sub_resource type="Resource" id="Resource_ycxa8"]
+[sub_resource type="Resource" id="Resource_mq2y0"]
 script = ExtResource("1_7lybl")
 acceleration = -2.0
 handling = -2.0
@@ -29,11 +29,23 @@ item_speed = -8.0
 script = ExtResource("2_kt2yd")
 id = &"polewar"
 display_name = "PoleWar"
-description = "Artillera pesada: su golpe lanza a cualquiera a la cuneta; poco amiga de los ítems."
+description = "La de pelo morado y ametralladora giratoria, la que va con Agnelopolus: su golpe lanza a cualquiera a la cuneta."
 gender = 1
 color = Color(0.55, 0.2, 0.8, 1)
-stats = SubResource("Resource_ycxa8")
+look = {
+"extras": [],
+"eye": Color(0.5, 0.2, 0.7, 1),
+"hair": Color(0.55, 0.3, 0.85, 1),
+"head": "ponytail",
+"outfit": Color(0.5, 0.25, 0.75, 1),
+"outfit2": Color(0.3, 0.12, 0.5, 1),
+"skin": Color(0.95, 0.8, 0.75, 1),
+"species": "human",
+"weapon": "gatling"
+}
+partner = &"agnelopolus"
+stats = SubResource("Resource_mq2y0")
 likes = Array[StringName]([&"tanque"])
-like_bonus = SubResource("Resource_hq5h6")
+like_bonus = SubResource("Resource_2eaim")
 dislikes = Array[StringName]([&"relampago"])
-dislike_penalty = SubResource("Resource_2gtn0")
+dislike_penalty = SubResource("Resource_ycxa8")

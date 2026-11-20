@@ -29,7 +29,7 @@ func _run() -> void:
 	GameSession.reset()
 	GameSession.laps = LAPS
 	var seats: Array[Seat] = [Seat.new()]
-	seats[0].character_id = &"aurea"
+	seats[0].character_id = &"ferchaos"
 	GameSession.setups = [{"slot": 0, "seats": seats, "team": -1, "vehicle": &"relampago"}]
 	GameSession.bot_teams = [-1, -1, -1]
 	var race: Node3D = load("res://scenes/race/race.tscn").instantiate()
@@ -51,9 +51,9 @@ func _run() -> void:
 			"dot=%.3f" % fwd.dot(circuit.tangents[0]))
 	_check("carrera: 1 humano + 3 bots", race.karts.size() == 4 and race.human_karts.size() == 1 and race.bot_karts.size() == 3)
 	var hk: Kart = race.human_karts[0]
-	var expected := KartBuild.to_kart_stats(KartBuild.combine(DataCatalog.vehicle(&"relampago"), DataCatalog.character(&"aurea")))
+	var expected := KartBuild.to_kart_stats(KartBuild.combine(DataCatalog.vehicle(&"relampago"), DataCatalog.character(&"ferchaos")))
 	_check("carrera: el kart usa las estadísticas del vehículo y personaje elegidos",
-			is_equal_approx(hk.stats.max_speed, expected.max_speed) and hk.character.id == &"aurea"
+			is_equal_approx(hk.stats.max_speed, expected.max_speed) and hk.character.id == &"ferchaos"
 			and hk.get_drift_color(3) == CharacterData.PINK,
 			"vel_max=%.2f (esperada %.2f)" % [hk.stats.max_speed, expected.max_speed])
 	var distinct := {}

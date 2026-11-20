@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_sg0qi"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_s32cu"]
+
+[sub_resource type="Resource" id="Resource_od4dn"]
+script = ExtResource("1_sg0qi")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_bnffe"]
+script = ExtResource("1_sg0qi")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_mcxxy"]
+script = ExtResource("1_sg0qi")
+speed = -2.0
+handling = 6.0
+weight = -4.0
+drift = 6.0
+offroad = -2.0
+item_speed = 2.0
+
+[resource]
+script = ExtResource("2_s32cu")
+id = &"xyla"
+display_name = "Xyla"
+description = "Insectoide de cuatro ojos y antenas: ágil de reflejos, derrapa como nadie."
+gender = 1
+color = Color(0.1, 0.7, 0.6, 1)
+look = {
+"extras": ["antennae", "mandibles", "extra_arms"],
+"eye": Color(0.1, 0.1, 0.1, 1),
+"outfit": Color(0.15, 0.4, 0.45, 1),
+"outfit2": Color(0.9, 0.8, 0.2, 1),
+"skin": Color(0.1, 0.6, 0.55, 1),
+"species": "insect",
+"weapon": "blaster"
+}
+stats = SubResource("Resource_mcxxy")
+likes = Array[StringName]([&"escorpion"])
+like_bonus = SubResource("Resource_bnffe")
+dislikes = Array[StringName]([&"tanque"])
+dislike_penalty = SubResource("Resource_od4dn")

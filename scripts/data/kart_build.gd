@@ -9,6 +9,8 @@ extends RefCounted
 const DUO_SPEED := -2.0
 const DUO_ACCELERATION := -3.0
 const GUNNER_WEIGHT_SHARE := 0.5
+## Bono de la pareja de la portada (DranCr+ClarStar, FerChaos+EnD, Agnelopolus+PoleWar) en un kart de 2.
+const PAIR_BONUS := [1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 3.0, 3.0]  # vel, acel, manejo, peso, derrape, fuera, golpe, ítems
 
 ## Peso de cada estadística en el índice de potencia (suman 1.0). Lo usa el script de equilibrado.
 const INDEX_WEIGHTS := {
@@ -46,6 +48,9 @@ static func combine(vehicle: VehicleData, driver: CharacterData, gunner: Charact
 			d.weight += gunner.stats.weight * GUNNER_WEIGHT_SHARE
 		d.speed += DUO_SPEED
 		d.acceleration += DUO_ACCELERATION
+		if driver != null and driver.partner != &"" and driver.partner == gunner.id:
+			d.add(StatDelta.make(PAIR_BONUS[0], PAIR_BONUS[1], PAIR_BONUS[2], PAIR_BONUS[3], PAIR_BONUS[4],
+					PAIR_BONUS[5], PAIR_BONUS[6], PAIR_BONUS[7]))
 	return d
 
 

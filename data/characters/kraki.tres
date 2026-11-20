@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stat_delta.gd" id="1_totkb"]
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="2_sn44r"]
+
+[sub_resource type="Resource" id="Resource_q1e0g"]
+script = ExtResource("1_totkb")
+speed = -2.0
+acceleration = -2.0
+handling = -2.0
+
+[sub_resource type="Resource" id="Resource_fn6ml"]
+script = ExtResource("1_totkb")
+speed = 2.0
+acceleration = 2.0
+drift = 2.0
+
+[sub_resource type="Resource" id="Resource_gaqyt"]
+script = ExtResource("1_totkb")
+speed = -3.0
+acceleration = -1.0
+handling = 6.0
+weight = -1.0
+drift = 7.0
+offroad = -1.0
+item_speed = 8.0
+
+[resource]
+script = ExtResource("2_sn44r")
+id = &"kraki"
+display_name = "Kraki"
+description = "Kraken azul de tentáculos: se escurre por las curvas y los derrapes largos."
+gender = 1
+color = Color(0.2, 0.45, 0.75, 1)
+look = {
+"extras": ["tentacles"],
+"eye": Color(0.05, 0.05, 0.1, 1),
+"outfit": Color(0.15, 0.3, 0.6, 1),
+"outfit2": Color(0.9, 0.9, 0.6, 1),
+"skin": Color(0.25, 0.5, 0.85, 1),
+"species": "kraken",
+"weapon": "blaster"
+}
+stats = SubResource("Resource_gaqyt")
+likes = Array[StringName]([&"escorpion"])
+like_bonus = SubResource("Resource_fn6ml")
+dislikes = Array[StringName]([&"tanque"])
+dislike_penalty = SubResource("Resource_q1e0g")
