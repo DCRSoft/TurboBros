@@ -12,6 +12,7 @@ var _center: Label
 var _warn: Label
 var _ink: Control
 var _item_hud: ItemHud
+var _minimap: Minimap
 
 
 func _ready() -> void:
@@ -61,6 +62,8 @@ func _ready() -> void:
 	add_child(_warn)
 	_item_hud = ItemHud.new()
 	add_child(_item_hud)
+	_minimap = Minimap.new()
+	add_child(_minimap)
 
 
 func _process(_delta: float) -> void:
@@ -85,6 +88,8 @@ func _process(_delta: float) -> void:
 		_center.text = race.center_text(kart)
 	if kart.team >= 0:
 		lines.append("Equipo %s" % GameSession.TEAM_NAMES[kart.team])
+	_minimap.kart = kart
+	_minimap.manager = race
 	_item_hud.kart = kart   # el ítem y los efectos se dibujan en ItemHud (iconos), ya no como texto
 	_ink.visible = kart.fx.mods.ink
 	var warns := PackedStringArray()

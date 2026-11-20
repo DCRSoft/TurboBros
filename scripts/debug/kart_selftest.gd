@@ -844,7 +844,7 @@ func _test_menus_smoke() -> void:
 	var seats: Array[Seat] = [Seat.new()]
 	seats[0].set_joypad(0)
 	for path in ["res://scenes/menu/main_menu.tscn", "res://scenes/menu/lobby.tscn", "res://scenes/menu/select.tscn",
-			"res://scenes/menu/options.tscn"]:
+			"res://scenes/menu/track_select.tscn", "res://scenes/menu/options.tscn"]:
 		if path.ends_with("select.tscn"):
 			GameSession.setups = [{"slot": 0, "seats": seats, "team": -1}]
 		var scene: Node = load(path).instantiate()
@@ -1419,6 +1419,7 @@ func _run() -> void:
 
 	# 6. Lobby, asientos y golpes
 	_test_lobby_model()
+	_test_session_memory()
 	await _test_hits()
 	_test_effects_unit()
 	_test_catalog_and_roller()
@@ -1460,6 +1461,11 @@ func _run() -> void:
 	# 6b. Equipos, bots, vueltas, puntos y menús
 	_test_race_options()
 	await _test_menus_smoke()
+
+	await _test_track_screen()
+
+	# 6c2. Arranque de la cuenta atrás
+	await _test_launch()
 
 	# 6d. Pistas y paisaje
 	await _test_tracks_and_scenery()
@@ -1601,3 +1607,172 @@ func _test_tracks_and_scenery() -> void:
 			"laps": 2, "bots": 1, "friendly_fire": false, "track": String(tracks[2].id)}
 	var spec := NetSession.build_spec(roster, 7)
 	_check("red: la especificación lleva la pista elegida por el anfitrión", spec.get("track", "") == String(tracks[2].id), str(spec.get("track", "")))
+
+
+# --- Arranque (cuenta atrás) ---------------------------------------------------------------------
+
+## Reinicia la cuenta atrás, acelera cuando faltan "remaining" s (null = sin acelerar), deja pasar la salida y mide
+## cuánto avanza el kart durante 1,2 s con el acelerador a fondo. Devuelve {"factor", "stalled", "boost", "dist"}.
+func _launch_run(m: RaceManager, k: Kart, sc: ScriptedController, remaining: Variant) -> Dictionary:
+	sc.set_input(0.0, 0.0)
+	k.respawn(m.circuit.grid_transform(0))   # de vuelta a la parrilla, quieto y sin efectos
+	for _i in 20:
+		await get_tree().physics_frame
+	m.start()
+	var r := m.get_racer(k)
+	if remaining != null:
+		m._countdown_left = float(remaining)
+		sc.set_input(0.0, 1.0)
+		await get_tree().physics_frame
+		await get_tree().physics_frame
+	var factor := r.launch_factor
+	m._countdown_left = 0.02
+	sc.set_input(0.0, 1.0)
+	while m.state != RaceManager.State.RACING:
+		await get_tree().physics_frame
+	await get_tree().physics_frame
+	var stalled := k.fx.has(&"stalled")
+	var boost := k.fx.has(&"launch_boost")
+	var p0 := k.sphere.global_position
+	for _i in 72:
+		await get_tree().physics_frame
+	return {"factor": factor, "stalled": stalled, "boost": boost, "dist": k.sphere.global_position.distance_to(p0)}
+
+
+func _test_track_screen() -> void:
+	GameSession.reset()
+	GameSession.laps = 3
+	var scene: Control = load("res://scenes/menu/track_select.tscn").instantiate()
+	add_child(scene)
+	await _ticks(3)
+	var n: int = scene.tracks.size()
+	var start_idx: int = scene.index
+	scene.move(1, 0)
+	var right: int = scene.index
+	scene.move(0, 1)
+	var down: int = scene.index
+	scene.index = n - 1
+	scene.move(1, 0)
+	var wrapped: bool = scene.index != n - 1
+	scene.set_laps(99)
+	var top: int = scene.laps
+	scene.set_laps(-3)
+	_check("pistas: la pantalla muestra las 10 con su arte y se mueve por la cuadrícula",
+			n >= 10 and ArtLibrary.track(scene.tracks[0].id) != null and right == start_idx + 1 and down == right + 5 and wrapped,
+			"%d pistas, %d -> %d -> %d" % [n, start_idx, right, down])
+	_check("pistas: vueltas entre 1 y 9", top == LobbyModel.MAX_LAPS and scene.laps == 1)
+	_check("pistas: el largo se calcula (1,4-2,0 km)", scene.tracks[0].length_m() > 1400.0 and scene.tracks[0].length_m() < 2000.0,
+			"%.0f m" % scene.tracks[0].length_m())
+	scene.queue_free()
+	await _ticks(2)
+	var art_ok := true
+	for c in DataCatalog.characters():
+		art_ok = art_ok and ArtLibrary.character(c.id) != null
+	for v in DataCatalog.vehicles():
+		art_ok = art_ok and ArtLibrary.vehicle(v.id) != null
+	_check("arte: los 16 personajes y 6 vehículos tienen su tarjeta", art_ok)
+	GameSession.reset()
+
+
+func _test_launch() -> void:
+	var F := RaceManager.launch_factor_for
+	_check("arranque: antes de los 2 s ahoga el motor, a los 2 s es el máximo y baja hasta 0",
+			F.call(2.6) < 0.0 and F.call(3.0) < 0.0 and is_equal_approx(F.call(2.0), 1.0)
+			and is_equal_approx(F.call(1.0), 0.5) and is_equal_approx(F.call(0.0), 0.0),
+			"%.2f / %.2f / %.2f" % [F.call(2.6), F.call(1.0), F.call(0.0)])
+	GameSession.reset()
+	GameSession.laps = 1
+	var seats: Array[Seat] = [Seat.new()]
+	GameSession.setups = [{"slot": 0, "seats": seats, "team": -1}]
+	GameSession.bot_teams = []
+	var race: Node3D = load("res://scenes/race/race.tscn").instantiate()
+	race.attach_player_input = false
+	add_child(race)
+	await get_tree().physics_frame
+	var m: RaceManager = race.manager
+	var k: Kart = race.human_karts[0]
+	var sc := ScriptedController.new()
+	k.add_child(sc)
+	k.controller = sc
+	var none := await _launch_run(m, k, sc, null)
+	var early := await _launch_run(m, k, sc, 2.6)
+	var perfect := await _launch_run(m, k, sc, 1.98)
+	var late := await _launch_run(m, k, sc, 0.9)
+	_check("arranque: acelerar antes de tiempo ahoga el motor (no avanza durante 2 s)",
+			early["factor"] < 0.0 and early["stalled"] and not early["boost"] and early["dist"] < 1.0,
+			"avanzó %.1f m" % early["dist"])
+	_check("arranque: acelerar a los 2 s exactos da el turbo", perfect["boost"] and not perfect["stalled"] and perfect["factor"] > 0.95,
+			"factor %.2f" % perfect["factor"])
+	_check("arranque: el turbo se nota (más lejos que una salida normal)", perfect["dist"] > none["dist"] * 1.15,
+			"turbo %.1f m / normal %.1f m" % [perfect["dist"], none["dist"]])
+	_check("arranque: más tarde el turbo es menor (proporcional decreciente)",
+			late["boost"] and late["factor"] < perfect["factor"] and late["dist"] < perfect["dist"] and late["dist"] > none["dist"] * 0.99,
+			"tarde %.1f m (factor %.2f) / perfecto %.1f m" % [late["dist"], late["factor"], perfect["dist"]])
+	_check("arranque: sin acelerar en la cuenta atrás no hay turbo ni ahogo", not none["boost"] and not none["stalled"] and none["dist"] > 2.0,
+			"%.1f m" % none["dist"])
+	var mm: Minimap = race.split.cells[0].hud._minimap
+	await get_tree().physics_frame
+	await get_tree().process_frame
+	_check("minimapa: cada vista dibuja el trazado de la pista y los karts", mm != null and mm.manager == m
+			and mm._built_for == m.circuit and mm._line.size() > 50 and m.racers.size() >= 1,
+			"puntos=%d" % (mm._line.size() if mm else -1))
+	race.queue_free()
+	await get_tree().process_frame
+
+
+# --- Memoria de la sesión -------------------------------------------------------------------------------
+
+func _test_session_memory() -> void:
+	var saved_mem: Dictionary = GameSession.memory
+	GameSession.memory = {}
+	var K := Seat.DeviceKind
+	var m := LobbyModel.new()
+	m.add(K.JOYPAD, 0)
+	m.add(K.KEYBOARD, 0)
+	m.add(K.JOYPAD, 1)
+	m.cycle_team(0, 1)
+	m.set_bots(3)
+	m.set_laps(5)
+	m.cycle_track(1)
+	m.save_memory()
+	var devs := [{"kind": K.JOYPAD, "id": 0}, {"kind": K.KEYBOARD, "id": 0}, {"kind": K.JOYPAD, "id": 1}]
+	var n := LobbyModel.new()
+	n.restore_memory(devs)
+	_check("memoria: el lobby recupera los jugadores activos con su kart", n.players.size() == 3
+			and n.find(K.JOYPAD, 1) != null and n.find(K.JOYPAD, 1).kart_slot == m.find(K.JOYPAD, 1).kart_slot)
+	_check("memoria: el lobby recupera equipo, bots, vueltas y pista", n.teams[0] == m.teams[0] and n.bots == 3 and not n.bots_auto
+			and n.laps == m.laps and n.track_id == m.track_id, "bots=%d vueltas=%d pista=%s" % [n.bots, n.laps, n.track_id])
+	var p := LobbyModel.new()
+	p.restore_memory([{"kind": K.JOYPAD, "id": 0}, {"kind": K.KEYBOARD, "id": 0}])
+	_check("memoria: un mando que ya no está conectado se omite", p.players.size() == 2 and p.find(K.JOYPAD, 1) == null)
+	var empty := LobbyModel.new()
+	GameSession.memory = {}
+	empty.restore_memory(devs)
+	_check("memoria: sin nada guardado el lobby empieza vacío", empty.players.is_empty())
+
+	# Selección: personaje por dispositivo y vehículo por kart
+	var seats_a: Array[Seat] = [Seat.new()]
+	seats_a[0].set_joypad(0)
+	var seats_b: Array[Seat] = [Seat.new(), Seat.new()]
+	seats_b[0].set_keyboard(0)
+	seats_b[0].role = Seat.Role.DRIVER
+	seats_b[1].set_joypad(1)
+	seats_b[1].role = Seat.Role.GUNNER
+	var setups: Array[Dictionary] = [{"slot": 0, "seats": seats_a, "team": -1}, {"slot": 1, "seats": seats_b, "team": -1}]
+	var sm := SelectModel.new(setups)
+	sm.cycle_character(sm.entries[0], 3)
+	sm.cycle_character(sm.entries[1], 5)
+	sm.cycle_vehicle(sm.entries[1], 2)
+	var want_a := sm.characters[sm.entries[0].char_idx].id
+	var want_b := sm.characters[sm.entries[1].char_idx].id
+	var want_v := sm.vehicle_of(1).id
+	sm.apply()
+	var fresh := SelectModel.new(setups)
+	fresh.restore_choices()
+	_check("memoria: la selección recuerda personaje de cada jugador y vehículo de cada kart",
+			fresh.characters[fresh.entries[0].char_idx].id == want_a and fresh.characters[fresh.entries[1].char_idx].id == want_b
+			and fresh.vehicle_of(1).id == want_v, "%s / %s / %s" % [want_a, want_b, want_v])
+	var other := SelectModel.new(setups)
+	_check("memoria: sin restaurar, la selección empieza por defecto", other.entries[0].char_idx != fresh.entries[0].char_idx
+			or other.entries[1].char_idx != fresh.entries[1].char_idx)
+	GameSession.memory = saved_mem

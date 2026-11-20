@@ -8,6 +8,8 @@ var _input := MenuInput.new()
 var _roster_label: Label
 var _me_label: Label
 var _preview: CharacterPreview
+var _track_art: TextureRect
+var _portrait: TextureRect
 var _preview_key := ""
 var _help: Label
 var _veh_idx := 0
@@ -26,6 +28,18 @@ func _ready() -> void:
 		get_tree().change_scene_to_file(MAIN_MENU)
 		return
 	_gunner_idx = 1 % _characters.size()
+	var mem: Dictionary = GameSession.memory.get("online", {})   # la elección de la partida anterior
+	for i in _characters.size():
+		if String(_characters[i].id) == mem.get("driver", ""):
+			_driver_idx = i
+		if String(_characters[i].id) == mem.get("gunner", ""):
+			_gunner_idx = i
+	for i in _vehicles.size():
+		if String(_vehicles[i].id) == mem.get("vehicle", ""):
+			_veh_idx = i
+	_seats = clampi(int(mem.get("seats", 1)), 1, 2)
+	if _seats == 2 and InputManager.get_devices().size() < 2:
+		_seats = 1
 	var bg := ColorRect.new()
 	bg.color = Color(0.08, 0.09, 0.12)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -45,9 +59,22 @@ func _ready() -> void:
 	var me_box := VBoxContainer.new()
 	me_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.add_child(me_box)
+	_track_art = TextureRect.new()
+	_track_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_track_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_track_art.custom_minimum_size = Vector2(0, 170)
+	me_box.add_child(_track_art)
+	var pv_row := HBoxContainer.new()
+	me_box.add_child(pv_row)
+	_portrait = TextureRect.new()
+	_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_portrait.custom_minimum_size = Vector2(150, 0)
+	pv_row.add_child(_portrait)
 	_preview = CharacterPreview.new()
-	_preview.custom_minimum_size = Vector2(0, 220)
-	me_box.add_child(_preview)
+	_preview.custom_minimum_size = Vector2(0, 200)
+	_preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pv_row.add_child(_preview)
 	_me_label = Label.new()
 	_me_label.add_theme_font_size_override("font_size", 16)
 	_me_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -159,6 +186,8 @@ func _set_ready(v: bool) -> void:
 
 
 func _push_choice() -> void:
+	GameSession.memory["online"] = {"driver": String(_characters[_driver_idx].id), "gunner": String(_characters[_gunner_idx].id),
+			"vehicle": String(_vehicles[_veh_idx].id), "seats": _seats}
 	NetSession.set_choice({"seats": _seats, "vehicle": String(_vehicles[_veh_idx].id),
 			"driver": String(_characters[_driver_idx].id), "gunner": String(_characters[_gunner_idx].id),
 			"ready": _ready_flag})
@@ -226,6 +255,8 @@ func _refresh() -> void:
 	L.append("Pista: %s · Bots: %d · Vueltas: %d · Fuego amigo: %s" % [DataCatalog.track(StringName(NetSession.roster.get("track", ""))).display_name, NetSession.roster["bots"], NetSession.roster["laps"],
 			"sí" if NetSession.roster["friendly_fire"] else "no"])
 	_roster_label.text = "\n".join(L)
+	_track_art.texture = ArtLibrary.track(DataCatalog.track(StringName(NetSession.roster.get("track", ""))).id)
+	_portrait.texture = ArtLibrary.character(_characters[_driver_idx].id)
 
 	var pv_gunner: CharacterData = _characters[_gunner_idx] if _seats == 2 else null
 	var key := "%s:%s:%s" % [_vehicles[_veh_idx].id, _characters[_driver_idx].id, pv_gunner.id if pv_gunner else ""]

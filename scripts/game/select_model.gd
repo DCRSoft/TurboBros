@@ -45,6 +45,26 @@ func _init(p_setups: Array[Dictionary], p_vehicles: Array[VehicleData] = [], p_c
 					gun.char_idx = ci
 
 
+## Personaje por dispositivo y vehículo por kart (el del conductor/jugador solo) de la carrera anterior.
+func restore_choices() -> void:
+	var chars: Dictionary = GameSession.memory.get("chars", {})
+	var vehs: Dictionary = GameSession.memory.get("vehicles", {})
+	for e in entries:
+		var cid: String = chars.get(_dev_key(e.seat), "")
+		for ci in characters.size():
+			if String(characters[ci].id) == cid:
+				e.char_idx = ci
+		if e.seat.role != Seat.Role.GUNNER:
+			var vid: String = vehs.get(_dev_key(e.seat), "")
+			for vi in vehicles.size():
+				if String(vehicles[vi].id) == vid:
+					kart_vehicle[e.kart_index] = vi
+
+
+static func _dev_key(seat: Seat) -> String:
+	return "%d:%d" % [int(seat.kind), seat.device_id]
+
+
 func find_entry(kind: Seat.DeviceKind, device_id: int) -> Entry:
 	for e in entries:
 		if e.seat.kind == kind and e.seat.device_id == device_id:
@@ -122,7 +142,14 @@ func synergy_text(kart_index: int) -> String:
 
 ## Guarda las elecciones en los setups (vehículo por kart) y en los asientos (personaje).
 func apply() -> void:
+	var chars: Dictionary = GameSession.memory.get("chars", {})
+	var vehs: Dictionary = GameSession.memory.get("vehicles", {})
 	for e in entries:
 		e.seat.character_id = characters[e.char_idx].id
+		chars[_dev_key(e.seat)] = String(e.seat.character_id)
+		if e.seat.role != Seat.Role.GUNNER:
+			vehs[_dev_key(e.seat)] = String(vehicles[kart_vehicle[e.kart_index]].id)
+	GameSession.memory["chars"] = chars
+	GameSession.memory["vehicles"] = vehs
 	for i in setups.size():
 		setups[i]["vehicle"] = vehicles[kart_vehicle[i]].id

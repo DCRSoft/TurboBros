@@ -54,6 +54,9 @@ func _effects() -> void:
 	_e("stumble", "Tropiezo", 0.5, {"speed_mult": 0.6})
 	_e("oil_slip", "Resbalón", 2.0, {"grip_mult": 0.15, "steer_mult": 0.6})
 	_e("flat_tire", "Rueda pinchada", 3.0, {"speed_mult": 0.55, "accel_mult": 0.5})
+	# Arranque de la cuenta atrás: turbo (duración y velocidad se escalan según el momento) y motor ahogado
+	_e("launch_boost", "Arranque turbo", 1.2, {"speed_mult": 1.35, "accel_mult": 3.0, "force_throttle": true})
+	_e("stalled", "Motor ahogado", 2.0, {"lock_control": true, "bubble_color": Color(0.12, 0.12, 0.12, 0.45)})
 	_e("explode", "Explosión", 1.6, {"lock_control": true, "spin": true, "speed_mult": 0.2, "grip_mult": 0.3})
 
 

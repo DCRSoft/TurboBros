@@ -228,6 +228,45 @@ func build_setups() -> Array[Dictionary]:
 	return out
 
 
+## Guarda en GameSession.memory los jugadores activos y las opciones (la próxima vez que se abra el lobby siguen ahí).
+func save_memory() -> void:
+	var ps: Array = []
+	for p in players:
+		ps.append([int(p.kind), p.device_id, p.kart_slot])
+	GameSession.memory["lobby"] = {"players": ps, "swapped": swapped.duplicate(), "teams": teams.duplicate(),
+			"bots": bots, "bots_auto": bots_auto, "laps": laps, "ff": friendly_fire, "track": String(track_id)}
+
+
+## Recupera lo guardado. "available" = dispositivos conectados ahora ([{"kind","id"}]); los que ya no están se omiten.
+func restore_memory(available: Array) -> void:
+	var m: Dictionary = GameSession.memory.get("lobby", {})
+	if m.is_empty():
+		return
+	var ok := {}
+	for d in available:
+		ok["%d:%d" % [int(d["kind"]), int(d["id"])]] = true
+	players.clear()
+	for e in m.get("players", []):
+		if ok.has("%d:%d" % [int(e[0]), int(e[1])]) and players.size() < MAX_PLAYERS:
+			var p := Player.new()
+			p.kind = int(e[0]) as Seat.DeviceKind
+			p.device_id = int(e[1])
+			p.kart_slot = clampi(int(e[2]), 0, MAX_KARTS - 1)
+			players.append(p)
+	for slot in MAX_KARTS:   # nunca más de 2 por kart: si sobra alguien, vuelve al reparto automático
+		if members(slot).size() > 2:
+			auto_layout()
+			break
+	swapped = m.get("swapped", swapped).duplicate()
+	teams = m.get("teams", teams).duplicate()
+	bots_auto = bool(m.get("bots_auto", true))
+	bots = int(m.get("bots", bots))
+	laps = clampi(int(m.get("laps", laps)), 1, MAX_LAPS)
+	friendly_fire = bool(m.get("ff", false))
+	track_id = StringName(m.get("track", ""))
+	_clamp_bots()
+
+
 ## Vuelca todo en GameSession para la carrera.
 func apply_to_session() -> void:
 	GameSession.setups = build_setups()

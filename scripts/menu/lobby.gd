@@ -19,6 +19,7 @@ var _help: Label
 
 func _ready() -> void:
 	GameSession.reset()
+	model.restore_memory(InputManager.get_devices())   # los jugadores de la carrera anterior siguen activos
 	var bg := ColorRect.new()
 	bg.color = Color(0.08, 0.09, 0.12)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -68,6 +69,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	for e in _input.poll():
 		_handle(e["kind"], e["id"], e["action"])
+	model.save_memory()
 	_refresh()
 
 
@@ -115,6 +117,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func start_race() -> void:
 	if not model.is_valid():
 		return
+	model.save_memory()
 	model.apply_to_session()
 	get_tree().change_scene_to_file(SELECT)
 

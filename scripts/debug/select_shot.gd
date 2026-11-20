@@ -1,6 +1,6 @@
 extends Node
 ## Captura de la pantalla de selección (docs/art/seleccion.png). Necesita render.
-##   Godot_console.exe --path . res://scenes/debug/select_shot.tscn
+##   Godot_console.exe --path . res://scenes/debug/select_shot.tscn [-- --tracks]
 
 
 func _ready() -> void:
@@ -13,12 +13,13 @@ func _run() -> void:
 	var b: Array[Seat] = [_seat(Seat.Role.DRIVER, 1), _seat(Seat.Role.GUNNER, 2)]
 	var c: Array[Seat] = [_seat(Seat.Role.SOLO, 3)]
 	GameSession.setups = [{"slot": 0, "seats": a, "team": -1}, {"slot": 1, "seats": b, "team": 1}, {"slot": 2, "seats": c, "team": -1}]
-	var scene: Node = load("res://scenes/menu/select.tscn").instantiate()
+	var tracks_screen := OS.get_cmdline_user_args().has("--tracks")
+	var scene: Node = load("res://scenes/menu/%s.tscn" % ("track_select" if tracks_screen else "select")).instantiate()
 	add_child(scene)
 	await get_tree().create_timer(2.0).timeout
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
-	img.save_png(ProjectSettings.globalize_path("res://docs/art/seleccion.png"))
+	img.save_png(ProjectSettings.globalize_path("res://docs/art/%s.png" % ("seleccion_pistas" if tracks_screen else "seleccion")))
 	print("Guardado: seleccion.png ", img.get_size())
 	get_tree().quit()
 

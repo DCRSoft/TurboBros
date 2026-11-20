@@ -4,14 +4,12 @@ extends Control
 
 const RACE := "res://scenes/race/race.tscn"
 const LOBBY := "res://scenes/menu/lobby.tscn"
+const TRACK_SELECT := "res://scenes/menu/track_select.tscn"
 const AUTO_START_DELAY := 0.8
 
 var model: SelectModel
 var _input := MenuInput.new()
-var _cards: Array[Label] = []
-var _bars: Array[ColorRect] = []
-var _previews: Array[CharacterPreview] = []
-var _prev_keys: Array[String] = []
+var _cards: Array[SelectCard] = []
 var _info: Label
 var _ready_timer := 0.0
 
@@ -21,6 +19,7 @@ func _ready() -> void:
 		get_tree().change_scene_to_file(LOBBY)
 		return
 	model = SelectModel.new(GameSession.setups)
+	model.restore_choices()
 	var bg := ColorRect.new()
 	bg.color = Color(0.08, 0.09, 0.12)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -37,32 +36,18 @@ func _ready() -> void:
 	title.text = "Elige personaje y vehículo"
 	title.add_theme_font_size_override("font_size", 32)
 	root.add_child(title)
+	var mode := 0 if model.entries.size() <= 2 else (1 if model.entries.size() <= 4 else 2)
 	var grid := GridContainer.new()
-	grid.columns = 4
+	grid.columns = mini(model.entries.size(), 4)
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
 	root.add_child(grid)
-	for e in model.entries:
-		var panel := PanelContainer.new()
-		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		var box := VBoxContainer.new()
-		panel.add_child(box)
-		var bar := ColorRect.new()
-		bar.custom_minimum_size = Vector2(0, 8)
-		box.add_child(bar)
-		_bars.append(bar)
-		var preview := CharacterPreview.new()
-		preview.custom_minimum_size = Vector2(0, 150 if model.entries.size() <= 4 else 105)
-		box.add_child(preview)
-		_previews.append(preview)
-		_prev_keys.append("")
-		var lbl := Label.new()
-		lbl.add_theme_font_size_override("font_size", 15 if model.entries.size() <= 4 else 13)
-		box.add_child(lbl)
-		_cards.append(lbl)
-		grid.add_child(panel)
+	for _e in model.entries:
+		var card := SelectCard.new()
+		card.build(mode, model.characters, model.vehicles)
+		grid.add_child(card)
+		_cards.append(card)
 	_info = Label.new()
 	_info.add_theme_font_size_override("font_size", 16)
 	root.add_child(_info)
@@ -108,14 +93,7 @@ func _try_start() -> void:
 func _start() -> void:
 	set_process(false)
 	model.apply()
-	get_tree().change_scene_to_file(RACE)
-
-
-func _bar(v: float) -> String:
-	var n := clampi(roundi(absf(v) / 3.0), 0, 5)
-	var neg := n if v < 0.0 else 0
-	var pos := n if v > 0.0 else 0
-	return "-".repeat(neg).lpad(5, ".") + "|" + "+".repeat(pos).rpad(5, ".")
+	get_tree().change_scene_to_file(TRACK_SELECT)
 
 
 func _device_name(seat: Seat) -> String:
@@ -128,40 +106,25 @@ func _refresh() -> void:
 		var ch := model.characters[e.char_idx]
 		var v := model.vehicle_of(e.kart_index)
 		var team: int = model.setups[e.kart_index].get("team", -1)
-		_bars[idx].color = GameSession.TEAM_COLORS[team] if team >= 0 else ch.color
 		var drv := model.driver_character(e.kart_index)
 		var gun := model.gunner_character(e.kart_index)
-		var key := "%s:%s:%s" % [v.id, drv.id if drv else "", gun.id if gun else ""]
-		if key != _prev_keys[idx]:   # el modelo solo se reconstruye cuando cambia la elección
-			_prev_keys[idx] = key
-			_previews[idx].show_kart(v, drv, gun, GameSession.TEAM_COLORS[team] if team >= 0 else v.body_color)
+		var body: Color = GameSession.TEAM_COLORS[team] if team >= 0 else v.body_color
 		var role := ""
 		match e.seat.role:
 			Seat.Role.DRIVER: role = " · Conductor"
 			Seat.Role.GUNNER: role = " · Artillero"
-		var L := PackedStringArray()
-		L.append("Kart %d%s    %s" % [e.kart_index + 1, role, "✔ LISTO" if e.ready else ""])
-		L.append(_device_name(e.seat))
-		L.append("◀ %s ▶" % ch.display_name)
-		L.append("")
-		if e.seat.role == Seat.Role.GUNNER:
-			L.append("Vehículo: %s (lo elige el conductor)" % v.display_name)
-		else:
-			L.append("▲ Vehículo: %s ▼" % v.display_name)
-		L.append("")
-		var d := model.kart_delta(e.kart_index)
-		for i in StatDelta.KEYS.size():
-			L.append("%-17s %s %+.0f%%" % [StatDelta.LABELS[i], _bar(d.get(StatDelta.KEYS[i])), d.get(StatDelta.KEYS[i])])
-		var syn := model.synergy_text(e.kart_index)
-		if syn != "":
-			L.append("")
-			L.append(syn)
-		_cards[idx].text = "\n".join(L)
-		_cards[idx].autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_cards[idx].custom_minimum_size = Vector2(280, 0)
+		_cards[idx].show_state({
+			"character": ch, "vehicle": v, "driver": drv, "gunner": gun, "body_color": body,
+			"bar_color": GameSession.TEAM_COLORS[team] if team >= 0 else ch.color,
+			"header": "Kart %d%s — %s" % [e.kart_index + 1, role, _device_name(e.seat)],
+			"ready": e.ready, "char_idx": e.char_idx, "veh_idx": model.kart_vehicle[e.kart_index],
+			"veh_locked": e.seat.role == Seat.Role.GUNNER, "delta": model.kart_delta(e.kart_index),
+			"synergy": model.synergy_text(e.kart_index),
+			"preview_key": "%s:%s:%s:%s" % [v.id, drv.id if drv else "", gun.id if gun else "", body.to_html()],
+		})
 	var ready_n := 0
 	for e in model.entries:
 		if e.ready:
 			ready_n += 1
-	_info.text = "Izq/Der: personaje · Arriba/Abajo: vehículo (solo/conductor) · A / confirmar: listo · B: quitar listo · Esc: lobby   —   Listos: %d/%d" % [
+	_info.text = "◀ ▶ personaje  ·  ▲ ▼ vehículo (jugador solo / conductor)  ·  A: listo  ·  B: quitar listo  ·  Esc: lobby   —   Listos: %d/%d" % [
 			ready_n, model.entries.size()]

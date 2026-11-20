@@ -12,6 +12,12 @@ signal race_finished(results: Array)
 enum State { WAITING, COUNTDOWN, RACING, FINISHED }
 
 const COUNTDOWN_TIME := 3.0
+## Arranque: acelerar con MÁS de LAUNCH_WINDOW s por delante ahoga el motor (STALL_TIME s sin poder avanzar); con
+## exactamente LAUNCH_WINDOW s da el turbo máximo, que baja de forma proporcional hasta 0 en el momento de la salida.
+const LAUNCH_WINDOW := 2.0
+const STALL_TIME := 2.0
+const LAUNCH_BOOST_MIN := 0.35   ## segundos y velocidad mínimos del turbo (se escalan con el factor)
+const LAUNCH_BOOST_MAX := 1.2
 const HUMAN_GRACE := 25.0      ## s que se espera a los humanos tras llegar el primero
 const BOT_WAIT := 15.0         ## s que se espera a los bots tras llegar el último humano
 const MAX_RACE_TIME := 600.0   ## tope de seguridad
@@ -31,6 +37,8 @@ class Racer:
 	var wrong_t := 0.0
 	var wrong_way := false
 	var respawns := 0
+	var launch_pending := true      ## aún no ha acelerado en la cuenta atrás
+	var launch_factor := 0.0        ## -1 = motor ahogado; 0..1 = fuerza del turbo de salida
 
 var circuit: Circuit
 var laps := 3
@@ -73,6 +81,39 @@ func start() -> void:
 	race_time = 0.0
 	for r in racers:
 		r.kart.frozen = true
+		r.launch_pending = true
+		r.launch_factor = 0.0
+
+
+## Resultado de acelerar cuando faltan "remaining" s para la salida: -1 = motor ahogado, 0..1 = fuerza del turbo.
+static func launch_factor_for(remaining: float) -> float:
+	if remaining > LAUNCH_WINDOW:
+		return -1.0
+	return clampf(remaining / LAUNCH_WINDOW, 0.0, 1.0)
+
+
+## Solo cuentan los karts con un jugador humano local (no la IA ni las marionetas en línea).
+func _reads_launch_input(r: Racer) -> bool:
+	var k := r.kart
+	return r.is_human and not k.net_remote and k.controller != null and not (k.controller is BotController)
+
+
+func _check_launch_input() -> void:
+	for r in racers:
+		if r.launch_pending and _reads_launch_input(r) and r.kart.controller.get_controls().throttle > 0.5:
+			r.launch_pending = false
+			r.launch_factor = launch_factor_for(_countdown_left)
+
+
+func _apply_launch(r: Racer) -> void:
+	if not _reads_launch_input(r):
+		return
+	if r.launch_factor < 0.0:
+		r.kart.fx.add(EffectLibrary.get_effect(&"stalled"), STALL_TIME)
+	elif r.launch_factor > 0.02:
+		var f := r.launch_factor
+		var eff := EffectLibrary.get_effect(&"launch_boost")
+		r.kart.fx.add(eff, lerpf(LAUNCH_BOOST_MIN, LAUNCH_BOOST_MAX, f), lerpf(1.1, eff.speed_mult, f))
 
 
 func get_racer(kart: Kart) -> Racer:
@@ -96,12 +137,16 @@ func center_text(kart: Kart) -> String:
 	var r := get_racer(kart)
 	match state:
 		State.COUNTDOWN:
+			if r and r.launch_factor < 0.0:
+				return "¡MOTOR AHOGADO!"
 			return str(ceili(_countdown_left))
 		State.RACING:
 			if r and r.finished:
 				return "¡META!  Puesto %d" % r.place
+			if r and r.launch_factor < 0.0 and race_time < STALL_TIME:
+				return "¡MOTOR AHOGADO!  %.1f" % (STALL_TIME - race_time)
 			if race_time < 1.0:
-				return "¡YA!"
+				return "¡ARRANQUE TURBO!" if r and r.launch_factor > 0.5 else "¡YA!"
 			if r and r.wrong_way:
 				return "¡CONTRAMANO!"
 		State.FINISHED:
@@ -128,6 +173,7 @@ func _physics_process(delta: float) -> void:
 	match state:
 		State.COUNTDOWN:
 			_countdown_left -= delta
+			_check_launch_input()
 			var n := ceili(_countdown_left)
 			if n != _last_beep and n > 0:
 				_last_beep = n
@@ -136,6 +182,7 @@ func _physics_process(delta: float) -> void:
 				state = State.RACING
 				for r in racers:
 					r.kart.frozen = false
+					_apply_launch(r)
 				race_started.emit()
 		State.RACING:
 			race_time += delta

@@ -15,6 +15,9 @@ var bot_teams: Array[int] = []   ## un elemento por bot (-1 = sin equipo)
 var laps := 3
 var track_id: StringName = &""   ## pista elegida en el lobby (vacío = la primera); no se borra con reset()
 var friendly_fire := false
+## Memoria de la sesión (no la borra reset()): jugadores activos y sus elecciones, para no empezar de cero en cada carrera.
+## {"lobby": {...}, "chars": {"tipo:dispositivo": id_personaje}, "vehicles": {"tipo:dispositivo": id_vehiculo}}
+var memory := {}
 var benchmark := false   ## prueba de rendimiento: 4 vistas + 4 bots, todos conducidos por la IA
 
 
