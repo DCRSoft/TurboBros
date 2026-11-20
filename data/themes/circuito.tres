@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="ThemeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/theme_data.gd" id="1_7qdlx"]
+
+[resource]
+script = ExtResource("1_7qdlx")
+id = &"circuito"
+display_name = "Circuito"
+sky_top = Color(0.28, 0.55, 0.95, 1)
+sky_horizon = Color(0.82, 0.9, 0.97, 1)
+ground_horizon = Color(0.55, 0.72, 0.55, 1)
+ambient = Color(0.68, 0.7, 0.75, 1)
+fog_color = Color(0.78, 0.86, 0.94, 1)
+fog_density = 0.0014
+sun_color = Color(1, 0.97, 0.9, 1)
+sun_energy = 0.85
+sun_rotation = Vector3(-50, 30, 0)
+ground_low = Color(0.2, 0.46, 0.18, 1)
+ground_high = Color(0.32, 0.55, 0.22, 1)
+rock = Color(0.55, 0.55, 0.55, 1)
+accent = Color(0.9, 0.95, 1, 1)
+amplitude = 8.0
+feature_size = 150.0
+road_a = Color(0.26, 0.26, 0.29, 1)
+road_b = Color(0.31, 0.31, 0.34, 1)
+curb_a = Color(0.9, 0.12, 0.12, 1)
+wall = Color(0.92, 0.92, 0.95, 1)
+mountain = Color(0.4, 0.55, 0.6, 1)
+mountain_cap = Color(0.9, 0.95, 1, 1)
+mountain_count = 18
+props = Array[Dictionary]([{
+"density": 0.35,
+"kind": "grandstand",
+"max": 1.3,
+"min": 1.0,
+"tint": Color(1, 1, 1, 1)
+}, {
+"density": 5.0,
+"kind": "round_tree",
+"max": 1.4,
+"min": 0.9,
+"tint": Color(1, 1, 1, 1)
+}, {
+"density": 8.0,
+"kind": "bush",
+"max": 1.4,
+"min": 0.8,
+"tint": Color(1, 1, 1, 1)
+}, {
+"density": 3.0,
+"kind": "pine",
+"max": 1.4,
+"min": 0.9,
+"tint": Color(1, 1, 1, 1)
+}])
+banner_color = Color(0.95, 0.75, 0.1, 1)

@@ -6,6 +6,7 @@ extends RefCounted
 const KINDS: Array[String] = [
 	"pine", "snow_pine", "round_tree", "bush", "palm", "cactus", "rock", "lava_spire", "crystal", "ice_crystal",
 	"mushroom", "cabin", "dead_tree", "ruin_pillar", "banner", "tires", "lamp",
+	"tower", "grandstand", "tank", "chimney", "lighthouse",
 ]
 
 static var _cache := {}
@@ -121,6 +122,38 @@ static func _make(kind: String) -> ArrayMesh:
 			b.cylinder(Vector3(0, 2.4, 0), 0.08, 0.12, 4.8, Color(0.3, 0.3, 0.34), 5)
 			b.box(Vector3(0.0, 4.9, 0), Vector3(0.7, 0.25, 0.7), Color(0.25, 0.25, 0.28))
 			b.box(Vector3(0.0, 4.72, 0), Vector3(0.5, 0.12, 0.5), Color(1.0, 0.95, 0.7))
+		"tower":
+			var body := Color(0.16, 0.14, 0.24)
+			var h := 22.0
+			b.box(Vector3(0, h * 0.5, 0), Vector3(9.0, h, 9.0), body)
+			b.box(Vector3(0, h + 1.0, 0), Vector3(6.0, 2.0, 6.0), Color(0.2, 0.18, 0.3))
+			b.cylinder(Vector3(0, h + 3.5, 0), 0.1, 0.2, 3.0, Color(0.8, 0.8, 0.9), 4)
+			b.sphere(Vector3(0, h + 5.1, 0), 0.4, Color(1.0, 0.3, 0.3), 4, 2)
+			var neon: Array[Color] = [Color(0.3, 0.95, 1.0), Color(1.0, 0.35, 0.85), Color(1.0, 0.9, 0.35)]
+			for r in 5:
+				var y := 3.0 + r * 4.0
+				b.box(Vector3(0, y, 0), Vector3(9.15, 0.9, 9.15), neon[r % 3])
+		"grandstand":
+			for i in 4:
+				b.box(Vector3(0, 0.8 + i * 1.6, -i * 1.6), Vector3(18.0, 1.6, 3.2), Color(0.75, 0.75, 0.8) if i % 2 == 0 else Color(0.9, 0.2, 0.2))
+			b.box(Vector3(0, 8.4, -2.4), Vector3(19.0, 0.4, 9.0), Color(0.9, 0.9, 0.95))
+			for x in [-8.5, 8.5]:
+				b.box(Vector3(x, 4.2, 2.0), Vector3(0.4, 8.4, 0.4), Color(0.5, 0.5, 0.55))
+		"tank":
+			b.cylinder(Vector3(0, 3.0, 0), 3.4, 3.6, 6.0, Color(0.72, 0.72, 0.7), 12)
+			b.cone(Vector3(0, 7.0, 0), 3.5, 2.0, Color(0.55, 0.55, 0.55), 12)
+			b.cylinder(Vector3(0, 1.0, 0), 3.65, 3.65, 0.6, Color(0.85, 0.25, 0.15), 12)
+		"chimney":
+			b.cylinder(Vector3(0, 4.0, 0), 1.6, 2.2, 8.0, Color(0.6, 0.35, 0.28), 8)
+			b.cylinder(Vector3(0, 10.0, 0), 1.2, 1.6, 4.0, Color(0.9, 0.9, 0.9), 8)
+			b.cylinder(Vector3(0, 13.0, 0), 1.0, 1.2, 2.0, Color(0.85, 0.2, 0.2), 8)
+			b.cylinder(Vector3(0, 14.2, 0), 1.4, 1.0, 0.6, Color(0.2, 0.2, 0.22), 8)
+		"lighthouse":
+			b.cylinder(Vector3(0, 4.0, 0), 1.6, 2.6, 8.0, Color(0.95, 0.95, 0.95), 8)
+			b.cylinder(Vector3(0, 3.0, 0), 2.0, 2.2, 1.6, Color(0.85, 0.15, 0.15), 8)
+			b.cylinder(Vector3(0, 6.2, 0), 1.9, 1.9, 1.6, Color(0.85, 0.15, 0.15), 8)
+			b.cylinder(Vector3(0, 8.8, 0), 1.2, 1.4, 1.4, Color(1.0, 0.95, 0.6), 8)
+			b.cone(Vector3(0, 10.1, 0), 1.6, 1.4, Color(0.7, 0.15, 0.15), 8)
 		_:
 			b.box(Vector3(0, 0.5, 0), Vector3.ONE, Color.MAGENTA)
 	return b.build()

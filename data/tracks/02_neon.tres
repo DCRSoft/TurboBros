@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TrackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/track_data.gd" id="1_dgu53"]
+
+[resource]
+script = ExtResource("1_dgu53")
+id = &"02_neon"
+display_name = "Ciudad Neón"
+description = "De noche entre rascacielos, con una espiral en el centro de la ciudad."
+theme = &"neon"
+control_points = PackedVector3Array(-140.4, 1.2622064, 179.2, -203, 1.3329766, 97.7, -218.7, 0.07077005, -19.1, -177.8, -1.2622064, -133.6, -81.7, -1.3329766, -208.6, 43.6, -0.07077005, -227.2, 153.8, 1.2622064, -184.3, 210.5, 1.3329766, -90.4, 205.2, 0.07077005, 15, 157.8, -1.2622064, 69.9, 108.7, -1.3329766, 38, 69.7, -0.07077005, -36.4, 8.2, 1.2622064, -74.5, -43.6, 1.3329766, -35.1, -38.8, 0.07077005, 53.5, -1.6, -1.2622064, 142.7, 4.8, -1.3329766, 200.5, -56.5, -0.07077005, 212.8)

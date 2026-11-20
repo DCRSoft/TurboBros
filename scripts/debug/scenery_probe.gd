@@ -24,7 +24,7 @@ func _run() -> void:
 		var s: Scenery = race.scenery
 		var m: RaceManager = race.manager
 		var ticks := 0
-		while m.state != RaceManager.State.FINISHED and ticks < 60 * 200:
+		while m.state != RaceManager.State.FINISHED and ticks < 60 * 300:
 			await get_tree().physics_frame
 			ticks += 1
 		var fin := 0

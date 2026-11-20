@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://tfk2jyv2fubg"
-path="res://.godot/imported/carrera_01_bosque_lejos.png-57e9cd263bdb79e577d749e1fd2e58e7.ctex"
+uid="uid://c2jc6l2foajg6"
+path="res://.godot/imported/carrera_04_circuito_lejos.png-70aa8fd6deea008405fde975a1eb2aea.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://docs/art/carrera_01_bosque_lejos.png"
-dest_files=["res://.godot/imported/carrera_01_bosque_lejos.png-57e9cd263bdb79e577d749e1fd2e58e7.ctex"]
+source_file="res://docs/art/carrera_04_circuito_lejos.png"
+dest_files=["res://.godot/imported/carrera_04_circuito_lejos.png-70aa8fd6deea008405fde975a1eb2aea.ctex"]
 
 [params]
 

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TrackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/track_data.gd" id="1_fnaoc"]
+
+[resource]
+script = ExtResource("1_fnaoc")
+id = &"08_nieve"
+display_name = "Montaña Nevada"
+description = "Curvas de montaña entre pinos nevados y cristales de hielo."
+theme = &"nieve"
+control_points = PackedVector3Array(-239.7, 0, 124.5, -250.3, 6.6883035, -14.2, -165, 8.950697, -120.9, -47.6, 5.290067, -152.9, -15.6, -1.8712052, -238.2, 101.7, -7.7942286, -248.9, 197.7, -8.559508, -184.9, 208.4, -3.6606297, -67.6, 123, 3.6606297, -14.2, 59, 8.559508, 71.1, 144.4, 7.7942286, 135.1, 123, 1.8712052, 209.8, -5, -5.290067, 199.1, -79.7, -8.950697, 124.5, -154.3, -6.6883035, 177.8)

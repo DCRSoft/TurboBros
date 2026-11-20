@@ -1491,8 +1491,8 @@ func _build_scenery_for(tr: TrackData, quality: GraphicsSettings.Quality) -> Arr
 func _test_tracks_and_scenery() -> void:
 	var tracks := DataCatalog.tracks()
 	var themes := DataCatalog.themes()
-	_check("pistas: hay 5 pistas y 5 temas, la primera es el bosque",
-			tracks.size() >= 5 and themes.size() >= 5 and tracks[0].id == &"01_bosque", "%d pistas, %d temas" % [tracks.size(), themes.size()])
+	_check("pistas: hay 10 pistas y 9 temas, la primera es la costa",
+			tracks.size() >= 10 and themes.size() >= 9 and tracks[0].id == &"01_costa", "%d pistas, %d temas" % [tracks.size(), themes.size()])
 	var ids := {}
 	var themes_ok := true
 	for tr in tracks:
@@ -1529,7 +1529,7 @@ func _test_tracks_and_scenery() -> void:
 		_check("pista %s: radio de curva mínimo >= 16 m y sin solapes" % tr.id,
 				radius >= 16.0 and overlap > c.road_half_width * 2.0 + 10.0,
 				"radio=%.0f m, separación mínima=%.0f m, largo=%.0f m" % [radius, overlap, c.length])
-		_check("pista %s: largo razonable (700-1500 m)" % tr.id, c.length > 700.0 and c.length < 1500.0, "%.0f m" % c.length)
+		_check("pista %s: largo razonable (1200-2300 m)" % tr.id, c.length > 1200.0 and c.length < 2300.0, "%.0f m" % c.length)
 		# El terreno queda por debajo de la carretera, sin tapar la calzada
 		var worst := -INF
 		for i in range(0, c.count, 7):
@@ -1556,7 +1556,7 @@ func _test_tracks_and_scenery() -> void:
 		total_ms += sc.build_ms
 		c.queue_free()
 		sc.queue_free()
-	_check("paisaje: construir las 5 pistas es rápido (< 1,5 s cada una)", total_ms < 7500, "%d ms en total" % total_ms)
+	_check("paisaje: construir las 10 pistas es rápido (< 1,5 s cada una)", total_ms < 15000, "%d ms en total" % total_ms)
 
 	# Calidad: más densidad y más trozos de terreno cuanto mayor
 	var f := tracks[0]

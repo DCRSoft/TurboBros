@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://sg8ch5o2q51x"
-path="res://.godot/imported/carrera_01_bosque.png-d5230e8c874ea8e92e2cc0d220d9ccb9.ctex"
+uid="uid://cnvvtft2wgg7d"
+path="res://.godot/imported/carrera_02_neon_lejos.png-bc93051b4035530364f3fdd82f80cd43.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://docs/art/carrera_01_bosque.png"
-dest_files=["res://.godot/imported/carrera_01_bosque.png-d5230e8c874ea8e92e2cc0d220d9ccb9.ctex"]
+source_file="res://docs/art/carrera_02_neon_lejos.png"
+dest_files=["res://.godot/imported/carrera_02_neon_lejos.png-bc93051b4035530364f3fdd82f80cd43.ctex"]
 
 [params]
 

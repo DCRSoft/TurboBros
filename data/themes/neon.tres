@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="ThemeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/theme_data.gd" id="1_uojp7"]
+
+[resource]
+script = ExtResource("1_uojp7")
+id = &"neon"
+display_name = "Ciudad neón"
+sky_top = Color(0.04, 0.02, 0.2, 1)
+sky_horizon = Color(0.6, 0.15, 0.65, 1)
+ground_horizon = Color(0.25, 0.1, 0.4, 1)
+ambient = Color(0.5, 0.42, 0.75, 1)
+fog_color = Color(0.28, 0.1, 0.42, 1)
+fog_density = 0.0024
+sun_color = Color(0.6, 0.65, 1, 1)
+sun_energy = 0.75
+sun_rotation = Vector3(-35, -40, 0)
+ground_low = Color(0.11, 0.1, 0.17, 1)
+ground_high = Color(0.2, 0.17, 0.3, 1)
+rock = Color(0.22, 0.2, 0.3, 1)
+accent = Color(0.4, 0.9, 1, 1)
+amplitude = 8.0
+feature_size = 140.0
+road_a = Color(0.12, 0.12, 0.17, 1)
+road_b = Color(0.17, 0.16, 0.23, 1)
+curb_a = Color(0.2, 0.95, 1, 1)
+curb_b = Color(1, 0.25, 0.85, 1)
+wall = Color(0.25, 0.85, 1, 1)
+mountain = Color(0.2, 0.12, 0.34, 1)
+mountain_cap = Color(0.95, 0.35, 0.85, 1)
+mountain_count = 20
+props = Array[Dictionary]([{
+"density": 4.0,
+"kind": "tower",
+"max": 1.7,
+"min": 0.9,
+"tint": Color(1, 1, 1, 1)
+}, {
+"density": 5.0,
+"kind": "lamp",
+"max": 1.2,
+"min": 1.0,
+"tint": Color(1, 0.6, 0.95, 1)
+}, {
+"density": 1.0,
+"kind": "crystal",
+"max": 1.4,
+"min": 0.8,
+"tint": Color(1, 0.4, 0.9, 1)
+}])
+banner_color = Color(1, 0.25, 0.85, 1)

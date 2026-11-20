@@ -141,15 +141,22 @@ Todo el arte 3D se **genera por código** (low poly, color por vértice, sin tex
 - La ayuda de controles de la pantalla se oculta a los 14 s de carrera.
 
 ## Pistas y paisaje
-Cinco pistas, cada una con su tema visual, todo generado por código (sin descargas ni licencias):
+Diez pistas inspiradas en el cartel de diseños del proyecto (trazados dibujados a mano en `tools/generate_tracks.gd`, ~1,7 km y ~65 s por vuelta), cada una con su tema visual y todo generado por código (sin descargas ni licencias):
 
-| Pista | Tema | Largo |
+| Pista | Tema | Decorado |
 |---|---|---|
-| 01 Bosque Esmeralda | pinos, arbustos, cabañas | 920 m |
-| 02 Dunas del Escorpión | desierto: cactus, palmeras, ruinas | 1142 m |
-| 03 Cumbre Helada | nieve: pinos nevados, cristales de hielo | 821 m |
-| 04 Volcán Brasa | roca negra, agujas de lava, cielo rojizo | 945 m |
-| 05 Planeta Zorp | hongos gigantes, cristales, cielo violeta | 1016 m |
+| 1 Costa Tropical | costa | palmeras, faro, arena |
+| 2 Ciudad Neón | neón (noche) | rascacielos con neones, curbs cian/magenta |
+| 3 Bosque Salvaje | bosque | pinos, cabañas, rocas |
+| 4 Circuito Internacional | circuito | gradas, árboles |
+| 5 Volcán en Erupción | volcán | agujas de lava, cielo rojizo |
+| 6 Autódromo del Desierto | desierto | cactus, palmeras, ruinas |
+| 7 Ciudad Industrial | industrial | depósitos, chimeneas |
+| 8 Montaña Nevada | nieve | pinos nevados, cristales de hielo |
+| 9 Autódromo Extremo | circuito | gradas, laberinto interior de curvas |
+| 10 Gran Premio Fantasía | fantasía | cristales y hongos gigantes |
+
+Aún **no** hay puentes/cruces, atajos, rampas, túneles ni zonas de turbo del cartel: el circuito es una curva cerrada sin cruces (el progreso y los bots dependen de ello).
 
 - **Datos**: una pista es un `.tres` (`data/tracks`, `TrackData`: puntos de control de una curva cerrada, anchura, tema, vueltas) y un tema es otro (`data/themes`, `ThemeData`: cielo, niebla, luz, colores del terreno y la carretera, montañas, decorado con densidad por hectárea). Se generan con `tools/generate_tracks.gd`; añadir un `.tres` = pista nueva.
 - **Paisaje** (`scripts/race/scenery.gd`): terreno de baja resolución en trozos de ~100 m (más bajo que la carretera junto a ella y con colinas al alejarse, color por altura/pendiente/nieve), anillo de montañas lejanas, decorado en `MultiMesh` por trozo y tipo (`scripts/art/prop_models.gd`, 17 modelos de <260 triángulos), banderines/neumáticos/farolas a pie de pista, arco de meta con "META" y cielo/niebla/sol del tema. Es solo visual: la colisión sigue siendo la carretera y sus muros.

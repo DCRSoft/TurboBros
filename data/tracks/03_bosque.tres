@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TrackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/track_data.gd" id="1_hu6u8"]
+
+[resource]
+script = ExtResource("1_hu6u8")
+id = &"03_bosque"
+display_name = "Bosque Salvaje"
+description = "Una serpiente entre pinos, rocas y cabañas, con subidas y bajadas."
+control_points = PackedVector3Array(-223, 0, 170, -240.6, 3.8567257, 67.3, -196.9, 5.9088464, -20.6, -212.8, 5.196152, -109.7, -147, 2.052121, -193.7, -32.4, -2.052121, -230.5, 69.7, -5.196152, -206.1, 152.6, -5.9088464, -227.1, 218.4, -3.8567257, -171, 208.7, -1.4695276e-15, -74.5, 152, 3.8567257, -13.8, 184.9, 5.9088464, 62.2, 209.9, 5.196152, 147.9, 128.2, 2.052121, 202.4, 24.9, -2.052121, 167.2, -42, -5.196152, 103.6, -103.3, -5.9088464, 133.7, -151, -3.8567257, 192.7)

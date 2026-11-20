@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TrackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/track_data.gd" id="1_8gurh"]
+
+[resource]
+script = ExtResource("1_8gurh")
+id = &"01_costa"
+display_name = "Costa Tropical"
+description = "Curvas suaves junto al mar y una chicane entre las palmeras."
+theme = &"costa"
+control_points = PackedVector3Array(-34.1, 0, 229.4, 120.9, 1.9545788, 241.8, 232.5, 2.4373198, 179.8, 269.7, 1.0847094, 43.4, 244.9, -1.0847094, -93, 170.5, -2.4373198, -204.6, 46.5, -1.9545788, -266.6, -89.9, -6.123032e-16, -254.2, -189.1, 1.9545788, -179.8, -139.5, 2.4373198, -93, -189.1, 1.0847094, -18.6, -127.1, -1.0847094, 55.8, -176.7, -2.4373198, 142.6, -139.5, -1.9545788, 217)
+road_half_width = 8.5

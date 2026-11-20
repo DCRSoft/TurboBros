@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TrackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/track_data.gd" id="1_ysj2e"]
+
+[resource]
+script = ExtResource("1_ysj2e")
+id = &"06_desierto"
+display_name = "Autódromo del Desierto"
+description = "Rectas largas en diagonal, una chicane y cactus por todas partes."
+theme = &"desierto"
+control_points = PackedVector3Array(-254, 0, 144, -264.3, 1.4449667, 40.7, -181.7, 2.6947825, -31.6, -88.7, 3.5806532, -93.6, 4.3, 3.9829366, -165.9, 97.2, 3.8473027, -238.2, 190.2, 3.1920688, -248.5, 200.5, 2.1057286, -165.9, 128.2, 0.73499805, -103.9, 45.6, -0.73499805, -41.9, 97.2, -2.1057286, 20.1, 179.9, -3.1920688, 71.7, 169.5, -3.8473027, 154.3, 66.2, -3.9829366, 185.3, -47.4, -3.5806532, 123.4, -140.4, -2.6947825, 164.7, -202.3, -1.4449667, 185.3)
+road_half_width = 9.0

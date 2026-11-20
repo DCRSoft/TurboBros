@@ -19,21 +19,26 @@ func _init() -> void:
 
 # --- Pistas ---------------------------------------------------------------------------------
 
-## rx = ax + sum(bx_k sin(k θ + p)),  rz = az + ...,  y = sum(ey_k sin(m θ + q))
-func _points(n: int, ax: float, xh: Array, az: float, zh: Array, yh: Array) -> PackedVector3Array:
+## Trazados dibujados a mano (metros, x/z; sentido horario visto desde arriba; el primer punto es la meta), inspirados en
+## el cartel de pistas del proyecto. La altura es una ondulación suave (amplitud, armónico, fase). Largo ~1,7 km.
+const LAYOUT_COSTA := [[-34.1, 229.4], [120.9, 241.8], [232.5, 179.8], [269.7, 43.4], [244.9, -93.0], [170.5, -204.6], [46.5, -266.6], [-89.9, -254.2], [-189.1, -179.8], [-139.5, -93.0], [-189.1, -18.6], [-127.1, 55.8], [-176.7, 142.6], [-139.5, 217.0]]
+const LAYOUT_NEON := [[-140.4, 179.2], [-203.0, 97.7], [-218.7, -19.1], [-177.8, -133.6], [-81.7, -208.6], [43.6, -227.2], [153.8, -184.3], [210.5, -90.4], [205.2, 15.0], [157.8, 69.9], [108.7, 38.0], [69.7, -36.4], [8.2, -74.5], [-43.6, -35.1], [-38.8, 53.5], [-1.6, 142.7], [4.8, 200.5], [-56.5, 212.8]]
+const LAYOUT_BOSQUE := [[-223.0, 170.0], [-240.6, 67.3], [-196.9, -20.6], [-212.8, -109.7], [-147.0, -193.7], [-32.4, -230.5], [69.7, -206.1], [152.6, -227.1], [218.4, -171.0], [208.7, -74.5], [152.0, -13.8], [184.9, 62.2], [209.9, 147.9], [128.2, 202.4], [24.9, 167.2], [-42.0, 103.6], [-103.3, 133.7], [-151.0, 192.7]]
+const LAYOUT_CIRCUITO := [[-177.2, 153.7], [-201.8, 22.2], [-185.4, -101.0], [-119.6, -175.0], [-4.6, -191.4], [118.7, -175.0], [163.9, -109.2], [151.5, -27.1], [61.2, -10.6], [-21.0, -35.3], [-78.6, -2.4], [-70.3, 55.1], [3.6, 79.8], [102.2, 71.5], [151.5, 112.6], [126.9, 161.9], [-21.0, 170.2]]
+const LAYOUT_VOLCAN := [[-249.6, 76.5], [-257.7, -56.2], [-201.1, -186.3], [-86.2, -266.9], [47.5, -281.7], [157.7, -225.6], [197.5, -130.2], [157.7, -64.3], [88.8, -40.9], [53.1, 1.0], [86.8, 62.7], [156.7, 117.9], [175.6, 169.4], [101.0, 195.9], [-1.0, 177.6], [-78.1, 147.5], [-143.4, 153.1], [-205.2, 150.5]]
+const LAYOUT_DESIERTO := [[-254.0, 144.0], [-264.3, 40.7], [-181.7, -31.6], [-88.7, -93.6], [4.3, -165.9], [97.2, -238.2], [190.2, -248.5], [200.5, -165.9], [128.2, -103.9], [45.6, -41.9], [97.2, 20.1], [179.9, 71.7], [169.5, 154.3], [66.2, 185.3], [-47.4, 123.4], [-140.4, 164.7], [-202.3, 185.3]]
+const LAYOUT_INDUSTRIAL := [[-227.9, 177.2], [-244.4, 54.5], [-205.3, -49.2], [-213.6, -150.5], [-136.6, -221.1], [-32.3, -202.7], [32.9, -139.8], [120.6, -167.7], [206.6, -198.5], [235.0, -112.0], [199.4, -23.7], [224.9, 62.8], [191.1, 158.9], [90.4, 203.8], [2.1, 165.3], [-80.8, 208.0], [-162.1, 234.7]]
+const LAYOUT_NIEVE := [[-239.7, 124.5], [-250.3, -14.2], [-165.0, -120.9], [-47.6, -152.9], [-15.6, -238.2], [101.7, -248.9], [197.7, -184.9], [208.4, -67.6], [123.0, -14.2], [59.0, 71.1], [144.4, 135.1], [123.0, 209.8], [-5.0, 199.1], [-79.7, 124.5], [-154.3, 177.8]]
+const LAYOUT_EXTREMO := [[-167.1, 129.7], [-182.2, -13.9], [-159.6, -127.3], [-76.4, -172.7], [44.6, -180.2], [135.3, -150.0], [158.0, -66.8], [120.2, -6.4], [44.6, -13.9], [-8.4, -66.8], [-76.4, -59.3], [-99.1, 8.8], [-53.7, 61.7], [29.4, 69.2], [89.9, 46.6], [142.8, 84.4], [127.7, 144.8], [21.9, 160.0], [-91.5, 152.4]]
+const LAYOUT_FANTASIA := [[-256.4, 105.9], [-273.8, -29.5], [-220.4, -171.0], [-103.9, -272.6], [41.7, -304.0], [165.7, -261.5], [220.3, -171.5], [192.2, -73.6], [124.7, 12.6], [86.9, 91.7], [100.3, 164.7], [109.8, 219.9], [53.4, 247.2], [-61.4, 242.8], [-178.9, 199.0]]
+
+
+func _points(layout: Array, amp: float, k: float, phase: float) -> PackedVector3Array:
 	var pts := PackedVector3Array()
+	var n := layout.size()
 	for i in n:
-		var th := i * TAU / n
-		var rx := ax
-		for h in xh:
-			rx += h[0] * sin(h[1] * th + h[2])
-		var rz := az
-		for h in zh:
-			rz += h[0] * sin(h[1] * th + h[2])
-		var y := 0.0
-		for h in yh:
-			y += h[0] * sin(h[1] * th + h[2])
-		pts.append(Vector3(rx * cos(th), y, rz * sin(th)))
+		var y := amp * sin(TAU * k * i / n + phase)
+		pts.append(Vector3(layout[i][0], y, layout[i][1]))
 	return pts
 
 
@@ -52,16 +57,16 @@ func _track(id: String, name: String, desc: String, theme: String, pts: PackedVe
 
 
 func _tracks() -> void:
-	_track("01_bosque", "Bosque Esmeralda", "Un circuito clásico entre pinos, con curvas amplias y una suave subida.", "bosque",
-			_points(16, 170.0, [[35.0, 3.0, 0.0]], 110.0, [[25.0, 2.0, 1.0]], [[3.0, 2.0, 0.0]]), 8.0)
-	_track("02_dunas", "Dunas del Escorpión", "Rectas largas y anchas sobre dunas ondulantes; el calor no perdona.", "desierto",
-			_points(18, 210.0, [[30.0, 2.0, 0.5]], 130.0, [[20.0, 3.0, 0.0]], [[5.0, 1.0, 0.0], [2.0, 3.0, 1.0]]), 9.0)
-	_track("03_cumbre", "Cumbre Helada", "Curvas cerradas de montaña con fuertes desniveles entre la nieve.", "nieve",
-			_points(20, 150.0, [[22.0, 3.0, 0.3]], 105.0, [[16.0, 2.0, 2.0]], [[9.0, 2.0, 0.0], [3.0, 5.0, 0.0]]), 8.0)
-	_track("04_volcan", "Volcán Brasa", "Un trazado retorcido sobre roca negra, con lava a ambos lados.", "volcan",
-			_points(20, 175.0, [[32.0, 3.0, 0.5]], 115.0, [[20.0, 2.0, 1.5]], [[6.0, 3.0, 0.0]]), 8.0)
-	_track("05_alien", "Planeta Zorp", "Cristales, hongos gigantes y una chicane que no esperabas.", "alien",
-			_points(20, 185.0, [[25.0, 2.0, 0.0], [12.0, 5.0, 1.0]], 120.0, [[26.0, 3.0, 0.7]], [[4.0, 4.0, 1.0]]), 8.5)
+	_track("01_costa", "Costa Tropical", "Curvas suaves junto al mar y una chicane entre las palmeras.", "costa", _points(LAYOUT_COSTA, 2.5, 2.0, 0.0), 8.5)
+	_track("02_neon", "Ciudad Neón", "De noche entre rascacielos, con una espiral en el centro de la ciudad.", "neon", _points(LAYOUT_NEON, 1.5, 3.0, 1.0), 8.0)
+	_track("03_bosque", "Bosque Salvaje", "Una serpiente entre pinos, rocas y cabañas, con subidas y bajadas.", "bosque", _points(LAYOUT_BOSQUE, 6.0, 2.0, 0.0), 8.0)
+	_track("04_circuito", "Circuito Internacional", "Trazado profesional: rectas largas, gradas y una horquilla interior.", "circuito", _points(LAYOUT_CIRCUITO, 1.0, 1.0, 0.0), 9.5)
+	_track("05_volcan", "Volcán en Erupción", "Roca negra y lava a ambos lados, con una bahía de curvas cerradas.", "volcan", _points(LAYOUT_VOLCAN, 7.0, 2.0, 0.5), 8.0)
+	_track("06_desierto", "Autódromo del Desierto", "Rectas largas en diagonal, una chicane y cactus por todas partes.", "desierto", _points(LAYOUT_DESIERTO, 4.0, 1.0, 0.0), 9.0)
+	_track("07_industrial", "Ciudad Industrial", "Depósitos y chimeneas, con zigzags entre las fábricas.", "industrial", _points(LAYOUT_INDUSTRIAL, 2.5, 3.0, 0.0), 8.0)
+	_track("08_nieve", "Montaña Nevada", "Curvas de montaña entre pinos nevados y cristales de hielo.", "nieve", _points(LAYOUT_NIEVE, 9.0, 2.0, 0.0), 8.0)
+	_track("09_extremo", "Autódromo Extremo", "Un gran óvalo con un laberinto interior de curvas técnicas.", "circuito", _points(LAYOUT_EXTREMO, 3.5, 2.0, 1.0), 9.0)
+	_track("10_fantasia", "Gran Premio Fantasía", "Cristales y hongos gigantes bajo un cielo violeta.", "alien", _points(LAYOUT_FANTASIA, 6.0, 3.0, 0.0), 8.5)
 
 
 # --- Temas ----------------------------------------------------------------------------------
@@ -134,7 +139,7 @@ func _themes() -> void:
 				_p("crystal", 2.0, 0.8, 1.4, Color(1.0, 0.45, 0.35))],
 		"banner_color": Color(1.0, 0.4, 0.1),
 	})
-	_theme("alien", "Planeta alienígena", {
+	_theme("alien", "Fantasía", {
 		"sky_top": Color(0.2, 0.12, 0.4), "sky_horizon": Color(0.45, 0.85, 0.85), "ground_horizon": Color(0.4, 0.3, 0.6),
 		"ambient": Color(0.55, 0.52, 0.72), "fog_color": Color(0.5, 0.4, 0.75), "fog_density": 0.002,
 		"sun_color": Color(0.85, 1.0, 0.95), "sun_energy": 1.0, "sun_rotation": Vector3(-55, -30, 0),
@@ -146,4 +151,52 @@ func _themes() -> void:
 		"props": [_p("crystal", 12.0, 0.8, 1.8, Color(0.5, 1.0, 0.95)), _p("mushroom", 14.0, 0.8, 1.8), _p("lava_spire", 3.0, 0.8, 1.4, Color(0.6, 0.4, 0.9)),
 				_p("rock", 6.0, 0.8, 2.0, Color(0.7, 0.7, 1.0))],
 		"banner_color": Color(0.9, 0.3, 0.85),
+	})
+	_theme("costa", "Costa tropical", {
+		"sky_top": Color(0.2, 0.55, 0.95), "sky_horizon": Color(0.7, 0.92, 0.98), "ground_horizon": Color(0.6, 0.85, 0.85),
+		"ambient": Color(0.7, 0.74, 0.78), "fog_color": Color(0.7, 0.9, 0.95), "fog_density": 0.0016,
+		"sun_color": Color(1.0, 0.95, 0.82), "sun_energy": 0.85, "sun_rotation": Vector3(-55, 25, 0),
+		"ground_low": Color(0.76, 0.62, 0.36), "ground_high": Color(0.25, 0.55, 0.24), "rock": Color(0.62, 0.56, 0.48),
+		"accent": Color(0.95, 0.95, 0.9), "amplitude": 16.0, "feature_size": 120.0, "snow_line": 0.0,
+		"road_a": Color(0.3, 0.3, 0.34), "road_b": Color(0.36, 0.36, 0.4), "curb_a": Color(0.9, 0.15, 0.15), "wall": Color(0.95, 0.93, 0.88),
+		"mountain": Color(0.25, 0.6, 0.5), "mountain_cap": Color(0.7, 0.9, 0.6), "mountain_count": 16,
+		"props": [_p("palm", 14.0, 0.9, 1.5), _p("bush", 10.0, 0.8, 1.4, Color(0.8, 1.0, 0.7)), _p("rock", 4.0, 0.8, 2.0, Color(1.0, 0.92, 0.8)),
+				_p("lighthouse", 0.08, 1.0, 1.2), _p("round_tree", 3.0, 0.9, 1.3)],
+		"banner_color": Color(0.1, 0.7, 0.85),
+	})
+	_theme("neon", "Ciudad neón", {
+		"sky_top": Color(0.04, 0.02, 0.2), "sky_horizon": Color(0.6, 0.15, 0.65), "ground_horizon": Color(0.25, 0.1, 0.4),
+		"ambient": Color(0.5, 0.42, 0.75), "fog_color": Color(0.28, 0.1, 0.42), "fog_density": 0.0024,
+		"sun_color": Color(0.6, 0.65, 1.0), "sun_energy": 0.75, "sun_rotation": Vector3(-35, -40, 0),
+		"ground_low": Color(0.11, 0.1, 0.17), "ground_high": Color(0.2, 0.17, 0.3), "rock": Color(0.22, 0.2, 0.3),
+		"accent": Color(0.4, 0.9, 1.0), "amplitude": 8.0, "feature_size": 140.0, "snow_line": 0.0,
+		"road_a": Color(0.12, 0.12, 0.17), "road_b": Color(0.17, 0.16, 0.23), "curb_a": Color(0.2, 0.95, 1.0), "curb_b": Color(1.0, 0.25, 0.85),
+		"wall": Color(0.25, 0.85, 1.0),
+		"mountain": Color(0.2, 0.12, 0.34), "mountain_cap": Color(0.95, 0.35, 0.85), "mountain_count": 20,
+		"props": [_p("tower", 4.0, 0.9, 1.7), _p("lamp", 5.0, 1.0, 1.2, Color(1.0, 0.6, 0.95)), _p("crystal", 1.0, 0.8, 1.4, Color(1.0, 0.4, 0.9))],
+		"banner_color": Color(1.0, 0.25, 0.85),
+	})
+	_theme("circuito", "Circuito", {
+		"sky_top": Color(0.28, 0.55, 0.95), "sky_horizon": Color(0.82, 0.9, 0.97), "ground_horizon": Color(0.55, 0.72, 0.55),
+		"ambient": Color(0.68, 0.7, 0.75), "fog_color": Color(0.78, 0.86, 0.94), "fog_density": 0.0014,
+		"sun_color": Color(1.0, 0.97, 0.9), "sun_energy": 0.85, "sun_rotation": Vector3(-50, 30, 0),
+		"ground_low": Color(0.2, 0.46, 0.18), "ground_high": Color(0.32, 0.55, 0.22), "rock": Color(0.55, 0.55, 0.55),
+		"accent": Color(0.9, 0.95, 1.0), "amplitude": 8.0, "feature_size": 150.0, "snow_line": 0.0,
+		"road_a": Color(0.26, 0.26, 0.29), "road_b": Color(0.31, 0.31, 0.34), "curb_a": Color(0.9, 0.12, 0.12), "wall": Color(0.92, 0.92, 0.95),
+		"mountain": Color(0.4, 0.55, 0.6), "mountain_cap": Color(0.9, 0.95, 1.0), "mountain_count": 18,
+		"props": [_p("grandstand", 0.35, 1.0, 1.3), _p("round_tree", 5.0, 0.9, 1.4), _p("bush", 8.0, 0.8, 1.4), _p("pine", 3.0, 0.9, 1.4)],
+		"banner_color": Color(0.95, 0.75, 0.1),
+	})
+	_theme("industrial", "Ciudad industrial", {
+		"sky_top": Color(0.45, 0.5, 0.58), "sky_horizon": Color(0.85, 0.7, 0.55), "ground_horizon": Color(0.5, 0.45, 0.4),
+		"ambient": Color(0.6, 0.58, 0.58), "fog_color": Color(0.66, 0.58, 0.5), "fog_density": 0.0026,
+		"sun_color": Color(1.0, 0.85, 0.7), "sun_energy": 0.95, "sun_rotation": Vector3(-38, 55, 0),
+		"ground_low": Color(0.3, 0.28, 0.26), "ground_high": Color(0.42, 0.38, 0.33), "rock": Color(0.4, 0.38, 0.36),
+		"accent": Color(0.7, 0.65, 0.55), "amplitude": 10.0, "feature_size": 130.0, "snow_line": 0.0,
+		"road_a": Color(0.2, 0.2, 0.22), "road_b": Color(0.25, 0.25, 0.27), "curb_a": Color(0.95, 0.8, 0.1), "curb_b": Color(0.1, 0.1, 0.1),
+		"wall": Color(0.9, 0.75, 0.15),
+		"mountain": Color(0.4, 0.38, 0.4), "mountain_cap": Color(0.6, 0.55, 0.5), "mountain_count": 18,
+		"props": [_p("tank", 1.3, 0.9, 1.5), _p("chimney", 0.9, 0.9, 1.4), _p("rock", 6.0, 0.8, 2.2), _p("dead_tree", 2.0, 0.8, 1.2),
+				_p("lamp", 2.0, 1.0, 1.2)],
+		"banner_color": Color(0.95, 0.8, 0.1),
 	})

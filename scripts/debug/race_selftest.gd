@@ -76,7 +76,7 @@ func _run() -> void:
 
 	# --- Carrera completa ---
 	var ticks := 0
-	var max_ticks := 60 * 200
+	var max_ticks := 60 * 400
 	var mid_checked := false
 	var kart_finishes: Array[int] = []
 	manager.kart_finished.connect(func(_k: Kart, place: int) -> void: kart_finishes.append(place))
@@ -117,7 +117,7 @@ func _run() -> void:
 	_check("resultados con 4 filas y puntos", manager.results.size() == 4 and manager.results[0]["points"] == 15,
 			str(manager.results.size()))
 	var t1: float = manager.results[0]["time"]
-	_check("tiempo del ganador razonable (2 vueltas)", t1 > 30.0 and t1 < 150.0, "%.1f s" % t1)
+	_check("tiempo del ganador razonable (2 vueltas)", t1 > 30.0 and t1 < 320.0, "%.1f s" % t1)
 	_check("bots sin atascos graves", respawns <= 2, "reapariciones=%d" % respawns)
 	_check("el humano pasó a piloto automático al terminar", manager.racers[0].kart.controller is BotController)
 
