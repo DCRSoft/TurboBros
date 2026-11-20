@@ -76,27 +76,37 @@ func _btn(id: int, b: JoyButton) -> bool:
 
 func _read_joypad(seat: Seat, out: KartControls) -> void:
 	var id := seat.device_id
-	var lx := _dz(Input.get_joy_axis(id, JOY_AXIS_LEFT_X))
-	var ly := _dz(Input.get_joy_axis(id, JOY_AXIS_LEFT_Y))
-	var rt := Input.get_joy_axis(id, JOY_AXIS_TRIGGER_RIGHT)
-	var lt := Input.get_joy_axis(id, JOY_AXIS_TRIGGER_LEFT)
-	var lb := _btn(id, JOY_BUTTON_LEFT_SHOULDER)
-	var rb := _btn(id, JOY_BUTTON_RIGHT_SHOULDER)
-	# Mirar atrás: pulsar el stick derecho (R3) o empujarlo hacia abajo
-	out.look_back = _btn(id, JOY_BUTTON_RIGHT_STICK) or Input.get_joy_axis(id, JOY_AXIS_RIGHT_Y) > 0.7
-	if seat.drives():
-		var dpad := int(_btn(id, JOY_BUTTON_DPAD_RIGHT)) - int(_btn(id, JOY_BUTTON_DPAD_LEFT))
-		out.steer = clampf(lx + dpad, -1.0, 1.0)
-		out.throttle = maxf(rt, 1.0 if _btn(id, JOY_BUTTON_A) else 0.0)
-		out.brake = maxf(lt, 1.0 if _btn(id, JOY_BUTTON_B) else 0.0)
-		if seat.role == Seat.Role.SOLO:
-			out.drift = lb or rb
-		else:
-			out.drift = rb or lb
-	if seat.uses_items():
-		out.item = _btn(id, JOY_BUTTON_X) or _btn(id, JOY_BUTTON_Y)
-		out.item_back = ly > 0.5
-		if seat.role == Seat.Role.GUNNER:
+	var state := {
+		"lx": _dz(Input.get_joy_axis(id, JOY_AXIS_LEFT_X)), "ly": _dz(Input.get_joy_axis(id, JOY_AXIS_LEFT_Y)),
+		"rt": Input.get_joy_axis(id, JOY_AXIS_TRIGGER_RIGHT), "lt": Input.get_joy_axis(id, JOY_AXIS_TRIGGER_LEFT),
+		"a": _btn(id, JOY_BUTTON_A), "b": _btn(id, JOY_BUTTON_B), "x": _btn(id, JOY_BUTTON_X), "y": _btn(id, JOY_BUTTON_Y),
+		"lb": _btn(id, JOY_BUTTON_LEFT_SHOULDER), "rb": _btn(id, JOY_BUTTON_RIGHT_SHOULDER),
+		"dl": _btn(id, JOY_BUTTON_DPAD_LEFT), "dr": _btn(id, JOY_BUTTON_DPAD_RIGHT),
+	}
+	map_pad(state, seat.role, out)
+
+
+## Mapeo del mando (esquema Xbox), separado del hardware para poder probarlo:
+## A (o RT) acelera · Y (o LT) reversa/freno · B ítem · X mirar atrás · LB/RB derrapan (artillero: golpean)
+## stick izq./cruceta gira (stick abajo + ítem = lanzar/colocar hacia atrás).
+static func map_pad(st: Dictionary, role: Seat.Role, out: KartControls) -> void:
+	var drives := role == Seat.Role.SOLO or role == Seat.Role.DRIVER
+	var uses_items := role == Seat.Role.SOLO or role == Seat.Role.GUNNER
+	var lb: bool = st.get("lb", false)
+	var rb: bool = st.get("rb", false)
+	var lt: float = st.get("lt", 0.0)
+	var rt: float = st.get("rt", 0.0)
+	out.look_back = st.get("x", false)
+	if drives:
+		var dpad := int(st.get("dr", false)) - int(st.get("dl", false))
+		out.steer = clampf(float(st.get("lx", 0.0)) + dpad, -1.0, 1.0)
+		out.throttle = maxf(rt, 1.0 if st.get("a", false) else 0.0)
+		out.brake = maxf(lt, 1.0 if st.get("y", false) else 0.0)
+		out.drift = lb or rb
+	if uses_items:
+		out.item = st.get("b", false)
+		out.item_back = float(st.get("ly", 0.0)) > 0.5
+		if role == Seat.Role.GUNNER:
 			out.hit_left = lb or lt > 0.5
 			out.hit_right = rb or rt > 0.5
 		else:
@@ -123,7 +133,7 @@ func _read_keyboard(seat: Seat, out: KartControls) -> void:
 
 
 ## Jugador SOLO: golpea con el botón de ítem + dirección (hito 4: solo si no tiene ítem).
-func _solo_hit(out: KartControls) -> void:
+static func _solo_hit(out: KartControls) -> void:
 	if out.item:
 		out.hit_left = out.steer < -0.5
 		out.hit_right = out.steer > 0.5

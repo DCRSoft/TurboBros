@@ -302,6 +302,46 @@ func _test_stat_effects() -> void:
 	r.stats.weight = 1.0
 
 
+func _pad(role: Seat.Role, state: Dictionary) -> KartControls:
+	var out := KartControls.new()
+	InputManager.map_pad(state, role, out)
+	return out
+
+
+func _test_pad_mapping() -> void:
+	# Esquema Xbox: A acelera, B ítem, X mirar atrás, Y reversa/freno; el resto como antes
+	var S := Seat.Role.SOLO
+	var a := _pad(S, {"a": true})
+	var b := _pad(S, {"b": true})
+	var x := _pad(S, {"x": true})
+	var y := _pad(S, {"y": true})
+	_check("mando Xbox: A acelera (y nada más)", a.throttle == 1.0 and a.brake == 0.0 and not a.item and not a.look_back)
+	_check("mando Xbox: B usa el ítem", b.item and b.throttle == 0.0 and not b.look_back)
+	_check("mando Xbox: X mira atrás (sin gastar el ítem)", x.look_back and not x.item and x.throttle == 0.0)
+	_check("mando Xbox: Y da reversa/freno", y.brake == 1.0 and y.throttle == 0.0 and not y.item)
+	var rt := _pad(S, {"rt": 1.0})
+	var lt := _pad(S, {"lt": 1.0})
+	_check("mando Xbox: los gatillos RT/LT también aceleran y frenan", rt.throttle == 1.0 and lt.brake == 1.0)
+	var steer := _pad(S, {"lx": 0.7, "dr": false})
+	var dpad := _pad(S, {"dl": true})
+	_check("mando Xbox: stick izquierdo y cruceta giran", is_equal_approx(steer.steer, 0.7) and dpad.steer == -1.0)
+	var drift := _pad(S, {"lb": true})
+	var drift2 := _pad(S, {"rb": true})
+	_check("mando Xbox: LB/RB derrapan", drift.drift and drift2.drift)
+	_check("mando Xbox: el artillero usa el ítem con B, mira atrás con X y golpea con LB/RB",
+			_pad(Seat.Role.GUNNER, {"b": true}).item and _pad(Seat.Role.GUNNER, {"x": true}).look_back
+			and _pad(Seat.Role.GUNNER, {"lb": true}).hit_left and _pad(Seat.Role.GUNNER, {"rb": true}).hit_right
+			and not _pad(Seat.Role.GUNNER, {"a": true}).throttle > 0.0)
+	_check("mando Xbox: el conductor no usa ítems pero sí mira atrás",
+			not _pad(Seat.Role.DRIVER, {"b": true}).item and _pad(Seat.Role.DRIVER, {"x": true}).look_back)
+	var solo_hit := _pad(S, {"b": true, "lx": 0.9})
+	_check("mando Xbox: jugador solo golpea con B + dirección", solo_hit.item and solo_hit.hit_right and not solo_hit.hit_left)
+	var back_item := _pad(S, {"b": true, "ly": 0.8})
+	_check("mando Xbox: B + stick abajo lanza/coloca hacia atrás", back_item.item and back_item.item_back)
+	var idle := _pad(S, {})
+	_check("mando Xbox: sin tocar nada no hay entrada", idle.throttle == 0.0 and idle.brake == 0.0 and not idle.item and not idle.look_back)
+
+
 func _test_look_back_controls() -> void:
 	var a := KartControls.new()
 	var b := KartControls.new()
@@ -1210,6 +1250,7 @@ func _run() -> void:
 
 	# 6h. Mirar atrás y pausa
 	_test_look_back_controls()
+	_test_pad_mapping()
 	await _test_look_back_camera()
 	await _test_pause()
 

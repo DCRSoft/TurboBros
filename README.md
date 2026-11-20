@@ -10,7 +10,7 @@ Hasta 8 jugadores locales con mandos USB/Bluetooth.
 ## Ejecutar
 1. Abrir la carpeta con Godot 4.7 (`project.godot`) y pulsar F5.
 2. Controles del hito 1:
-   - **Mando**: stick izq. girar · RT/A acelerar · LT/B frenar · LB/RB derrapar (salto + derrape) (pulsar con el stick inclinado).
+   - **Mando (esquema Xbox)**: stick izq. girar · **A** (o RT) acelerar · **Y** (o LT) reversa/freno · **B** ítem · **X** mirar atrás · **LB/RB** derrapar (salto + derrape, con el stick inclinado) · Start pausa.
    - **Teclado** (control adicional, se puede combinar con mandos y con otros teclados): J1 = WASD + Shift (derrape) + Espacio (ítem) + Q/E (golpes del artillero) + C (mirar atrás); J2 = flechas + L (derrape) + K (ítem) + J/; (golpes) + / (mirar atrás). R = reiniciar. **P / Esc / Start = pausa**.
 
 ## Pantalla dividida (hito 2)
@@ -49,7 +49,7 @@ El juego arranca en el lobby. Cada jugador se une pulsando su botón: **A** (man
 
 ## Ítems y efectos (hito 4)
 - **Cajas de ítems** en la pista de prueba: al tocarlas, ruleta de 1 s y el ítem sale según tu posición (los últimos reciben opciones más fuertes; el 1.º nunca recibe cohete, estrella, etc.).
-- **Usar ítem**: botón X/Y (mando), Espacio (J1), K (J2). Con "atrás" (stick abajo / S / ↓) los ataques salen hacia atrás y las trampas se colocan 3 m detrás; sin él, hacia adelante (trampas a 6 m).
+- **Usar ítem**: botón B (mando), Espacio (J1), K (J2). Con "atrás" (stick abajo / S / ↓) los ataques salen hacia atrás y las trampas se colocan 3 m detrás; sin él, hacia adelante (trampas a 6 m).
 - **Sin ítem en mano**, el artillero (o jugador solo con botón de ítem + dirección) golpea a los lados.
 - 23 ítems: velocidad (turbo, triple turbo, cohete), defensa (escudo, orbitales, burbuja reflectante), ataque (recto, rebotador, teledirigido, bomba de área, ola de choque), trampas (aceite, clavos, caja falsa, barrera, mina; sin soltar hacen de escudo trasero), invencibilidad (estrella, fantasma, gigante) y caos (tinta, controles invertidos, ralentizar a los de delante, intercambio de posición).
 - **Un único sistema de efectos** (`KartEffect` + `KartEffects`): turbos, giros, escudos, tinta... son recursos `.tres` en `data/effects/`. Los turbos de derrape y aterrizaje también pasan por él.
@@ -131,5 +131,5 @@ Todo el arte 3D se **genera por código** (low poly, color por vértice, sin tex
 
 ## Pausa y mirar atrás
 - **Pausa**: **Start** (mando), **P** o **Esc** durante la carrera. En local congela todo (física, bots, cuenta atrás y tiempo) y ofrece *Continuar*, *Reiniciar carrera*, *Volver al lobby* y *Menú principal*. **En línea** no puede congelar a los demás: el menú se abre pero la carrera sigue (opciones *Continuar* y *Salir de la partida*). Cualquier jugador puede abrirla y cerrarla.
-- **Mirar atrás** (mantener): **R3** (pulsar el stick derecho) o empujar el stick derecho hacia abajo en mando; **C** (teclado J1) o **/** (teclado J2). La cámara pasa por delante del kart y mira hacia lo que viene detrás, con un aviso en pantalla; al soltar vuelve a la normal. Funciona para cualquiera de los dos jugadores de un kart y en pantalla dividida cada vista es independiente.
+- **Mirar atrás** (mantener): **X** en el mando, **C** (teclado J1) o **/** (teclado J2). La cámara pasa por delante del kart y mira hacia lo que viene detrás, con un aviso en pantalla; al soltar vuelve a la normal. Funciona para cualquiera de los dos jugadores de un kart y en pantalla dividida cada vista es independiente.
 - Capturas en `docs/art/` (`carrera_pausa.png`, `carrera_atras.png`).

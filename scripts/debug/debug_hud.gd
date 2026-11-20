@@ -115,9 +115,9 @@ func _process(_delta: float) -> void:
 	if info_provider.is_valid():
 		lines.append(info_provider.call())
 	if show_help:
-		lines.append("[Mando] stick girar | RT/A acelerar | LT/B frenar | LB/RB derrapar")
+		lines.append("[Mando] stick girar | A/RT acelerar | Y/LT reversa | B ítem | X mirar atrás | LB/RB derrapar")
 		lines.append("[Teclado J1] WASD + Shift | [J2] flechas + L | R reiniciar")
-		lines.append("Pausa: Start / P / Esc | Mirar atrás: R3 (o stick der. abajo) / C (J1) / / (J2)")
+		lines.append("Pausa: Start / P / Esc | Mirar atrás: X (mando) / C (J1) / / (J2)")
 		lines.append("Artillero: LB/RB golpean izq/der")
 		lines.append("F1-F4: nº de karts (solo depuración) | [ ]: escala de render")
 	_label.text = "\n".join(lines)
