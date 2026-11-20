@@ -1,7 +1,9 @@
 # TurboBros
 
 Juego de karts arcade 3D low poly para Windows (Godot 4, GDScript, renderizador Compatibility).
-Hasta 8 jugadores locales con mandos USB/Bluetooth. Licencia del código: MIT (ver `LICENSE`).
+Hasta 8 jugadores locales con mandos USB/Bluetooth.
+
+**Licencias:** el código es MIT (ver `LICENSE`). Las imágenes y los personajes (nombres, diseños, descripciones) son © DCRSoft, **todos los derechos reservados** (ver `LICENSE-ASSETS.md`).
 
 > Repositorio público: nunca subir tokens, claves ni datos personales. Assets de terceros: registrar en `CREDITS.md`.
 

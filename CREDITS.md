@@ -7,14 +7,18 @@ comprobar que su licencia permite publicarlo en un repositorio público y anotar
 |-------|----------------------|----------|---------------------|
 | _(ninguno todavía)_ | | | |
 
-## Arte propio (pendiente de licencia)
-- `assets/ui/cover.jpg` — portada del juego, aportada por el autor. **No se sube al repositorio público**
-  (está en `.gitignore`) hasta decidir su licencia. El menú principal funciona sin ella (muestra solo el texto).
-  Comprobar también cómo se generó (herramienta/modelo) y si esa licencia permite publicarla.
+## Arte propio — todos los derechos reservados (ver `LICENSE-ASSETS.md`)
+- `assets/ui/cover.jpg` — portada del juego. Generada con IA y modificada a mano por el autor (DCRSoft).
+  Licencia: **todos los derechos reservados**. Todavía **no se sube al repositorio** (está en `.gitignore`);
+  el menú principal funciona sin ella.
+  - Pendiente: anotar aquí la herramienta de IA y la fecha de generación, y confirmar que sus términos de uso
+    permiten el uso comercial. Conservar el prompt original.
+- Personajes (`data/characters/`): nombres, diseños y descripciones propios — todos los derechos reservados.
 
 ## Motor
 - Godot Engine — MIT License — https://godotengine.org
 
 ## Licencias
 - Código: MIT (ver `LICENSE`).
-- Assets propios (arte/sonido): licencia **pendiente de decidir antes del primer release público**.
+- Imágenes y personajes: **todos los derechos reservados** (ver `LICENSE-ASSETS.md`).
+- Sonido y música propios: pendiente de decidir antes del primer release público.
