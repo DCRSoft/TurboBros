@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="ThemeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/theme_data.gd" id="1_pfbf6"]
+
+[resource]
+script = ExtResource("1_pfbf6")
+id = &"volcan"
+display_name = "Volcán"
+sky_top = Color(0.22, 0.12, 0.18, 1)
+sky_horizon = Color(0.95, 0.45, 0.2, 1)
+ground_horizon = Color(0.5, 0.2, 0.12, 1)
+ambient = Color(0.5, 0.36, 0.34, 1)
+fog_color = Color(0.55, 0.25, 0.15, 1)
+fog_density = 0.0028
+sun_color = Color(1, 0.6, 0.35, 1)
+sun_energy = 1.05
+sun_rotation = Vector3(-30, 60, 0)
+ground_low = Color(0.17, 0.14, 0.14, 1)
+ground_high = Color(0.3, 0.2, 0.18, 1)
+rock = Color(0.26, 0.23, 0.24, 1)
+accent = Color(1, 0.45, 0.1, 1)
+amplitude = 28.0
+feature_size = 95.0
+road_a = Color(0.2, 0.19, 0.21, 1)
+road_b = Color(0.25, 0.23, 0.26, 1)
+curb_a = Color(1, 0.45, 0.1, 1)
+curb_b = Color(0.15, 0.15, 0.17, 1)
+wall = Color(0.28, 0.24, 0.25, 1)
+mountain = Color(0.25, 0.2, 0.22, 1)
+mountain_cap = Color(1, 0.5, 0.15, 1)
+mountain_count = 20
+props = Array[Dictionary]([{
+"density": 10.0,
+"kind": "lava_spire",
+"max": 1.8,
+"min": 0.8,
+"tint": Color(1, 1, 1, 1)
+}, {
+"density": 12.0,
+"kind": "rock",
+"max": 2.4,
+"min": 0.8,
+"tint": Color(0.55, 0.45, 0.45, 1)
+}, {
+"density": 4.0,
+"kind": "dead_tree",
+"max": 1.2,
+"min": 0.8,
+"tint": Color(0.4, 0.3, 0.3, 1)
+}, {
+"density": 2.0,
+"kind": "crystal",
+"max": 1.4,
+"min": 0.8,
+"tint": Color(1, 0.45, 0.35, 1)
+}])
+banner_color = Color(1, 0.4, 0.1, 1)

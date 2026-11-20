@@ -13,6 +13,7 @@ const MAX_KARTS := 8
 var setups: Array[Dictionary] = []
 var bot_teams: Array[int] = []   ## un elemento por bot (-1 = sin equipo)
 var laps := 3
+var track_id: StringName = &""   ## pista elegida en el lobby (vacío = la primera); no se borra con reset()
 var friendly_fire := false
 var benchmark := false   ## prueba de rendimiento: 4 vistas + 4 bots, todos conducidos por la IA
 

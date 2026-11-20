@@ -139,3 +139,22 @@ Todo el arte 3D se **genera por código** (low poly, color por vértice, sin tex
 - **23 iconos vectoriales** dibujados por código (`scripts/ui/item_icons.gd`) y **modelos 3D low poly** de la caja de ítems (cubo de cristal con marco dorado y "?" flotante), misil recto y teledirigido, bola rebotadora, bomba con mecha, aceite, clavos, caja falsa (naranja con "!"), barrera y mina (`scripts/art/item_models.gd`). La trampa que llevas como escudo se ve detrás del kart. Imágenes: `docs/art/items_iconos.png`, `items_modelos.png`, `carrera_hud.png`.
 - **Reglas**: lo que afecta "a todos" (bomba, ola de choque, mina, tinta, controles invertidos...) **no afecta a quien lo lanza** ni, **sin fuego amigo**, a su equipo; con fuego amigo sí afecta a los compañeros (nunca al lanzador). Los dueños pisan sus propias trampas sin activarlas.
 - La ayuda de controles de la pantalla se oculta a los 14 s de carrera.
+
+## Pistas y paisaje
+Cinco pistas, cada una con su tema visual, todo generado por código (sin descargas ni licencias):
+
+| Pista | Tema | Largo |
+|---|---|---|
+| 01 Bosque Esmeralda | pinos, arbustos, cabañas | 920 m |
+| 02 Dunas del Escorpión | desierto: cactus, palmeras, ruinas | 1142 m |
+| 03 Cumbre Helada | nieve: pinos nevados, cristales de hielo | 821 m |
+| 04 Volcán Brasa | roca negra, agujas de lava, cielo rojizo | 945 m |
+| 05 Planeta Zorp | hongos gigantes, cristales, cielo violeta | 1016 m |
+
+- **Datos**: una pista es un `.tres` (`data/tracks`, `TrackData`: puntos de control de una curva cerrada, anchura, tema, vueltas) y un tema es otro (`data/themes`, `ThemeData`: cielo, niebla, luz, colores del terreno y la carretera, montañas, decorado con densidad por hectárea). Se generan con `tools/generate_tracks.gd`; añadir un `.tres` = pista nueva.
+- **Paisaje** (`scripts/race/scenery.gd`): terreno de baja resolución en trozos de ~100 m (más bajo que la carretera junto a ella y con colinas al alejarse, color por altura/pendiente/nieve), anillo de montañas lejanas, decorado en `MultiMesh` por trozo y tipo (`scripts/art/prop_models.gd`, 17 modelos de <260 triángulos), banderines/neumáticos/farolas a pie de pista, arco de meta con "META" y cielo/niebla/sol del tema. Es solo visual: la colisión sigue siendo la carretera y sus muros.
+- **Calidad gráfica**: Baja/Media/Alta cambian el tamaño de celda del terreno (10/7/6 m), la distancia de dibujado del terreno y del decorado (260/480/800 m y 130/230/400 m) y la densidad del decorado (0,3/0,65/1,0); la niebla se ajusta a esa distancia para que no se vea el corte.
+- **Elegir pista**: en el lobby con **X** (mando) o **T**; en la sala en línea la elige el anfitrión (**T** / X) y viaja en la especificación de la carrera. Las vueltas se ajustan a las de la pista.
+- **Pruebas**: `selftest` valida los datos, el radio de curva, que el terreno no tape la carretera, que no haya decorado sobre la calzada, la densidad por calidad y la elección de pista; `scenes/debug/scenery_probe.tscn` corre 1 vuelta con IA en cada pista. Capturas: `race_shot.tscn -- --track=03_cumbre [--far|--aerial]` → `docs/art/carrera_*.png`.
+
+Además: el orden de personajes en la selección es DranCr primero y el resto alfabético, y por defecto hay el máximo de bots (se deja de rellenar solo cuando se cambia a mano).

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TrackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/track_data.gd" id="1_85qlc"]
+
+[resource]
+script = ExtResource("1_85qlc")
+id = &"02_dunas"
+display_name = "Dunas del Escorpión"
+description = "Rectas largas y anchas sobre dunas ondulantes; el calor no perdona."
+theme = &"desierto"
+control_points = PackedVector3Array(224.38277, 1.6829419, 0, 223.59123, 3.4874027, 50.38658, 182.64418, 3.308298, 94.6958, 112.80444, 2.647185, 112.583305, 35.682816, 3.1467366, 110.967636, -32.555576, 4.8296785, 110.967636, -90.00417, 6.013069, 112.583305, -142.92094, 4.99124, 94.6958, -191.78644, 1.8044608, 50.38658, -224.38277, -1.6829419, 1.5919883e-14, -223.59123, -3.4874027, -38.538654, -182.64418, -3.308298, -72.42898, -112.80444, -2.647185, -112.583305, -35.682816, -3.1467366, -145.08238, 32.555576, -4.8296785, -145.08238, 90.00417, -6.013069, -112.583305, 142.92094, -4.99124, -72.42898, 191.78644, -1.8044608, -38.538654)
+road_half_width = 9.0

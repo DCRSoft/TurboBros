@@ -140,7 +140,7 @@ static func _solo_hit(out: KartControls) -> void:
 
 
 ## Entrada de menú de un dispositivo: x/y (-1..1; y>0 = abajo), confirm, back, swap, start, select,
-## lb, rb, lt, rt.
+## lb, rb, lt, rt, track.
 func read_menu(kind: Seat.DeviceKind, id: int) -> Dictionary:
 	if kind == Seat.DeviceKind.JOYPAD:
 		var dx := int(_btn(id, JOY_BUTTON_DPAD_RIGHT)) - int(_btn(id, JOY_BUTTON_DPAD_LEFT))
@@ -149,7 +149,7 @@ func read_menu(kind: Seat.DeviceKind, id: int) -> Dictionary:
 				"y": clampf(_dz(Input.get_joy_axis(id, JOY_AXIS_LEFT_Y)) + dy, -1.0, 1.0),
 				"confirm": _btn(id, JOY_BUTTON_A), "back": _btn(id, JOY_BUTTON_B),
 				"swap": _btn(id, JOY_BUTTON_Y), "start": _btn(id, JOY_BUTTON_START),
-				"select": _btn(id, JOY_BUTTON_BACK),
+				"select": _btn(id, JOY_BUTTON_BACK), "track": _btn(id, JOY_BUTTON_X),
 				"lb": _btn(id, JOY_BUTTON_LEFT_SHOULDER), "rb": _btn(id, JOY_BUTTON_RIGHT_SHOULDER),
 				"lt": Input.get_joy_axis(id, JOY_AXIS_TRIGGER_LEFT) > 0.6,
 				"rt": Input.get_joy_axis(id, JOY_AXIS_TRIGGER_RIGHT) > 0.6}
@@ -159,4 +159,4 @@ func read_menu(kind: Seat.DeviceKind, id: int) -> Dictionary:
 			"y": float(int(key.call("brake")) - int(key.call("throttle"))),
 			"confirm": key.call("item"), "back": key.call("hit_l"),
 			"swap": key.call("hit_r"), "start": false, "select": false,
-			"lb": false, "rb": false, "lt": false, "rt": false}
+			"lb": false, "rb": false, "lt": false, "rt": false, "track": false}

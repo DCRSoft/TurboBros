@@ -53,6 +53,8 @@ func _run() -> void:
 		NetSession.test_autopilot = true
 		var joined := await _wait(func() -> bool: return NetSession.peer_count() >= 2, 40.0)
 		_check("anfitrión: el cliente se une a la sala", joined, "equipos=%d" % NetSession.peer_count())
+		_check("anfitrión: por defecto el máximo de bots (8 karts - 2 equipos = 6)", int(NetSession.roster["bots"]) == 6,
+				"bots=%d" % int(NetSession.roster["bots"]))
 		NetSession.set_choice({"vehicle": "relampago", "driver": "drancr", "gunner": "clarstar", "seats": 1, "ready": true})
 		NetSession.set_host_config(1, 2, false)
 		var ready := await _wait(func() -> bool: return NetSession.can_start(), 40.0)

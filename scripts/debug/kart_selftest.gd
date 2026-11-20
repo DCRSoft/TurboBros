@@ -117,6 +117,7 @@ func _test_roster_and_build() -> void:
 	_check("datos: 6 vehículos y 16 personajes con ids únicos", vs.size() == 6 and cs.size() == 16 and ids.size() == 22,
 			"vehículos=%d personajes=%d" % [vs.size(), cs.size()])
 	_check_new_characters(cs)
+	_test_character_order()
 	var v := DataCatalog.vehicle(&"relampago")
 	var aurea := DataCatalog.character(&"ferchaos")
 	var brutus := DataCatalog.character(&"polewar")
@@ -142,6 +143,18 @@ func _test_roster_and_build() -> void:
 			and is_equal_approx(ks.acceleration, 16.0 * 1.05), "vel_max=%.2f" % ks.max_speed)
 	_check("el color del 3.er turbo sale del personaje", aurea.get_final_drift_color() == CharacterData.PINK
 			and DataCatalog.character(&"end").get_final_drift_color() == CharacterData.GOLD)
+
+
+func _test_character_order() -> void:
+	var cs := DataCatalog.characters()
+	var names := PackedStringArray()
+	for c in cs:
+		names.append(c.display_name)
+	var rest_sorted := true
+	for i in range(2, cs.size()):
+		rest_sorted = rest_sorted and cs[i - 1].display_name.to_lower() <= cs[i].display_name.to_lower()
+	_check("orden de personajes: DranCr primero y el resto alfabético", cs[0].id == &"drancr" and rest_sorted,
+			", ".join(names))
 
 
 func _check_new_characters(cs: Array[CharacterData]) -> void:
@@ -769,6 +782,21 @@ func _test_quality_effects() -> void:
 
 
 func _test_race_options() -> void:
+	# Por defecto, SIEMPRE el máximo de bots (8 karts en pantalla), que se reajusta al entrar/salir jugadores
+	var d := LobbyModel.new()
+	d.add(Seat.DeviceKind.JOYPAD, 0)
+	var one := d.bots
+	d.add(Seat.DeviceKind.JOYPAD, 1)
+	d.add(Seat.DeviceKind.JOYPAD, 2)
+	d.add(Seat.DeviceKind.JOYPAD, 3)
+	var four := d.bots
+	d.remove(d.players[3])
+	var three := d.bots
+	_check("bots por defecto: el máximo (1 jugador = 7, 4 = 4, y se reajusta al salir uno)",
+			one == 7 and four == 4 and three == 5 and d.bots == d.max_bots(), "1=%d 4=%d tras salir=%d" % [one, four, three])
+	d.set_bots(2)
+	d.add(Seat.DeviceKind.JOYPAD, 3)
+	_check("bots: al cambiarlos a mano dejan de ser automáticos", not d.bots_auto and d.bots == 2, "bots=%d" % d.bots)
 	var m := LobbyModel.new()
 	m.add(Seat.DeviceKind.JOYPAD, 0)
 	m.add(Seat.DeviceKind.JOYPAD, 1)
@@ -1433,9 +1461,143 @@ func _run() -> void:
 	_test_race_options()
 	await _test_menus_smoke()
 
+	# 6d. Pistas y paisaje
+	await _test_tracks_and_scenery()
+
 	# 7. Versión
 	_check("versión leída de VERSION", GameVersion.current == "0.1.0", GameVersion.current)
 	_check("compare de versiones", GameVersion.compare("v1.2.0", "1.10.0") < 0)
 
 	print("RESULTADO: %s" % ("TODO OK" if failures == 0 else "%d FALLOS" % failures))
 	get_tree().quit(failures)
+
+
+# --- Pistas y paisaje ---------------------------------------------------------------------------------
+
+func _build_scenery_for(tr: TrackData, quality: GraphicsSettings.Quality) -> Array:
+	var saved := GraphicsSettings.quality
+	GraphicsSettings.quality = quality
+	var c := Circuit.new()
+	c.track = tr
+	c.theme = DataCatalog.theme(tr.theme)
+	add_child(c)
+	var sc := Scenery.new()
+	add_child(sc)
+	sc.build(c, c.theme)
+	GraphicsSettings.quality = saved
+	return [c, sc]
+
+
+func _test_tracks_and_scenery() -> void:
+	var tracks := DataCatalog.tracks()
+	var themes := DataCatalog.themes()
+	_check("pistas: hay 5 pistas y 5 temas, la primera es el bosque",
+			tracks.size() >= 5 and themes.size() >= 5 and tracks[0].id == &"01_bosque", "%d pistas, %d temas" % [tracks.size(), themes.size()])
+	var ids := {}
+	var themes_ok := true
+	for tr in tracks:
+		ids[tr.id] = true
+		themes_ok = themes_ok and DataCatalog.theme(tr.theme).id == tr.theme and tr.control_points.size() >= 12
+	_check("pistas: ids únicos y cada una con su tema y puntos de control", ids.size() == tracks.size() and themes_ok)
+	_check("pistas: id desconocido -> la primera", DataCatalog.track(&"no_existe").id == tracks[0].id)
+	var skies := {}
+	for t in themes:
+		skies[t.sky_top.to_html() + t.ground_low.to_html()] = true
+	_check("temas: todos se ven distintos (cielo y terreno)", skies.size() == themes.size())
+
+	var any_props := true
+	var total_ms := 0
+	for tr in tracks:
+		var built := _build_scenery_for(tr, GraphicsSettings.Quality.HIGH)
+		var c: Circuit = built[0]
+		var sc: Scenery = built[1]
+		await get_tree().process_frame
+		# Curvatura mínima (radio) y que la pista no se cruce ni roce consigo misma
+		var max_turn := 0.0   # giro máximo en 5 muestras (15 m): radio de curva real, sin ruido de la muestra
+		for i in c.count:
+			var acc := 0.0
+			for k in 5:
+				acc += c.turn[(i + k) % c.count]
+			max_turn = maxf(max_turn, absf(acc))
+		var radius := 5.0 * c.step / maxf(max_turn, 0.0001)
+		var overlap := INF
+		for i in range(0, c.count, 3):
+			for j in range(i + 1, c.count, 3):
+				var gap := mini(j - i, c.count - (j - i))
+				if gap * c.step > 120.0:
+					overlap = minf(overlap, Vector2(c.points[i].x - c.points[j].x, c.points[i].z - c.points[j].z).length())
+		_check("pista %s: radio de curva mínimo >= 16 m y sin solapes" % tr.id,
+				radius >= 16.0 and overlap > c.road_half_width * 2.0 + 10.0,
+				"radio=%.0f m, separación mínima=%.0f m, largo=%.0f m" % [radius, overlap, c.length])
+		_check("pista %s: largo razonable (700-1500 m)" % tr.id, c.length > 700.0 and c.length < 1500.0, "%.0f m" % c.length)
+		# El terreno queda por debajo de la carretera, sin tapar la calzada
+		var worst := -INF
+		for i in range(0, c.count, 7):
+			for lat in [-1.0, -0.5, 0.0, 0.5, 1.0]:
+				var q: Vector3 = c.points[i] + c.rights[i] * lat * c.road_half_width
+				worst = maxf(worst, sc.height_at(q.x, q.z) - q.y)
+		_check("pista %s: el terreno no tapa la carretera" % tr.id, worst < -0.1, "máx. terreno-carretera=%.2f m" % worst)
+		# Ningún decorado sobre la calzada ni pegado a los muros (salvo lo de a pie de pista)
+		var bad := 0
+		var counted := 0
+		for n in sc.get_children():
+			var mmi := n as MultiMeshInstance3D
+			if mmi == null or String(mmi.name).begins_with("Trackside_"):
+				continue
+			for k in mmi.multimesh.instance_count:
+				var o := mmi.multimesh.get_instance_transform(k).origin
+				counted += 1
+				if sc.road_distance(o.x, o.z) < c.road_half_width + 7.9:
+					bad += 1
+		any_props = any_props and counted > 100
+		_check("pista %s: decorado (%d) lejos de la carretera" % [tr.id, counted], bad == 0 and counted > 100, "demasiado cerca=%d" % bad)
+		_check("pista %s: arco de meta y elementos a pie de pista" % tr.id,
+				sc.get_node_or_null("FinishArch") != null and int(sc.prop_counts.get("banner", 0)) > 3, str(sc.prop_counts.get("banner", 0)))
+		total_ms += sc.build_ms
+		c.queue_free()
+		sc.queue_free()
+	_check("paisaje: construir las 5 pistas es rápido (< 1,5 s cada una)", total_ms < 7500, "%d ms en total" % total_ms)
+
+	# Calidad: más densidad y más trozos de terreno cuanto mayor
+	var f := tracks[0]
+	var lo := _build_scenery_for(f, GraphicsSettings.Quality.LOW)
+	var me := _build_scenery_for(f, GraphicsSettings.Quality.MEDIUM)
+	var hi := _build_scenery_for(f, GraphicsSettings.Quality.HIGH)
+	var plo: int = (lo[1] as Scenery).prop_instances
+	var pme: int = (me[1] as Scenery).prop_instances
+	var phi: int = (hi[1] as Scenery).prop_instances
+	_check("paisaje: más decorado cuanto mayor la calidad (Baja < Media < Alta)", plo < pme and pme < phi, "%d / %d / %d" % [plo, pme, phi])
+	var tlo: int = (lo[1] as Scenery).terrain_triangles
+	var thi: int = (hi[1] as Scenery).terrain_triangles
+	_check("paisaje: el terreno de Baja usa menos triángulos que el de Alta", tlo < thi, "%d / %d" % [tlo, thi])
+	for pair in [lo, me, hi]:
+		(pair[0] as Node).queue_free()
+		(pair[1] as Node).queue_free()
+	await get_tree().process_frame
+	# Modelos del decorado: todos existen y son ligeros
+	var heavy := ""
+	for kind in PropModels.KINDS:
+		if PropModels.triangles(kind) <= 0 or PropModels.triangles(kind) > 260:
+			heavy += " %s=%d" % [kind, PropModels.triangles(kind)]
+	_check("decorado: todos los modelos existen y tienen menos de 260 triángulos", heavy == "", heavy)
+	var used := true
+	for t in themes:
+		for e in t.props:
+			used = used and PropModels.KINDS.has(e["kind"])
+	_check("temas: solo usan modelos de decorado que existen", used)
+
+	# Elección de pista: lobby local y especificación de red
+	var m := LobbyModel.new()
+	var first := m.current_track().id
+	m.cycle_track(1)
+	var second := m.current_track().id
+	m.cycle_track(-1)
+	_check("lobby: la tecla de pista cambia y vuelve a la primera", first == tracks[0].id and second == tracks[1].id and m.current_track().id == first)
+	m.cycle_track(1)
+	m.apply_to_session()
+	_check("lobby: la pista elegida llega a GameSession", GameSession.track_id == tracks[1].id, str(GameSession.track_id))
+	GameSession.track_id = &""
+	var roster := {"peers": {1: {"name": "A", "vehicle": "azulon", "driver": "drancr", "gunner": "drancr", "seats": 1}},
+			"laps": 2, "bots": 1, "friendly_fire": false, "track": String(tracks[2].id)}
+	var spec := NetSession.build_spec(roster, 7)
+	_check("red: la especificación lleva la pista elegida por el anfitrión", spec.get("track", "") == String(tracks[2].id), str(spec.get("track", "")))

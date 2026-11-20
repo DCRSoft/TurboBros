@@ -11,17 +11,20 @@ enum Quality { LOW, MEDIUM, HIGH }
 const PRESETS := {
 	Quality.LOW: {
 		"name": "Baja", "shadows": false, "shadow_distance": 0.0, "msaa": 0, "fxaa": false,
-		"glow": false, "tonemap": false, "far": 160.0, "lod": 4.0, "particles": 0.25,
+		"glow": false, "tonemap": false, "far": 1000.0, "lod": 4.0, "particles": 0.25,
+			"terrain_cell": 10.0, "terrain_distance": 260.0, "prop_density": 0.3, "prop_distance": 130.0,
 		"pixel_budget": 900000, "base_scale": 0.75, "textures": false,
 	},
 	Quality.MEDIUM: {
 		"name": "Media", "shadows": true, "shadow_distance": 35.0, "msaa": 0, "fxaa": true,
-		"glow": false, "tonemap": true, "far": 320.0, "lod": 2.0, "particles": 0.5,
+		"glow": false, "tonemap": true, "far": 1200.0, "lod": 2.0, "particles": 0.5,
+			"terrain_cell": 7.0, "terrain_distance": 480.0, "prop_density": 0.65, "prop_distance": 230.0,
 		"pixel_budget": 1600000, "base_scale": 0.9, "textures": true,
 	},
 	Quality.HIGH: {
 		"name": "Alta", "shadows": true, "shadow_distance": 90.0, "msaa": 2, "fxaa": true,
-		"glow": true, "tonemap": true, "far": 700.0, "lod": 1.0, "particles": 1.0,
+		"glow": true, "tonemap": true, "far": 1500.0, "lod": 1.0, "particles": 1.0,
+			"terrain_cell": 6.0, "terrain_distance": 800.0, "prop_density": 1.0, "prop_distance": 400.0,
 		"pixel_budget": 0, "base_scale": 1.0, "textures": true,
 	},
 }

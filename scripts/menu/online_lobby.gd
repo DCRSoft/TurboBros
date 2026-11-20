@@ -95,6 +95,7 @@ func _process(_delta: float) -> void:
 			"lt": _host_laps(-1)
 			"rt": _host_laps(1)
 			"select": _host_ff()
+			"track": _host_track()
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -112,6 +113,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_BRACKETLEFT: _host_laps(-1)
 		KEY_BRACKETRIGHT: _host_laps(1)
 		KEY_F: _host_ff()
+		KEY_T: _host_track()
 
 
 # --- Elecciones locales --------------------------------------------------------------------
@@ -175,6 +177,16 @@ func _host_laps(d: int) -> void:
 		NetSession.set_host_config(int(NetSession.roster["laps"]) + d, NetSession.roster["bots"], NetSession.roster["friendly_fire"])
 
 
+func _host_track() -> void:
+	if NetSession.is_host():
+		var all := DataCatalog.tracks()
+		var cur := 0
+		for i in all.size():
+			if String(all[i].id) == String(NetSession.roster.get("track", "")):
+				cur = i
+		NetSession.set_host_track(String(all[(cur + 1) % all.size()].id))
+
+
 func _host_ff() -> void:
 	if NetSession.is_host():
 		NetSession.set_host_config(NetSession.roster["laps"], NetSession.roster["bots"], not NetSession.roster["friendly_fire"])
@@ -211,7 +223,7 @@ func _refresh() -> void:
 		line += "   [%s]" % ("✔ LISTO" if p.get("ready", false) else "eligiendo…")
 		L.append(line)
 	L.append("")
-	L.append("Bots: %d · Vueltas: %d · Fuego amigo: %s" % [NetSession.roster["bots"], NetSession.roster["laps"],
+	L.append("Pista: %s · Bots: %d · Vueltas: %d · Fuego amigo: %s" % [DataCatalog.track(StringName(NetSession.roster.get("track", ""))).display_name, NetSession.roster["bots"], NetSession.roster["laps"],
 			"sí" if NetSession.roster["friendly_fire"] else "no"])
 	_roster_label.text = "\n".join(L)
 
@@ -242,7 +254,7 @@ func _refresh() -> void:
 
 	var can := NetSession.is_host() and NetSession.can_start()
 	_help.text = "Izq/Der: personaje · Arriba/Abajo: vehículo · Y/E/;: 1 ↔ 2 jugadores en esta PC · A: listo · B: quitar listo · Esc: salir\n" \
-		+ ("ANFITRIÓN: -/+ bots · [ ] vueltas · F fuego amigo · Start/Enter: dar la salida %s" % ("(¡todos listos!)" if can else "(faltan listos o jugadores)")
+		+ ("ANFITRIÓN: -/+ bots · [ ] vueltas · F fuego amigo · T pista · Start/Enter: dar la salida %s" % ("(¡todos listos!)" if can else "(faltan listos o jugadores)")
 			if NetSession.is_host() else "Esperando a que el anfitrión dé la salida…")
 
 

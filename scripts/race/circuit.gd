@@ -4,7 +4,11 @@ extends Node3D
 ## dibujar la carretera, medir el progreso/vueltas y guiar a los bots.
 ## Muestras a intervalos regulares (step); índice 0 = línea de meta; la carrera avanza hacia índices crecientes.
 
-@export var road_half_width := 8.0
+## Pista (TrackData) y tema (ThemeData); asignar ANTES de añadir el nodo al árbol. Sin asignar: primera pista.
+var track: TrackData
+var theme: ThemeData
+
+var road_half_width := 8.0
 @export var wall_height := 2.5
 @export var target_spacing := 3.0
 
@@ -17,12 +21,20 @@ var step := 3.0
 var length := 0.0
 var min_y := 0.0
 
-const ROAD_COLORS: Array[Color] = [Color(0.24, 0.24, 0.27), Color(0.29, 0.29, 0.32)]
-const CURB_COLORS: Array[Color] = [Color(0.9, 0.15, 0.15), Color(0.95, 0.95, 0.95)]
-const WALL_COLOR := Color(0.75, 0.3, 0.25)
+var _road_colors: Array[Color] = []
+var _curb_colors: Array[Color] = []
+var _wall_color := Color.WHITE
 
 
 func _ready() -> void:
+	if track == null:
+		track = DataCatalog.track(&"")
+	if theme == null:
+		theme = DataCatalog.theme(track.theme)
+	road_half_width = track.road_half_width
+	_road_colors = [theme.road_a, theme.road_b]
+	_curb_colors = [theme.curb_a, theme.curb_b]
+	_wall_color = theme.wall
 	_generate_path()
 	_build_geometry()
 
@@ -121,14 +133,7 @@ func _flat_dist2(a: Vector3, b: Vector3) -> float:
 # --- Generación de la curva --------------------------------------------------
 
 func _control_points() -> PackedVector3Array:
-	var out := PackedVector3Array()
-	var n := 16
-	for i in n:
-		var th := i * TAU / n
-		var rx := 170.0 + 35.0 * sin(3.0 * th)
-		var rz := 110.0 + 25.0 * sin(2.0 * th + 1.0)
-		out.append(Vector3(rx * cos(th), 3.0 * sin(2.0 * th), rz * sin(th)))
-	return out
+	return track.control_points
 
 
 func _catmull(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: float) -> Vector3:
@@ -218,9 +223,9 @@ func _build_geometry() -> void:
 		var ri := points[i] + rights[i] * hw
 		var lj := points[j] - rights[j] * hw
 		var rj := points[j] + rights[j] * hw
-		_quad(verts, norms, cols, li, ri, rj, lj, up, ROAD_COLORS[(i / 2) % 2], faces, true)
+		_quad(verts, norms, cols, li, ri, rj, lj, up, _road_colors[(i / 2) % 2], faces, true)
 		# Bordillos (solo visual)
-		var cc := CURB_COLORS[i % 2]
+		var cc := _curb_colors[i % 2]
 		var o := up * 0.03
 		_quad(verts, norms, cols, li + o, li + rights[i] + o, lj + rights[j] + o, lj + o, up, cc)
 		_quad(verts, norms, cols, ri - rights[i] + o, ri + o, rj + o, rj - rights[j] + o, up, cc)
@@ -230,7 +235,7 @@ func _build_geometry() -> void:
 			var bj: Vector3 = points[j] + rights[j] * side * (hw + 0.3)
 			var inward: Vector3 = -rights[i] * side
 			_quad(verts, norms, cols, bi, bi + up * wall_height, bj + up * wall_height, bj, inward,
-					WALL_COLOR, faces, true)
+					_wall_color, faces, true)
 	# Línea de meta a cuadros
 	var t0 := Vector3(tangents[0].x, 0.0, tangents[0].z).normalized()
 	var cells := 10
@@ -266,14 +271,3 @@ func _build_geometry() -> void:
 	body.collision_mask = 0
 	body.add_child(cs)
 	add_child(body)
-
-	# Suelo de relleno (solo visual)
-	var ground := MeshInstance3D.new()
-	var gm := BoxMesh.new()
-	gm.size = Vector3(1200, 1, 1200)
-	ground.mesh = gm
-	var gmat := StandardMaterial3D.new()
-	gmat.albedo_color = Color(0.32, 0.48, 0.3)
-	ground.material_override = gmat
-	ground.position = Vector3(0, min_y - 8.5, 0)
-	add_child(ground)

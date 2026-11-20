@@ -4,7 +4,7 @@ extends RefCounted
 ## [{"kind": Seat.DeviceKind, "id": int, "action": "left"|"right"|"up"|"down"|"confirm"|"back"|"swap"|
 ##   "start"|"select"|"lb"|"rb"|"lt"|"rt"}]. Ignora lo que ya estaba pulsado al abrir la pantalla.
 
-const BUTTONS: Array[String] = ["confirm", "back", "swap", "start", "select", "lb", "rb", "lt", "rt"]
+const BUTTONS: Array[String] = ["confirm", "back", "swap", "start", "select", "lb", "rb", "lt", "rt", "track"]
 
 var _prev := {}
 var _warmup := true

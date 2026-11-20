@@ -46,7 +46,7 @@ func _ready() -> void:
 
 
 func _reset_state() -> void:
-	roster = {"peers": {}, "laps": 3, "bots": 0, "friendly_fire": false}
+	roster = {"peers": {}, "laps": 3, "bots": MAX_KARTS - 1, "bots_auto": true, "friendly_fire": false, "track": ""}
 	var vs := DataCatalog.vehicles()
 	var cs := DataCatalog.characters()
 	local_choice = {"seats": 1, "vehicle": String(vs[0].id) if not vs.is_empty() else "",
@@ -156,8 +156,20 @@ func set_host_config(laps: int, bots: int, friendly_fire: bool) -> void:
 	if not is_host():
 		return
 	roster["laps"] = clampi(laps, 1, 9)
+	if bots != int(roster["bots"]):
+		roster["bots_auto"] = false   # lo cambió el anfitrión a mano
 	roster["bots"] = clampi(bots, 0, MAX_KARTS - roster["peers"].size())
 	roster["friendly_fire"] = friendly_fire
+	_broadcast_roster()
+
+
+## El anfitrión elige la pista (id de data/tracks; vacío = la primera). Cambia las vueltas a las de la pista.
+func set_host_track(id: String) -> void:
+	if not is_host():
+		return
+	var t := DataCatalog.track(StringName(id))
+	roster["track"] = String(t.id)
+	roster["laps"] = clampi(t.default_laps, 1, 9)
 	_broadcast_roster()
 
 
@@ -173,7 +185,8 @@ func _merge_choice(id: int, c: Dictionary) -> void:
 
 
 func _broadcast_roster() -> void:
-	roster["bots"] = clampi(int(roster["bots"]), 0, MAX_KARTS - roster["peers"].size())
+	var max_b: int = MAX_KARTS - roster["peers"].size()
+	roster["bots"] = max_b if roster.get("bots_auto", false) else clampi(int(roster["bots"]), 0, max_b)
 	roster_changed.emit()
 	rpc("net_roster", roster)
 
@@ -213,7 +226,8 @@ static func build_spec(r: Dictionary, seed_value: int) -> Dictionary:
 				"gunner": "", "seats": 1, "team": -1})
 	for i in karts.size():
 		karts[i]["kart_id"] = i
-	return {"karts": karts, "laps": int(r["laps"]), "friendly_fire": bool(r["friendly_fire"]), "seed": seed_value}
+	return {"karts": karts, "laps": int(r["laps"]), "friendly_fire": bool(r["friendly_fire"]),
+			"track": String(DataCatalog.track(StringName(r.get("track", ""))).id), "seed": seed_value}
 
 
 func start_race() -> void:

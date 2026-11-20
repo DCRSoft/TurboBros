@@ -1,7 +1,6 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/race/race.gd" id="1_race"]
-[ext_resource type="Script" path="res://scripts/race/circuit.gd" id="2_circuit"]
 [ext_resource type="Script" path="res://scripts/race/race_manager.gd" id="3_manager"]
 [ext_resource type="Script" path="res://scripts/game/split_screen.gd" id="4_split"]
 [ext_resource type="Script" path="res://scripts/race/results_screen.gd" id="5_results"]
@@ -26,9 +25,6 @@ environment = SubResource("env")
 transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 20, 0)
 shadow_enabled = true
 directional_shadow_max_distance = 80.0
-
-[node name="Circuit" type="Node3D" parent="."]
-script = ExtResource("2_circuit")
 
 [node name="RaceManager" type="Node" parent="."]
 script = ExtResource("3_manager")

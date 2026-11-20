@@ -19,7 +19,11 @@ const BOT_COLORS: Array[Color] = [
 @export var demo_bots := 3
 @export_range(0.25, 1.0, 0.05) var render_scale := 1.0
 
-@onready var circuit: Circuit = $Circuit
+## Pistas de prueba/capturas: asignar antes de añadir la escena al árbol (vacío = la elegida en el lobby).
+var track_override: StringName = &""
+var circuit: Circuit
+var scenery: Scenery
+var track: TrackData
 @onready var manager: RaceManager = $RaceManager
 @onready var split: SplitScreen = $UI/SplitScreen
 @onready var results: ResultsScreen = $Results
@@ -33,10 +37,11 @@ var _online := false
 
 
 func _ready() -> void:
+	_online = NetSession.online and not NetSession.spec.is_empty()
+	_build_track()
 	_apply_graphics()
 	GraphicsSettings.changed.connect(_apply_graphics)
 	split.render_scale = render_scale
-	_online = NetSession.online and not NetSession.spec.is_empty()
 	var groups: Array = []
 	var laps := GameSession.laps
 	if _online:
@@ -70,6 +75,25 @@ func _ready() -> void:
 		NetSession.report_loaded()  # cuando todos hayan cargado el anfitrión da la salida
 	else:
 		manager.start()
+
+
+# --- Pista ---------------------------------------------------------------------------------
+
+func _build_track() -> void:
+	var id: StringName = track_override
+	if id == &"":
+		id = StringName(NetSession.spec.get("track", "")) if _online else GameSession.track_id
+	track = DataCatalog.track(id)
+	var theme := DataCatalog.theme(track.theme)
+	circuit = Circuit.new()
+	circuit.name = "Circuit"
+	circuit.track = track
+	circuit.theme = theme
+	add_child(circuit)
+	scenery = Scenery.new()
+	scenery.name = "Scenery"
+	add_child(scenery)
+	scenery.build(circuit, theme)
 
 
 # --- Local ---------------------------------------------------------------------------------
@@ -179,6 +203,8 @@ func _on_host_lost(_reason: String) -> void:
 
 func _apply_graphics() -> void:
 	GraphicsSettings.apply_to_scene(self)
+	if scenery != null:
+		scenery.apply_theme($WorldEnvironment, $Sun)
 
 
 func _color(team: int, fallback: Color) -> Color:

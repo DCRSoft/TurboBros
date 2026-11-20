@@ -19,8 +19,10 @@ var players: Array[Player] = []
 var swapped := [false, false, false, false]  ## por kart: intercambia conductor/artillero
 var teams := [-1, -1, -1, -1]                ## equipo de cada kart humano (-1 = sin equipo)
 var bots := 0
+var bots_auto := true   ## por defecto SIEMPRE el máximo de bots; deja de ser automático cuando se cambia a mano
 var laps := 3
 var friendly_fire := false
+var track_id: StringName = &""   ## vacío = la primera pista
 
 
 static func default_kart_count(n: int) -> int:
@@ -116,16 +118,39 @@ func max_bots() -> int:
 	return maxi(0, GameSession.MAX_KARTS - kart_count())
 
 
+func _init() -> void:
+	_clamp_bots()
+
+
 func set_bots(n: int) -> void:
+	bots_auto = false
 	bots = clampi(n, 0, max_bots())
 
 
 func _clamp_bots() -> void:
-	bots = clampi(bots, 0, max_bots())
+	bots = max_bots() if bots_auto else clampi(bots, 0, max_bots())
 
 
 func set_laps(n: int) -> void:
 	laps = clampi(n, 1, MAX_LAPS)
+
+
+## Siguiente/anterior pista del catálogo (las vueltas pasan a las de la pista).
+func cycle_track(dir: int) -> void:
+	var all := DataCatalog.tracks()
+	if all.is_empty():
+		return
+	var cur := 0
+	for i in all.size():
+		if all[i].id == track_id:
+			cur = i
+	var t := all[posmod(cur + dir, all.size())]
+	track_id = t.id
+	laps = clampi(t.default_laps, 1, MAX_LAPS)
+
+
+func current_track() -> TrackData:
+	return DataCatalog.track(track_id)
 
 
 func toggle_friendly_fire() -> void:
@@ -209,3 +234,4 @@ func apply_to_session() -> void:
 	GameSession.bot_teams = bot_teams()
 	GameSession.laps = laps
 	GameSession.friendly_fire = friendly_fire
+	GameSession.track_id = current_track().id
