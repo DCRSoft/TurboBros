@@ -1463,6 +1463,7 @@ func _run() -> void:
 	await _test_menus_smoke()
 
 	await _test_track_screen()
+	await _test_features()
 
 	# 6c2. Arranque de la cuenta atrás
 	await _test_launch()
@@ -1684,6 +1685,79 @@ func _test_track_screen() -> void:
 	for v in DataCatalog.vehicles():
 		art_ok = art_ok and ArtLibrary.vehicle(v.id) != null
 	_check("arte: los 16 personajes y 6 vehículos tienen su tarjeta", art_ok)
+	GameSession.reset()
+
+
+func _test_features() -> void:
+	var counts := {"turbo": 0, "ramp": 0, "bridge": 0, "tunnel": 0}
+	var placed := true
+	var per_track_ok := true
+	for tr in DataCatalog.tracks():
+		var n_turbo := 0
+		for f in tr.features:
+			counts[String(f["type"])] += 1
+			placed = placed and float(f["f"]) > 0.03 and float(f["f"]) < 0.97
+			if String(f["type"]) == "turbo":
+				n_turbo += 1
+		per_track_ok = per_track_ok and n_turbo >= 3
+	_check("elementos: cada pista tiene al menos 3 zonas de turbo y los hay de los cuatro tipos",
+			per_track_ok and counts["ramp"] >= 3 and counts["bridge"] >= 4 and counts["tunnel"] >= 3, str(counts))
+	_check("elementos: ninguno está en la parrilla de salida ni en la meta", placed)
+
+	# Una pista con puentes y túneles: geometría, cañón y agua bajo el puente
+	var built := _build_scenery_for(DataCatalog.track(&"03_bosque"), GraphicsSettings.Quality.HIGH)
+	var c: Circuit = built[0]
+	var sc: Scenery = built[1]
+	await get_tree().process_frame
+	var br: Dictionary = c.bridges[0]
+	var mid := (int(br["i0"]) + int(br["i1"])) / 2
+	var p: Vector3 = c.points[mid]
+	var depth := p.y - sc.height_at(p.x, p.z)
+	_check("puentes: el terreno cae bajo el puente (cañón de >= 8 m) y hay agua", depth >= 8.0 and sc.get_node_or_null("Hazard_water") != null,
+			"profundidad %.1f m" % depth)
+	_check("puentes: la carretera del puente tiene su propio color y hay tablero y pilares",
+			c.bridge_hazard_at(mid) == "water" and c.get_node_or_null("BridgeDecks") != null and c.get_node_or_null("BridgePiers") != null)
+	c.queue_free()
+	sc.queue_free()
+	var built2 := _build_scenery_for(DataCatalog.track(&"02_neon"), GraphicsSettings.Quality.HIGH)
+	var c2: Circuit = built2[0]
+	await get_tree().process_frame
+	_check("túneles y rampas: techo, portales y rampa con colisión", c2.get_node_or_null("Tunnels") != null
+			and c2.get_node_or_null("TunnelPortals") != null and c2.get_node_or_null("RampBody") != null and c2.ramps.size() >= 2,
+			"túneles=%d rampas=%d" % [c2.tunnels.size(), c2.ramps.size()])
+	c2.queue_free()
+	(built2[1] as Node).queue_free()
+
+	# Zona de turbo: un kart que pasa por encima recibe el turbo; fuera de la zona no
+	GameSession.reset()
+	GameSession.laps = 1
+	var seats: Array[Seat] = [Seat.new()]
+	GameSession.setups = [{"slot": 0, "seats": seats, "team": -1}]
+	GameSession.bot_teams = []
+	var race: Node3D = load("res://scenes/race/race.tscn").instantiate()
+	race.attach_player_input = false
+	race.track_override = &"01_costa"
+	add_child(race)
+	await get_tree().physics_frame
+	var m: RaceManager = race.manager
+	var k: Kart = race.human_karts[0]
+	m.start()
+	m._countdown_left = 0.02
+	while m.state != RaceManager.State.RACING:
+		await get_tree().physics_frame
+	var pad: Dictionary = race.circuit.pads[0]
+	var idx: int = pad["i"]
+	k.respawn(race.circuit.respawn_transform(race.circuit.wrap_index(idx - 30)))
+	for _i in 6:
+		await get_tree().physics_frame
+	var before := k.fx.has(&"boost")
+	k.respawn(Transform3D(race.circuit.respawn_transform(idx).basis, (pad["pos"] as Vector3) + Vector3.UP * 0.9))
+	for _i in 4:
+		await get_tree().physics_frame
+	var on_pad := k.fx.has(&"boost")
+	_check("turbos: el kart recibe el turbo al pasar por la zona y no antes", on_pad and not before, "antes=%s sobre la zona=%s" % [before, on_pad])
+	race.queue_free()
+	await get_tree().process_frame
 	GameSession.reset()
 
 

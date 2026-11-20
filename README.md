@@ -174,3 +174,8 @@ Además: el orden de personajes en la selección es DranCr primero y el resto al
 - **Memoria de la sesión** (`GameSession.memory`, se conserva entre carreras y al pasar por el menú): el lobby recupera a los jugadores activos con su kart, equipos, bots, vueltas y pista (los mandos desconectados se omiten); la selección recuerda el personaje de cada dispositivo y el vehículo de cada kart; la sala en línea recuerda tu elección.
 - **Arranque de la cuenta atrás**: se arranca con la cuenta de 3 s. Acelerar con **más de 2 s** por delante **ahoga el motor** (2 s sin poder avanzar, "¡MOTOR AHOGADO!"); acelerar justo a los **2 s** da el turbo máximo ("¡ARRANQUE TURBO!") y, si se acelera después, el turbo baja de forma proporcional hasta 0 en el momento de la salida. Solo cuenta para humanos locales (no IA ni marionetas). Efectos `launch_boost` y `stalled` en `data/effects`.
 - **Minimapa**: cada vista dibuja abajo a la derecha el trazado, la meta y un punto por kart (el propio destacado, con el color de equipo).
+
+## Elementos del trazado (puentes, túneles, rampas y turbos)
+- Cada pista lleva en `TrackData.features` sus elementos (posición como fracción de la vuelta): **zonas de turbo** (3+ por pista; el kart que pasa recibe el efecto `boost`), **rampas** (colisión real, saltan), **túneles** (techo y portales) y **puentes** (tablero y pilares de color propio, cañón de ~10 m en el terreno y agua / lava / vacío debajo).
+- Se colocan por coordenadas en `tools/generate_tracks.gd` (`FEATURES`; los trazados y elementos salen de `tools/_trace/bake.py` a partir de los mapas). Código: `scripts/race/circuit_features.gd`, cañón y agua en `scenery.gd`.
+- Pendiente: atajos / rutas alternas, que exigen que el progreso y los bots entiendan varios caminos.

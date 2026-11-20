@@ -195,10 +195,31 @@ func _physics_process(delta: float) -> void:
 				race_started.emit()
 		State.RACING:
 			race_time += delta
+			_apply_pads()
 			for r in racers:
 				_update_progress(r, delta)
 			_rank()
 			_check_end()
+
+
+## Zonas de turbo: el kart que pasa por encima recibe el turbo (se renueva mientras siga en la zona).
+func _apply_pads() -> void:
+	if circuit.pads.is_empty():
+		return
+	var boost := EffectLibrary.get_effect(&"boost")
+	for r in racers:
+		var k := r.kart
+		if k.net_remote or r.finished:
+			continue
+		var p := k.sphere.global_position
+		for pad in circuit.pads:
+			var q: Vector3 = pad["pos"]
+			var dx := p.x - q.x
+			var dz := p.z - q.z
+			var rad: float = pad["radius"]
+			if dx * dx + dz * dz < rad * rad and absf(p.y - q.y) < 3.0:
+				k.fx.add(boost)
+				break
 
 
 func _update_progress(r: Racer, delta: float) -> void:

@@ -36,7 +36,14 @@ func _run() -> void:
 			track_name = a.substr(8)
 			race.track_override = StringName(track_name)
 	add_child(race)
-	await get_tree().create_timer(SECONDS).timeout
+	var feature := ""
+	for a2 in args:
+		if a2.begins_with("--feature="):
+			feature = a2.substr(10)
+	if feature != "":
+		await _show_feature(race, feature)
+	else:
+		await get_tree().create_timer(SECONDS).timeout
 	if args.has("--aerial") or args.has("--far"):
 		for cam in race.find_children("*", "ChaseCamera", true, false):
 			var cc := cam as ChaseCamera
@@ -78,3 +85,21 @@ func _run() -> void:
 	img.save_png(ProjectSettings.globalize_path(path))
 	print("Guardado: ", path, " ", img.get_size())
 	get_tree().quit()
+
+
+## --feature=bridge|tunnel|ramp|turbo[,n]: coloca el kart unos metros antes del elemento n-ésimo de ese tipo y espera a la cuenta atrás.
+func _show_feature(race: Node3D, spec: String) -> void:
+	var parts := spec.split(",")
+	var kind := parts[0]
+	var n := int(parts[1]) if parts.size() > 1 else 0
+	await get_tree().create_timer(0.5).timeout
+	var c: Circuit = race.circuit
+	var list: Array = {"bridge": c.bridges, "tunnel": c.tunnels, "ramp": c.ramps, "turbo": c.pads}.get(kind, [])
+	if list.is_empty():
+		print("Sin elementos de tipo ", kind)
+		return
+	var e: Dictionary = list[mini(n, list.size() - 1)]
+	var i: int = e["i0"] if e.has("i0") else e["i"]
+	var k: Kart = race.human_karts[0]
+	k.respawn(c.respawn_transform(c.wrap_index(i - 8)))
+	await get_tree().create_timer(1.2).timeout

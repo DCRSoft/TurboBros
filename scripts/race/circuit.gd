@@ -20,6 +20,10 @@ var count := 0
 var step := 3.0
 var length := 0.0
 var min_y := 0.0
+var pads: Array[Dictionary] = []      ## zonas de turbo: {"pos": Vector3, "radius": float, "i": int}
+var ramps: Array[Dictionary] = []     ## rampas: {"i": int, "len": float, "lat": float}
+var bridges: Array[Dictionary] = []   ## puentes: {"i0": int, "i1": int, "hazard": String}
+var tunnels: Array[Dictionary] = []   ## túneles: {"i0": int, "i1": int}
 
 var _road_colors: Array[Color] = []
 var _curb_colors: Array[Color] = []
@@ -36,10 +40,20 @@ func _ready() -> void:
 	_curb_colors = [theme.curb_a, theme.curb_b]
 	_wall_color = theme.wall
 	_generate_path()
+	CircuitFeatures.collect(self)
 	_build_geometry()
+	CircuitFeatures.build(self)
 
 
 # --- API -------------------------------------------------------------------
+
+## Peligro bajo el puente en la muestra i ("water", "lava", "void") o "" si la carretera no está en un puente.
+func bridge_hazard_at(i: int) -> String:
+	for b in bridges:
+		if i >= int(b["i0"]) and i <= int(b["i1"]):
+			return String(b["hazard"])
+	return ""
+
 
 func wrap_index(i: int) -> int:
 	return posmod(i, count)
@@ -223,7 +237,9 @@ func _build_geometry() -> void:
 		var ri := points[i] + rights[i] * hw
 		var lj := points[j] - rights[j] * hw
 		var rj := points[j] + rights[j] * hw
-		_quad(verts, norms, cols, li, ri, rj, lj, up, _road_colors[(i / 2) % 2], faces, true)
+		var hz := bridge_hazard_at(i)
+		var road_col: Color = CircuitFeatures.deck_color(hz, i / 2) if hz != "" else _road_colors[(i / 2) % 2]
+		_quad(verts, norms, cols, li, ri, rj, lj, up, road_col, faces, true)
 		# Bordillos (solo visual)
 		var cc := _curb_colors[i % 2]
 		var o := up * 0.03

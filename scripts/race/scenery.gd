@@ -13,6 +13,7 @@ const HASH := 32.0          ## celda del índice espacial de la carretera
 const REGION_RINGS := 6     ## el decorado llega hasta REGION_RINGS * HASH metros de la carretera
 const ROAD_DROP := 1.2      ## el terreno queda por debajo de la carretera
 const TRACKSIDE_STEP := 36.0
+const CANYON_DEPTH := 10.0  ## profundidad del cañón bajo los puentes
 
 var circuit: Circuit
 var theme: ThemeData
@@ -57,6 +58,7 @@ func build(c: Circuit, t: ThemeData) -> void:
 	mean_y /= maxf(circuit.count, 1)
 	_index_road()
 	_build_terrain()
+	_build_hazards()
 	_build_mountains()
 	_build_props()
 	_build_trackside()
@@ -168,6 +170,9 @@ func _build_terrain() -> void:
 	_dist.fill(INF)
 	var roady := PackedFloat32Array()
 	roady.resize(total)
+	var near := PackedInt32Array()
+	near.resize(total)
+	near.fill(-1)
 	var hw := circuit.road_half_width
 	var flat := hw + 6.0
 	var reach := flat + 55.0
@@ -189,6 +194,7 @@ func _build_terrain() -> void:
 					if d < _dist[idx]:
 						_dist[idx] = d
 						roady[idx] = p.y
+						near[idx] = i
 	_heights = PackedFloat32Array()
 	_heights.resize(total)
 	for iz in _nz:
@@ -204,6 +210,9 @@ func _build_terrain() -> void:
 			else:
 				var t := smoothstep(flat, reach, d)
 				_heights[idx] = lerpf(roady[idx] - ROAD_DROP, mean_y + hill, t)
+				var bw := _bridge_weight(near[idx])
+				if bw > 0.0:   # cañón bajo el puente: más profundo junto a la carretera
+					_heights[idx] -= CANYON_DEPTH * bw * (1.0 - smoothstep(hw + 4.0, hw + 26.0, d))
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
 	mat.roughness = 1.0
@@ -212,6 +221,57 @@ func _build_terrain() -> void:
 	for cz in cz_n:
 		for cx in cx_n:
 			_terrain_chunk(cx, cz, mat, view)
+
+
+## 0..1: cuánto cae el terreno bajo el puente en la muestra i (suave en las bocas del puente).
+func _bridge_weight(i: int) -> float:
+	var w := 0.0
+	for b in circuit.bridges:
+		var i0: int = b["i0"]
+		var i1: int = b["i1"]
+		if i >= i0 - 6 and i <= i1 + 6:
+			w = maxf(w, smoothstep(i0 - 6.0, i0 + 3.0, float(i)) * (1.0 - smoothstep(i1 - 3.0, i1 + 6.0, float(i))))
+	return w
+
+
+## Agua / lava / vacío en el fondo de cada cañón de puente (un plano por puente).
+func _build_hazards() -> void:
+	for b in circuit.bridges:
+		var hz: String = b["hazard"]
+		var lo := Vector2(INF, INF)
+		var hi := Vector2(-INF, -INF)
+		var y := 0.0
+		var n := 0
+		for i in range(int(b["i0"]), int(b["i1"]) + 1):
+			var p := circuit.points[i]
+			lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.z))
+			hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.z))
+			y += p.y
+			n += 1
+		if n == 0:
+			continue
+		y = y / n - ROAD_DROP - CANYON_DEPTH + 2.2
+		var plane := PlaneMesh.new()
+		plane.size = Vector2(hi.x - lo.x + 70.0, hi.y - lo.y + 70.0)
+		var mat := StandardMaterial3D.new()
+		match hz:
+			"lava":
+				mat.albedo_color = Color(1.0, 0.38, 0.06)
+				mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			"void":
+				mat.albedo_color = Color(0.03, 0.02, 0.12)
+				mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			_:
+				mat.albedo_color = Color(0.18, 0.5, 0.85, 0.8)
+				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				mat.roughness = 0.2
+		var mi := MeshInstance3D.new()
+		mi.name = "Hazard_" + hz
+		mi.mesh = plane
+		mi.material_override = mat
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.position = Vector3((lo.x + hi.x) * 0.5, y, (lo.y + hi.y) * 0.5)
+		add_child(mi)
 
 
 func _terrain_chunk(cx: int, cz: int, mat: Material, view: float) -> void:

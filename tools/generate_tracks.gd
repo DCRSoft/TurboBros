@@ -33,6 +33,21 @@ const LAYOUT_EXTREMO := [[-279.8, 26.8], [-254.1, -28.4], [-243.0, -79.9], [-232
 const LAYOUT_FANTASIA := [[-166.9, -73.6], [-206.2, -101.6], [-258.6, -71.0], [-302.3, -40.4], [-319.7, 7.6], [-315.4, 55.7], [-289.2, 90.6], [-254.2, 115.1], [-219.3, 134.3], [-175.6, 173.6], [-123.2, 221.6], [-75.2, 260.9], [-49.0, 278.4], [-9.7, 304.6], [51.5, 339.6], [130.1, 357.0], [208.7, 322.1], [269.9, 274.0], [296.1, 221.6], [296.1, 178.0], [269.9, 143.0], [287.3, 55.7], [296.1, -14.2], [287.3, -75.4], [248.0, -119.0], [239.3, -175.8], [200.0, -223.8], [165.0, -258.8], [112.6, -280.6], [51.5, -289.4], [-9.7, -289.4], [-70.8, -280.6], [-110.1, -254.4], [-123.2, -219.5], [-110.1, -184.5], [-75.2, -158.3], [-27.1, -132.1], [7.8, -101.6], [6.1, -71.0], [-35.9, -56.1], [-97.0, -62.3]]
 
 
+## Elementos de cada pista por coordenadas (m); _track() los convierte en fracciones de la vuelta.
+const FEATURES := {
+	"01_costa": [{"type": "bridge", "a": [226.4, 32.4], "b": [226.4, -88.2], "hazard": "water"}, {"type": "turbo", "a": [-48.5, 220.5], "lat": 0.0}, {"type": "turbo", "a": [226.4, -179.8], "lat": 0.0}, {"type": "turbo", "a": [-169.0, -30.3], "lat": 0.0}, {"type": "turbo", "a": [84.1, -300.4], "lat": 0.0}],
+	"02_neon": [{"type": "tunnel", "a": [-82.9, 296.1], "b": [100.3, 266.3], "hazard": ""}, {"type": "tunnel", "a": [100.3, -267.2], "b": [-105.8, -265.0], "hazard": ""}, {"type": "ramp", "a": [-254.7, 181.6], "lat": 0.0, "len": 9}, {"type": "ramp", "a": [134.7, 39.6], "lat": 0.0, "len": 9}, {"type": "turbo", "a": [214.8, 222.8], "lat": 0.0}, {"type": "turbo", "a": [59.1, -93.2], "lat": 0.0}, {"type": "turbo", "a": [-238.6, -70.3], "lat": 0.0}],
+	"03_bosque": [{"type": "bridge", "a": [-147.2, -54.4], "b": [-70.0, 31.3], "hazard": "water"}, {"type": "bridge", "a": [159.2, 129.8], "b": [169.9, 9.9], "hazard": "water"}, {"type": "turbo", "a": [0.6, 275.5], "lat": 0.0}, {"type": "turbo", "a": [32.8, -135.8], "lat": 0.0}, {"type": "turbo", "a": [-155.7, -251.5], "lat": 0.0}],
+	"04_circuito": [{"type": "turbo", "a": [-54.4, 233.6], "lat": 0.0}, {"type": "turbo", "a": [-54.4, -235.2], "lat": 0.0}, {"type": "turbo", "a": [54.6, -102.2], "lat": 0.0}, {"type": "turbo", "a": [-246.3, -36.7], "lat": 0.0}],
+	"05_volcan": [{"type": "bridge", "a": [4.1, -198.9], "b": [-94.8, -237.6], "hazard": "lava"}, {"type": "ramp", "a": [-103.4, 252.3], "lat": 0.0, "len": 9}, {"type": "turbo", "a": [111.5, 239.4], "lat": 0.0}, {"type": "turbo", "a": [175.9, -134.5], "lat": 0.0}, {"type": "turbo", "a": [-228.0, 31.0], "lat": 0.0}],
+	"06_desierto": [{"type": "ramp", "a": [42.1, -272.9], "lat": 0.0, "len": 9}, {"type": "turbo", "a": [-184.4, -121.2], "lat": 0.0}, {"type": "turbo", "a": [135.5, -291.6], "lat": 0.0}, {"type": "turbo", "a": [-86.3, 175.3], "lat": 0.0}, {"type": "turbo", "a": [217.2, 112.3], "lat": 0.0}],
+	"07_industrial": [{"type": "ramp", "a": [-219.7, -74.2], "lat": 0.0, "len": 9}, {"type": "ramp", "a": [89.2, 25.6], "lat": 0.0, "len": 9}, {"type": "turbo", "a": [-96.6, 206.7], "lat": 0.0}, {"type": "turbo", "a": [-38.6, -178.7], "lat": 0.0}, {"type": "turbo", "a": [207.6, -51.0], "lat": 0.0}],
+	"08_nieve": [{"type": "tunnel", "a": [13.6, -221.5], "b": [-116.2, -212.1], "hazard": ""}, {"type": "bridge", "a": [193.0, 75.8], "b": [138.7, 0.3], "hazard": "water"}, {"type": "ramp", "a": [-80.8, 271.7], "lat": 0.0, "len": 9}, {"type": "turbo", "a": [242.5, 276.4], "lat": 0.0}, {"type": "turbo", "a": [228.4, -146.0], "lat": 0.0}, {"type": "turbo", "a": [-243.6, -141.3], "lat": 0.0}],
+	"09_extremo": [{"type": "turbo", "a": [50.8, 250.7], "lat": 0.0}, {"type": "turbo", "a": [161.2, -246.3], "lat": 0.0}, {"type": "turbo", "a": [83.9, -45.3], "lat": 0.0}, {"type": "turbo", "a": [-254.1, -109.4], "lat": 0.0}],
+	"10_fantasia": [{"type": "bridge", "a": [-140.7, 207.7], "b": [-72.5, 265.3], "hazard": "void"}, {"type": "turbo", "a": [129.2, 357.0], "lat": 0.0}, {"type": "turbo", "a": [50.6, -290.2], "lat": 0.0}, {"type": "turbo", "a": [-245.5, -75.4], "lat": 0.0}, {"type": "turbo", "a": [265.5, 29.5], "lat": 0.0}],
+}
+
+
 func _points(layout: Array, amp: float, k: float, phase: float) -> PackedVector3Array:
 	var pts := PackedVector3Array()
 	var n := layout.size()
@@ -51,6 +66,24 @@ func _track(id: String, name: String, desc: String, theme: String, pts: PackedVe
 	t.control_points = pts
 	t.road_half_width = half_width
 	t.default_laps = laps
+	var total := t.length_m()
+	for f in FEATURES.get(id, []):
+		var a: Array = f["a"]
+		var f0 := t.project_f(a[0], a[1])
+		if f["type"] == "turbo":
+			t.features.append({"type": "turbo", "f": f0, "lat": float(f["lat"])})
+		elif f["type"] == "ramp":
+			t.features.append({"type": "ramp", "f": f0, "lat": float(f["lat"]), "len": float(f["len"])})
+		else:
+			var bb: Array = f["b"]
+			var f1 := t.project_f(bb[0], bb[1])
+			if f1 < f0:
+				var tmp := f0
+				f0 = f1
+				f1 = tmp
+			var is_bridge: bool = f["type"] == "bridge"   # puentes de unos 45-65 m y túneles de 70-100 m
+			var span := clampf((f1 - f0) * total, 45.0 if is_bridge else 70.0, 65.0 if is_bridge else 100.0)
+			t.features.append({"type": String(f["type"]), "f": f0, "len": span, "hazard": String(f["hazard"])})
 	var err := ResourceSaver.save(t, TRACK_DIR + id + ".tres")
 	if err != OK:
 		push_error("No se pudo guardar la pista %s (%d)" % [id, err])
