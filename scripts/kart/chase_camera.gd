@@ -13,6 +13,7 @@ extends Node3D
 
 var camera: Camera3D
 var _dir := Vector3(0.0, 0.0, -1.0)
+var _back := 0.0   ## 0 = cámara normal, 1 = mirando atrás
 
 
 func _ready() -> void:
@@ -56,9 +57,15 @@ func _process(delta: float) -> void:
 		else:
 			_dir = _dir.lerp(f, clampf(delta * heading_lag, 0.0, 1.0)).normalized()
 	var focus := target.get_visual_position()
+	# Mirar atrás: la cámara pasa por delante del kart y apunta hacia lo que viene detrás (mezcla suave)
+	_back = move_toward(_back, 1.0 if target.look_back else 0.0, delta * 7.0)
 	var desired := focus - _dir * distance + Vector3.UP * height
-	camera.global_position = camera.global_position.lerp(desired, clampf(delta * position_lag, 0.0, 1.0))
-	camera.look_at(focus + Vector3.UP * look_height, Vector3.UP)
+	var look_at_pos := focus + Vector3.UP * look_height
+	if _back > 0.0:
+		desired = desired.lerp(focus + _dir * 5.2 + Vector3.UP * 2.5, _back)
+		look_at_pos = look_at_pos.lerp(focus - _dir * 14.0 + Vector3.UP * 0.6, _back)
+	camera.global_position = camera.global_position.lerp(desired, clampf(delta * (position_lag + 8.0 * _back), 0.0, 1.0))
+	camera.look_at(look_at_pos, Vector3.UP)
 	var ratio := clampf(target.get_speed_kmh() / (target.stats.max_speed * 3.6), 0.0, 1.5)
 	var fov_goal := base_fov + max_fov_gain * ratio
 	camera.fov = lerpf(camera.fov, fov_goal, clampf(delta * 4.0, 0.0, 1.0))

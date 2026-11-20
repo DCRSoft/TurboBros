@@ -302,6 +302,93 @@ func _test_stat_effects() -> void:
 	r.stats.weight = 1.0
 
 
+func _test_look_back_controls() -> void:
+	var a := KartControls.new()
+	var b := KartControls.new()
+	b.look_back = true
+	a.merge(b)
+	var merged_ok := a.look_back
+	a.clear()
+	_check("mirar atrás: se combina entre conductor y artillero y se limpia", merged_ok and not a.look_back)
+	var both := true
+	for i in InputManager.KEY_SCHEMES.size():
+		both = both and InputManager.KEY_SCHEMES[i].has("look")
+	_check("mirar atrás: cada esquema de teclado tiene su tecla (C / /)", both
+			and InputManager.KEY_SCHEMES[0]["look"] == KEY_C and InputManager.KEY_SCHEMES[1]["look"] == KEY_SLASH)
+
+
+func _test_look_back_camera() -> void:
+	track.set_player_count(1)
+	await _ticks(60)
+	var k: Kart = track.karts[0]
+	var cam: ChaseCamera = track.split.cells[0].camera
+	var ctrl := ScriptedController.new()
+	k.add_child(ctrl)
+	k.controller = ctrl
+	ctrl.set_input(0, 1)
+	await _ticks(90)
+	var fwd := k.get_visual_forward()
+	fwd.y = 0.0
+	fwd = fwd.normalized()
+	var behind_dot := (cam.camera.global_position - k.get_visual_position()).normalized().dot(fwd)
+	var view_dot := (-cam.camera.global_basis.z).dot(fwd)
+	_check("cámara normal: detrás del kart y mirando hacia delante", behind_dot < -0.3 and view_dot > 0.5,
+			"posición=%.2f mirada=%.2f" % [behind_dot, view_dot])
+	ctrl.set_look_back(true)
+	await _ticks(50)
+	_check("el kart registra que se mantiene 'mirar atrás'", k.look_back)
+	fwd = k.get_visual_forward()
+	fwd.y = 0.0
+	fwd = fwd.normalized()
+	var ahead_dot := (cam.camera.global_position - k.get_visual_position()).normalized().dot(fwd)
+	var rear_view := (-cam.camera.global_basis.z).dot(fwd)
+	_check("mirar atrás: la cámara pasa delante del kart y mira hacia atrás", ahead_dot > 0.3 and rear_view < -0.5,
+			"posición=%.2f mirada=%.2f" % [ahead_dot, rear_view])
+	ctrl.set_look_back(false)
+	await _ticks(60)
+	var back_dot := (cam.camera.global_position - k.get_visual_position()).normalized().dot(fwd)
+	_check("al soltar el botón la cámara vuelve a la normal", not k.look_back and back_dot < -0.3, "posición=%.2f" % back_dot)
+	ctrl.set_input(0, 0)
+
+
+func _test_pause() -> void:
+	var pair := await _setup_pair()
+	var k := pair[1]
+	var ctrl: ScriptedController = k.controller
+	ctrl.set_input(0, 1)
+	await _ticks(30)
+	var pm := PauseMenu.new()
+	add_child(pm)
+	var old_mode := process_mode
+	process_mode = Node.PROCESS_MODE_ALWAYS  # el test sigue corriendo con el árbol en pausa
+	var opened := [0]
+	pm.opened.connect(func() -> void: opened[0] += 1)
+	var p0 := k.sphere.global_position
+	pm.open()
+	var paused := get_tree().paused and pm.is_open
+	await _ticks(40)
+	var moved_paused := k.sphere.global_position.distance_to(p0)
+	_check("pausa: abre el menú y congela el juego (el kart no avanza)", paused and moved_paused < 0.2 and opened[0] == 1,
+			"movido=%.2f m" % moved_paused)
+	pm._move(1)
+	_check("pausa: se navega por las opciones", pm._sel == 1)
+	pm.close()
+	var resumed := not get_tree().paused and not pm.is_open
+	await _ticks(40)
+	var moved_after := k.sphere.global_position.distance_to(p0)
+	_check("pausa: al continuar el juego sigue", resumed and moved_after > 5.0, "movido=%.1f m" % moved_after)
+	var pm_online := PauseMenu.new()
+	add_child(pm_online)
+	pm_online.setup(null, true)
+	pm_online.open()
+	_check("pausa en línea: muestra el menú pero no congela la carrera", pm_online.is_open and not get_tree().paused)
+	pm_online.close()
+	pm_online.queue_free()
+	pm.queue_free()
+	process_mode = old_mode
+	ctrl.set_input(0, 0)
+
+
 func _tri_count(mesh: ArrayMesh) -> int:
 	return (mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size() / 3
 
@@ -1120,6 +1207,11 @@ func _run() -> void:
 	_test_balance()
 	_test_select_model()
 	await _test_stat_effects()
+
+	# 6h. Mirar atrás y pausa
+	_test_look_back_controls()
+	await _test_look_back_camera()
+	await _test_pause()
 
 	# 6g. Arte: personajes y vehículos generados por código
 	_test_art()

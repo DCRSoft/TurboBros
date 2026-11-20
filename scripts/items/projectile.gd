@@ -148,7 +148,7 @@ func _on_contact(k: Kart) -> void:
 	if data.kind == ItemProjectile.Kind.BOMB:
 		_explode()
 		return
-	var res := k.take_hit(owner_kart, data.hit_effect)
+	var res := k.take_hit(_attacker(), data.hit_effect)
 	match res:
 		Kart.HitResult.REFLECTED:
 			owner_kart = k
@@ -182,7 +182,7 @@ func _blast(center: Vector3, radius: float, is_shockwave: bool) -> void:
 			continue
 		if is_shockwave and not k.grounded:
 			continue  # un kart en el aire se libra de la ola
-		k.take_hit(owner_kart, data.hit_effect)
+		k.take_hit(_attacker(), data.hit_effect)
 
 
 func _start_ring(radius: float) -> void:
@@ -253,3 +253,7 @@ func _steer_homing(delta: float) -> void:
 			axis = Vector3.UP
 		cur = cur.rotated(axis.normalized(), step)
 	velocity = cur * spd
+
+
+func _attacker() -> Kart:
+	return owner_kart if is_instance_valid(owner_kart) else null

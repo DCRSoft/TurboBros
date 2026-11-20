@@ -63,6 +63,7 @@ var drift_level := 0
 var forward_speed := 0.0
 var ground_normal := Vector3.UP
 var hop_active := false  ## salto previo al derrape en curso
+var look_back := false   ## el jugador mantiene "mirar atrás" (lo lee la cámara)
 
 # Efectos, ítems y carrera
 var fx := KartEffects.new()
@@ -234,6 +235,7 @@ func _physics_process(delta: float) -> void:
 		_remote_step(delta)
 		return
 	var c: KartControls = controller.get_controls() if controller else _idle_controls
+	look_back = c.look_back   # la cámara de este kart mira hacia atrás mientras se mantiene el botón
 	if fx.mods.lock_control or frozen:
 		c = _idle_controls
 		hop_active = false

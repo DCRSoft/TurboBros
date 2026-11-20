@@ -11,7 +11,7 @@ Hasta 8 jugadores locales con mandos USB/Bluetooth.
 1. Abrir la carpeta con Godot 4.7 (`project.godot`) y pulsar F5.
 2. Controles del hito 1:
    - **Mando**: stick izq. girar · RT/A acelerar · LT/B frenar · LB/RB derrapar (salto + derrape) (pulsar con el stick inclinado).
-   - **Teclado** (control adicional, se puede combinar con mandos y con otros teclados): J1 = WASD + Shift (derrape) + Espacio (ítem) + Q/E (golpes del artillero); J2 = flechas + L (derrape) + K (ítem) + J/; (golpes). R = reiniciar.
+   - **Teclado** (control adicional, se puede combinar con mandos y con otros teclados): J1 = WASD + Shift (derrape) + Espacio (ítem) + Q/E (golpes del artillero) + C (mirar atrás); J2 = flechas + L (derrape) + K (ítem) + J/; (golpes) + / (mirar atrás). R = reiniciar. **P / Esc / Start = pausa**.
 
 ## Pantalla dividida (hito 2)
 - **F1–F4**: número de karts (1 a 4). 2 = arriba/abajo, 3–4 = cuadrícula 2×2.
@@ -128,3 +128,8 @@ Todo el arte 3D se **genera por código** (low poly, color por vértice, sin tex
 - Imágenes: `docs/art/` (`personajes.png`, `vehiculos.png`, `parejas.png`, `seleccion.png`, `carrera.png`, `carrera_duo.png`). Se regeneran con `res://scenes/debug/art_sheet.tscn`, `select_shot.tscn` y `race_shot.tscn` (necesitan render, no `--headless`).
 - Añadir un personaje: editar `tools/generate_roster.gd` (estadísticas + `look`) y ejecutar `Godot_console.exe --headless --path . --script tools/generate_roster.gd`; luego `tools/balance.gd`.
 - Licencia: los diseños de personajes y las imágenes son © DCRSoft, todos los derechos reservados (`LICENSE-ASSETS.md`); el código generador es MIT.
+
+## Pausa y mirar atrás
+- **Pausa**: **Start** (mando), **P** o **Esc** durante la carrera. En local congela todo (física, bots, cuenta atrás y tiempo) y ofrece *Continuar*, *Reiniciar carrera*, *Volver al lobby* y *Menú principal*. **En línea** no puede congelar a los demás: el menú se abre pero la carrera sigue (opciones *Continuar* y *Salir de la partida*). Cualquier jugador puede abrirla y cerrarla.
+- **Mirar atrás** (mantener): **R3** (pulsar el stick derecho) o empujar el stick derecho hacia abajo en mando; **C** (teclado J1) o **/** (teclado J2). La cámara pasa por delante del kart y mira hacia lo que viene detrás, con un aviso en pantalla; al soltar vuelve a la normal. Funciona para cualquiera de los dos jugadores de un kart y en pantalla dividida cada vista es independiente.
+- Capturas en `docs/art/` (`carrera_pausa.png`, `carrera_atras.png`).

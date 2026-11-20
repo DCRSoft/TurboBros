@@ -102,6 +102,8 @@ func _process(_delta: float) -> void:
 		warns.append("⇄ ¡CONTROLES INVERTIDOS!")
 	if kart.fx.mods.lock_control:
 		warns.append("¡SIN CONTROL!")
+	if kart.look_back:
+		warns.append("↩ MIRANDO ATRÁS")
 	_warn.text = "\n".join(warns)
 	for s in seats:
 		var role := ""
@@ -115,7 +117,8 @@ func _process(_delta: float) -> void:
 	if show_help:
 		lines.append("[Mando] stick girar | RT/A acelerar | LT/B frenar | LB/RB derrapar")
 		lines.append("[Teclado J1] WASD + Shift | [J2] flechas + L | R reiniciar")
-		lines.append("Artillero: LB/RB golpean izq/der | Esc: volver al lobby")
+		lines.append("Pausa: Start / P / Esc | Mirar atrás: R3 (o stick der. abajo) / C (J1) / / (J2)")
+		lines.append("Artillero: LB/RB golpean izq/der")
 		lines.append("F1-F4: nº de karts (solo depuración) | [ ]: escala de render")
 	_label.text = "\n".join(lines)
 	_label.add_theme_color_override("font_color",

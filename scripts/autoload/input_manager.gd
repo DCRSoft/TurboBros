@@ -7,9 +7,9 @@ const DEADZONE := 0.18
 ## Esquemas de teclado (teclas físicas). El teclado como control "oficial" llega en el hito 8.
 const KEY_SCHEMES: Array[Dictionary] = [
 	{"left": KEY_A, "right": KEY_D, "throttle": KEY_W, "brake": KEY_S,
-		"drift": KEY_SHIFT, "item": KEY_SPACE, "hit_l": KEY_Q, "hit_r": KEY_E},
+		"drift": KEY_SHIFT, "item": KEY_SPACE, "hit_l": KEY_Q, "hit_r": KEY_E, "look": KEY_C},
 	{"left": KEY_LEFT, "right": KEY_RIGHT, "throttle": KEY_UP, "brake": KEY_DOWN,
-		"drift": KEY_L, "item": KEY_K, "hit_l": KEY_J, "hit_r": KEY_SEMICOLON},
+		"drift": KEY_L, "item": KEY_K, "hit_l": KEY_J, "hit_r": KEY_SEMICOLON, "look": KEY_SLASH},
 ]
 
 signal devices_changed
@@ -82,6 +82,8 @@ func _read_joypad(seat: Seat, out: KartControls) -> void:
 	var lt := Input.get_joy_axis(id, JOY_AXIS_TRIGGER_LEFT)
 	var lb := _btn(id, JOY_BUTTON_LEFT_SHOULDER)
 	var rb := _btn(id, JOY_BUTTON_RIGHT_SHOULDER)
+	# Mirar atrás: pulsar el stick derecho (R3) o empujarlo hacia abajo
+	out.look_back = _btn(id, JOY_BUTTON_RIGHT_STICK) or Input.get_joy_axis(id, JOY_AXIS_RIGHT_Y) > 0.7
 	if seat.drives():
 		var dpad := int(_btn(id, JOY_BUTTON_DPAD_RIGHT)) - int(_btn(id, JOY_BUTTON_DPAD_LEFT))
 		out.steer = clampf(lx + dpad, -1.0, 1.0)
@@ -104,6 +106,7 @@ func _read_joypad(seat: Seat, out: KartControls) -> void:
 func _read_keyboard(seat: Seat, out: KartControls) -> void:
 	var k: Dictionary = KEY_SCHEMES[clampi(seat.device_id, 0, KEY_SCHEMES.size() - 1)]
 	var down := func(name: String) -> bool: return Input.is_physical_key_pressed(k[name])
+	out.look_back = down.call("look")
 	if seat.drives():
 		out.steer = float(int(down.call("right")) - int(down.call("left")))
 		out.throttle = 1.0 if down.call("throttle") else 0.0

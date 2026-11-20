@@ -30,10 +30,17 @@ func _run() -> void:
 	race.autopilot_humans = true
 	add_child(race)
 	await get_tree().create_timer(SECONDS).timeout
+	var args := OS.get_cmdline_user_args()
+	if args.has("--back"):
+		(race.human_karts[0].controller as KartController).get_controls().look_back = true
+		await get_tree().create_timer(0.8).timeout
+	if args.has("--pause"):
+		race.pause_menu.open()
+		await get_tree().create_timer(0.3).timeout
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://docs/art"))
-	var path := "res://docs/art/carrera%s.png" % ("_duo" if duo else "")
+	var path := "res://docs/art/carrera%s.png" % ("_duo" if duo else ("_atras" if args.has("--back") else ("_pausa" if args.has("--pause") else "")))
 	img.save_png(ProjectSettings.globalize_path(path))
 	print("Guardado: ", path, " ", img.get_size())
 	get_tree().quit()

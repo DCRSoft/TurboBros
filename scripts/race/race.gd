@@ -28,6 +28,7 @@ var karts: Array[Kart] = []
 var human_karts: Array[Kart] = []   ## karts con vista en ESTE equipo
 var bot_karts: Array[Kart] = []
 var net_sync: NetSync
+var pause_menu: PauseMenu
 var _online := false
 
 
@@ -51,6 +52,10 @@ func _ready() -> void:
 	manager.setup(circuit, karts, laps)
 	split.setup(human_karts, groups, manager)
 	manager.race_finished.connect(func(_r: Array) -> void: results.show_results(manager))
+	pause_menu = PauseMenu.new()
+	pause_menu.name = "PauseMenu"
+	add_child(pause_menu)
+	pause_menu.setup(manager, _online)
 	for pos in circuit.item_box_positions():
 		var box := ItemBox.new()
 		box.position = pos
@@ -215,12 +220,5 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_R:
 			for k in human_karts:
 				manager.respawn_kart(k)
-		KEY_ESCAPE:
-			AudioManager.stop_engines()
-			if _online:
-				NetSession.leave()
-				get_tree().change_scene_to_file(MAIN_MENU)
-			else:
-				get_tree().change_scene_to_file(LOBBY)
 		KEY_BRACKETLEFT: split.render_scale -= 0.1
 		KEY_BRACKETRIGHT: split.render_scale += 0.1

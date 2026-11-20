@@ -125,10 +125,15 @@ func _trigger(k: Kart) -> bool:
 		for node in get_tree().get_nodes_in_group("karts"):
 			var other := node as Kart
 			if other and other.sphere.global_position.distance_to(global_position) <= data.blast_radius:
-				other.take_hit(owner_kart, data.hit_effect)
+				other.take_hit(_attacker(), data.hit_effect)
 		return true
-	var res := k.take_hit(owner_kart, data.hit_effect)
+	var res := k.take_hit(_attacker(), data.hit_effect)
 	if res == Kart.HitResult.IGNORED:
 		return false  # fantasma/compañero: la atraviesa
 	_victim_cd[k.get_instance_id()] = 1.0
 	return data.consume_on_trigger
+
+
+## El dueño puede haber salido de la carrera (p. ej. un jugador en línea que se desconecta): sin él, ataca "nadie".
+func _attacker() -> Kart:
+	return owner_kart if is_instance_valid(owner_kart) else null

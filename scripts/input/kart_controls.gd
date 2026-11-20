@@ -11,6 +11,7 @@ var item := false
 var item_back := false ## lanzar hacia atrás
 var hit_left := false  ## golpe del artillero
 var hit_right := false
+var look_back := false ## mantener para ver hacia atrás
 
 
 func clear() -> void:
@@ -22,6 +23,7 @@ func clear() -> void:
 	item_back = false
 	hit_left = false
 	hit_right = false
+	look_back = false
 
 
 ## Combina otro estado (p. ej. conductor + artillero del mismo kart).
@@ -35,3 +37,4 @@ func merge(o: KartControls) -> void:
 	item_back = item_back or o.item_back
 	hit_left = hit_left or o.hit_left
 	hit_right = hit_right or o.hit_right
+	look_back = look_back or o.look_back
