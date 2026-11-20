@@ -114,7 +114,7 @@ var _bubble: MeshInstance3D
 var _bubble_mat: StandardMaterial3D
 var _orbs: Array[MeshInstance3D] = []
 var _carry: MeshInstance3D
-var _carry_mat: StandardMaterial3D
+var _carry_item: ItemData
 var _idle_controls := KartControls.new()
 var _spark_mat: StandardMaterial3D
 var _look: Node3D                    ## modelo 3D (vehículo + personajes)
@@ -218,12 +218,7 @@ func _build_visual_extras() -> void:
 		_orbs.append(o)
 
 	_carry = MeshInstance3D.new()
-	var cm := BoxMesh.new()
-	cm.size = Vector3(0.6, 0.6, 0.6)
-	_carry.mesh = cm
-	_carry_mat = StandardMaterial3D.new()
-	_carry_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_carry.material_override = _carry_mat
+	_carry.scale = Vector3.ONE * 0.6
 	_carry.position = Vector3(0, 0.6, 1.5)
 	_carry.visible = false
 	body.add_child(_carry)
@@ -784,6 +779,8 @@ func _update_effect_visuals(delta: float) -> void:
 			o.position = Vector3(cos(a) * 1.5, 0.7, sin(a) * 1.5)
 	if held_item != null and held_item.carried_guard and not is_rolling():
 		_carry.visible = true
-		_carry_mat.albedo_color = held_item.icon_color
+		if _carry_item != held_item:   # el modelo de la trampa que llevas se muestra detrás del kart
+			_carry_item = held_item
+			_carry.mesh = ItemModels.carry_mesh(held_item)
 	else:
 		_carry.visible = false

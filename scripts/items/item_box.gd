@@ -7,31 +7,38 @@ extends Node3D
 
 var _t := 0.0
 var _mesh: MeshInstance3D
+var _mark: Label3D
+var _clock := 0.0
 
 
 func _ready() -> void:
 	_mesh = MeshInstance3D.new()
-	var m := BoxMesh.new()
-	m.size = Vector3.ONE * 1.2
-	_mesh.mesh = m
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1.0, 0.85, 0.2, 0.75)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.emission_enabled = true
-	mat.emission = Color(1.0, 0.7, 0.1)
-	_mesh.material_override = mat
+	_mesh.mesh = ItemModels.box_mesh(false)   # cubo de cristal azul con marco dorado
 	_mesh.position.y = 1.0
+	_mesh.scale = Vector3.ONE * 1.1
 	add_child(_mesh)
+	_mark = Label3D.new()                      # el "?" flota siempre de cara a cada cámara
+	_mark.text = "?"
+	_mark.font_size = 96
+	_mark.pixel_size = 0.012
+	_mark.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_mark.outline_size = 14
+	_mark.modulate = Color(1, 1, 1)
+	_mark.position.y = 1.0
+	add_child(_mark)
 
 
 func _process(delta: float) -> void:
+	_clock += delta
 	_mesh.rotate_y(delta * 1.5)
-
+	_mesh.position.y = 1.0 + sin(_clock * 2.2) * 0.12   # sube y baja suavemente
+	_mark.position.y = _mesh.position.y
 
 func _physics_process(delta: float) -> void:
 	if _t > 0.0:
 		_t -= delta
 		_mesh.visible = _t <= 0.0
+		_mark.visible = _mesh.visible
 		return
 	for node in get_tree().get_nodes_in_group("karts"):
 		var k := node as Kart
@@ -44,4 +51,5 @@ func _physics_process(delta: float) -> void:
 			k.pickup_item()
 			_t = respawn_time
 			_mesh.visible = false
+			_mark.visible = false
 			return

@@ -5,6 +5,8 @@ extends Node3D
 var data: ItemTrap
 var owner_kart: Kart
 var net_id := -1
+var _spin := false
+var _visual: MeshInstance3D
 var _age := 0.0
 var _victim_cd := {}   ## instance_id del kart -> s restantes (las persistentes no repiten cada tick)
 
@@ -40,56 +42,32 @@ func _ready() -> void:
 
 func _build() -> void:
 	var mi := MeshInstance3D.new()
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = data.color
+	mi.mesh = ItemModels.trap_mesh(data.kind, data.color, data.trigger_radius)   # modelo low poly (vertex color)
 	match data.kind:
-		ItemTrap.Kind.OIL:
-			var m := CylinderMesh.new()
-			m.top_radius = data.trigger_radius
-			m.bottom_radius = data.trigger_radius
-			m.height = 0.05
-			m.radial_segments = 12
-			mi.mesh = m
-			mi.position.y = 0.03
-		ItemTrap.Kind.NAILS:
-			var m := BoxMesh.new()
-			m.size = Vector3(data.trigger_radius * 1.4, 0.15, 0.6)
-			mi.mesh = m
-			mi.position.y = 0.08
 		ItemTrap.Kind.FAKE_BOX:
-			var m := BoxMesh.new()
-			m.size = Vector3.ONE * 1.2
-			mi.mesh = m
 			mi.position.y = 1.0
+			_spin = true
 		ItemTrap.Kind.BARRIER:
-			var m := BoxMesh.new()
-			m.size = Vector3(3.0, 1.2, 0.6)
-			mi.mesh = m
-			mi.position.y = 0.6
+			var shape := BoxShape3D.new()
+			shape.size = Vector3(3.0, 1.2, 0.6)
+			var cs := CollisionShape3D.new()
+			cs.shape = shape
+			cs.position.y = 0.6
 			var body := StaticBody3D.new()
 			body.collision_layer = 1
 			body.collision_mask = 0
-			var cs := CollisionShape3D.new()
-			var shape := BoxShape3D.new()
-			shape.size = m.size
-			cs.shape = shape
-			cs.position.y = 0.6
 			body.add_child(cs)
 			add_child(body)
-			var fwd := -owner_kart.model.global_basis.z
-			rotation.y = atan2(-fwd.x, -fwd.z)
-		ItemTrap.Kind.MINE:
-			var m := SphereMesh.new()
-			m.radius = 0.5
-			m.height = 0.7
-			m.radial_segments = 8
-			m.rings = 4
-			mi.mesh = m
-			mi.position.y = 0.3
-			mat.emission_enabled = true
-			mat.emission = Color(0.8, 0.1, 0.1)
-	mi.material_override = mat
+			if is_instance_valid(owner_kart):
+				var fwd := -owner_kart.model.global_basis.z
+				rotation.y = atan2(-fwd.x, -fwd.z)
 	add_child(mi)
+	_visual = mi
+
+
+func _process(delta: float) -> void:
+	if _spin and _visual != null:
+		_visual.rotate_y(delta * 1.5)   # la caja falsa gira como una caja de ítems de verdad
 
 
 func _physics_process(delta: float) -> void:
@@ -105,10 +83,8 @@ func _physics_process(delta: float) -> void:
 		return  # es un obstáculo sólido; no tiene disparador
 	for node in get_tree().get_nodes_in_group("karts"):
 		var k := node as Kart
-		if k == null or _victim_cd.has(k.get_instance_id()):
-			continue
-		if k == owner_kart and _age < data.arm_time:
-			continue
+		if k == null or k == owner_kart or _victim_cd.has(k.get_instance_id()):
+			continue   # el dueño nunca activa sus propias trampas (los compañeros, solo con fuego amigo)
 		var d := k.sphere.global_position - global_position
 		var dy := absf(d.y)
 		d.y = 0.0
@@ -124,7 +100,8 @@ func _trigger(k: Kart) -> bool:
 	if data.blast_radius > 0.0:
 		for node in get_tree().get_nodes_in_group("karts"):
 			var other := node as Kart
-			if other and other.sphere.global_position.distance_to(global_position) <= data.blast_radius:
+			if other and other != owner_kart \
+					and other.sphere.global_position.distance_to(global_position) <= data.blast_radius:
 				other.take_hit(_attacker(), data.hit_effect)
 		return true
 	var res := k.take_hit(_attacker(), data.hit_effect)

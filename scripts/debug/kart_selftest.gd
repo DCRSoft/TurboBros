@@ -828,6 +828,160 @@ func _test_menus_smoke() -> void:
 	_check("menús: principal, lobby y selección cargan y corren", true)
 
 
+func _test_item_visuals() -> void:
+	var items := ItemCatalog.all()
+	var missing := ""
+	for it in items:
+		if not ItemIcons.has_icon(it.id):
+			missing += " " + String(it.id)
+	_check("ítems: los 23 tienen icono dibujado", missing == "" and ItemIcons.IDS.size() == items.size(), missing)
+	# Modelos 3D
+	var bad := ""
+	for kind in [ItemProjectile.Kind.STRAIGHT, ItemProjectile.Kind.BOUNCER, ItemProjectile.Kind.HOMING, ItemProjectile.Kind.BOMB]:
+		var m := ItemModels.projectile_mesh(kind, Color.RED)
+		var bb := m.get_aabb()
+		if m.get_surface_count() != 1 or _tri_count(m) < 20 or bb.size.length() < 0.5 or bb.size.length() > 3.0:
+			bad += " proyectil%d" % kind
+	for kind in [ItemTrap.Kind.OIL, ItemTrap.Kind.NAILS, ItemTrap.Kind.FAKE_BOX, ItemTrap.Kind.BARRIER, ItemTrap.Kind.MINE]:
+		var m := ItemModels.trap_mesh(kind, Color.GRAY, 2.0)
+		if m.get_surface_count() != 1 or _tri_count(m) < 20:
+			bad += " trampa%d" % kind
+	var box := ItemModels.box_mesh(false)
+	var fake := ItemModels.box_mesh(true)
+	_check("ítems: modelos 3D de proyectiles, trampas y cajas (1 malla cada uno)",
+			bad == "" and box.get_aabb().size.x > 1.0 and box != fake, bad)
+	_check("ítems: las mallas se comparten (caché)", ItemModels.box_mesh(false) == box
+			and ItemModels.projectile_mesh(ItemProjectile.Kind.BOMB, Color.RED) == ItemModels.projectile_mesh(ItemProjectile.Kind.BOMB, Color.RED))
+	var mine := ItemCatalog.find(&"mine")
+	_check("ítems: la trampa que llevas se ve detrás del kart", ItemModels.carry_mesh(mine).get_surface_count() == 1)
+	# Efectos "a favor" y "en contra" en el HUD
+	_check("HUD: efectos a favor en verde y en contra en rojo",
+			not ItemHud.is_bad(EffectLibrary.get_effect(&"star")) and not ItemHud.is_bad(EffectLibrary.get_effect(&"shield"))
+			and not ItemHud.is_bad(EffectLibrary.get_effect(&"guard")) and ItemHud.is_bad(EffectLibrary.get_effect(&"invert"))
+			and ItemHud.is_bad(EffectLibrary.get_effect(&"slow")) and ItemHud.is_bad(EffectLibrary.get_effect(&"spin"))
+			and ItemHud.is_bad(EffectLibrary.get_effect(&"ink")))
+	# El HUD dibuja ítem y efectos sin errores y la ruleta cicla
+	var pair := await _setup_pair()
+	var k := pair[1]
+	var hud := ItemHud.new()
+	hud.kart = k
+	add_child(hud)
+	k.held_item = ItemCatalog.find(&"triple_turbo")
+	k.held_uses = 3
+	k.fx.add(EffectLibrary.get_effect(&"star"))
+	k.fx.add(EffectLibrary.get_effect(&"invert"))
+	await _ticks(5)
+	k.held_item = null
+	k.pickup_item(ItemCatalog.find(&"bomb"))
+	var seen := {}
+	for i in 30:
+		await get_tree().physics_frame
+		seen[hud._roll_idx] = true
+	_check("HUD: la ruleta recorre varios ítems mientras sortea", k.is_rolling() and seen.size() >= 4, "iconos distintos=%d" % seen.size())
+	hud.queue_free()
+	# Los proyectiles y la caja usan los modelos nuevos
+	var p := Projectile.new()
+	p.setup(ItemCatalog.find(&"missile") as ItemProjectile, k, false)
+	k.get_parent().add_child(p)
+	p.launch()
+	_check("proyectil: usa el modelo 3D del misil", p._mesh.mesh == ItemModels.projectile_mesh(ItemProjectile.Kind.STRAIGHT, p.data.color))
+	p.queue_free()
+	var ib := ItemBox.new()
+	add_child(ib)
+	await _ticks(2)
+	_check("caja de ítems: modelo 3D con '?' flotante", ib._mesh.mesh == box and ib._mark.text == "?")
+	ib.queue_free()
+
+
+func _explode_bomb_at(owner_kart: Kart, pos: Vector3) -> void:
+	var p := Projectile.new()
+	p.setup(ItemCatalog.find(&"bomb") as ItemProjectile, owner_kart, false)
+	owner_kart.get_parent().add_child(p)
+	p.launch()
+	p.global_position = pos
+	p._explode()
+
+
+func _find_trap() -> Trap:
+	for n in track.get_children():
+		if n is Trap and is_instance_valid(n):
+			return n
+	return null
+
+
+func _test_item_ownership() -> void:
+	var pair := await _setup_pair()
+	var f := pair[0]
+	var r := pair[1]
+	var close := func() -> void:
+		_fresh(f, r)
+		f.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 36)))
+		r.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 40)))
+	# Bomba: no afecta a quien la lanza, sí al rival
+	close.call()
+	await _ticks(30)
+	_explode_bomb_at(r, Vector3(0, 0.6, 38))
+	_check("bomba: afecta al rival y NO a quien la lanza", f.fx.has(&"explode") and not r.fx.has(&"explode"),
+			"rival=%s lanzador=%s" % [f.fx.has(&"explode"), r.fx.has(&"explode")])
+	# Compañero de equipo: sin fuego amigo se libra; con fuego amigo, no
+	close.call()
+	f.team = 2
+	r.team = 2
+	r.friendly_fire = false
+	await _ticks(30)
+	_explode_bomb_at(r, Vector3(0, 0.6, 38))
+	var safe := not f.fx.has(&"explode")
+	f.fx.clear()
+	r.friendly_fire = true
+	_explode_bomb_at(r, Vector3(0, 0.6, 38))
+	_check("bomba: el compañero se libra sin fuego amigo y recibe con fuego amigo (el lanzador nunca)",
+			safe and f.fx.has(&"explode") and not r.fx.has(&"explode"))
+	r.friendly_fire = false
+	# Ola de choque
+	close.call()
+	await _ticks(30)
+	_give(r, &"shockwave")
+	r.use_held_item()
+	_check("ola de choque: afecta al rival (en el suelo) y no al lanzador", f.fx.has(&"spin") and not r.fx.has(&"spin"))
+	close.call()
+	f.team = 2
+	r.team = 2
+	await _ticks(30)
+	_give(r, &"shockwave")
+	r.use_held_item()
+	_check("ola de choque: sin fuego amigo no afecta al compañero", not f.fx.has(&"spin") and not r.fx.has(&"spin"))
+	# Caos (tinta / controles invertidos): rivales, no compañeros
+	close.call()
+	f.team = 2
+	r.team = 2
+	await _ticks(30)
+	_give(r, &"ink")
+	r.use_held_item()
+	var ink_off := f.fx.mods.ink or r.fx.mods.ink
+	r.friendly_fire = true
+	_give(r, &"invert")
+	r.use_held_item()
+	_check("caos: la tinta no cae sobre el compañero sin fuego amigo ni sobre el lanzador",
+			not ink_off and not r.fx.has(&"invert") and not r.fx.has(&"ink"))
+	_check("caos: con fuego amigo sí alcanza al compañero (pero nunca al lanzador)", f.fx.has(&"invert") and not r.fx.has(&"invert"))
+	r.friendly_fire = false
+	# Mina: el dueño puede pisarla sin activarla; el rival sí
+	close.call()
+	await _ticks(30)
+	_give(r, &"mine")
+	r.use_held_item(true)
+	var trap := _find_trap()
+	var trap_pos := trap.global_position
+	r.respawn(Transform3D(Basis.IDENTITY, trap_pos + Vector3(0, 0.6, 0)))
+	await _ticks(25)
+	_check("mina: su dueño la pisa y no se activa (ni le afecta)", is_instance_valid(trap) and not r.fx.has(&"explode"))
+	f.respawn(Transform3D(Basis.IDENTITY, trap_pos + Vector3(0, 0.6, 0.5)))
+	await _ticks(25)
+	_check("mina: el rival que la pisa sí la activa", f.fx.has(&"explode"))
+	f.team = -1
+	r.team = -1
+
+
 func _test_effects_unit() -> void:
 	var fx := KartEffects.new()
 	fx.add(EffectLibrary.get_effect(&"slow"))
@@ -1003,7 +1157,7 @@ func _test_items() -> void:
 	r.use_held_item(true)
 	f.respawn(Transform3D(Basis.IDENTITY, Vector3(0, 0.6, 44.5)))
 	await _ticks(20)
-	_check("mina: explota y afecta a los cercanos", f.fx.has(&"explode") and r.fx.has(&"explode"),
+	_check("mina: explota al rival y NO afecta a quien la colocó", f.fx.has(&"explode") and not r.fx.has(&"explode"),
 			"f=%s r=%s" % [f.fx.has(&"explode"), r.fx.has(&"explode")])
 
 	# Caos
@@ -1241,6 +1395,8 @@ func _run() -> void:
 	_test_effects_unit()
 	_test_catalog_and_roller()
 	await _test_items()
+	await _test_item_ownership()
+	await _test_item_visuals()
 
 	# 6a. Vehículos, personajes, sinergias y equilibrio
 	_test_roster_and_build()

@@ -34,13 +34,21 @@ func _run() -> void:
 	if args.has("--back"):
 		(race.human_karts[0].controller as KartController).get_controls().look_back = true
 		await get_tree().create_timer(0.8).timeout
+	if args.has("--hud"):
+		var hk: Kart = race.human_karts[0]
+		hk.held_item = ItemCatalog.find(&"triple_turbo")
+		hk.held_uses = 3
+		hk.fx.add(EffectLibrary.get_effect(&"star"))
+		hk.fx.add(EffectLibrary.get_effect(&"invert"))
+		hk.fx.add(EffectLibrary.get_effect(&"guard"))
+		await get_tree().create_timer(0.6).timeout
 	if args.has("--pause"):
 		race.pause_menu.open()
 		await get_tree().create_timer(0.3).timeout
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://docs/art"))
-	var path := "res://docs/art/carrera%s.png" % ("_duo" if duo else ("_atras" if args.has("--back") else ("_pausa" if args.has("--pause") else "")))
+	var path := "res://docs/art/carrera%s.png" % ("_duo" if duo else ("_atras" if args.has("--back") else ("_pausa" if args.has("--pause") else ("_hud" if args.has("--hud") else ""))))
 	img.save_png(ProjectSettings.globalize_path(path))
 	print("Guardado: ", path, " ", img.get_size())
 	get_tree().quit()

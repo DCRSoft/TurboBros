@@ -21,11 +21,13 @@ var _ring_t := 0.0
 var _mesh: MeshInstance3D
 var _backwards := false
 var net_id := -1   ## identificador igual en todos los equipos (kart.net_id * 1000 + nº de uso); -1 = sin red
+var _skip: Kart    ## kart al que no puede golpear (el que lo lanzó o, tras un reflejo, el que lo reflejó)
 
 
 func setup(d: ItemProjectile, k: Kart, backwards: bool) -> void:
 	data = d
 	owner_kart = k
+	_skip = k
 	_backwards = backwards
 	net_id = k.net_id * 1000 + k.use_seq if k.net_id >= 0 else -1
 	_bounces_left = d.bounces
@@ -64,19 +66,15 @@ func launch() -> void:
 
 func _build_mesh() -> void:
 	_mesh = MeshInstance3D.new()
-	var m := SphereMesh.new()
-	m.radius = 0.45 if data.kind != ItemProjectile.Kind.BOMB else 0.6
-	m.height = m.radius * 2.0
-	m.radial_segments = 8
-	m.rings = 4
-	_mesh.mesh = m
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = data.color
-	mat.emission_enabled = true
-	mat.emission = data.color
-	_mesh.material_override = mat
+	if data.kind == ItemProjectile.Kind.SHOCKWAVE:
+		var m := SphereMesh.new()   # la ola de choque solo dibuja el anillo expansivo (ver _start_ring)
+		m.radius = 0.2
+		m.height = 0.4
+		_mesh.mesh = m
+		_mesh.visible = false
+	else:
+		_mesh.mesh = ItemModels.projectile_mesh(data.kind, data.color)   # misil, bola rebotadora o bomba
 	add_child(_mesh)
-	_mesh.visible = data.kind != ItemProjectile.Kind.SHOCKWAVE
 
 
 func _physics_process(delta: float) -> void:
@@ -116,6 +114,13 @@ func _physics_process(delta: float) -> void:
 			return
 
 	global_position = to
+	# Orientación: los misiles apuntan hacia donde van; la bola y la bomba giran sobre sí mismas
+	if data.kind == ItemProjectile.Kind.STRAIGHT or data.kind == ItemProjectile.Kind.HOMING:
+		var flat := Vector3(velocity.x, 0.0, velocity.z)
+		if flat.length_squared() > 0.5:
+			look_at(global_position + flat.normalized(), Vector3.UP)
+	elif data.kind == ItemProjectile.Kind.BOUNCER or data.kind == ItemProjectile.Kind.BOMB:
+		_mesh.rotate_object_local(Vector3.RIGHT, delta * 9.0)
 
 	# Suelo
 	var ground := space.intersect_ray(PhysicsRayQueryParameters3D.create(
@@ -133,10 +138,8 @@ func _physics_process(delta: float) -> void:
 func _check_karts() -> void:
 	for node in get_tree().get_nodes_in_group("karts"):
 		var k := node as Kart
-		if k == null or _spent:
-			continue
-		if k == owner_kart and _age < ARM_TIME:
-			continue
+		if k == null or _spent or k == _skip:
+			continue   # quien lo lanza (o quien lo reflejó) nunca es su blanco
 		var d := k.sphere.global_position - global_position
 		var dy := absf(d.y)
 		d.y = 0.0
@@ -152,6 +155,7 @@ func _on_contact(k: Kart) -> void:
 	match res:
 		Kart.HitResult.REFLECTED:
 			owner_kart = k
+			_skip = k          # ahora el atacante original sí puede ser alcanzado
 			velocity = -velocity
 			_age = 0.0
 			_target = null
@@ -173,10 +177,9 @@ func _explode() -> void:
 func _blast(center: Vector3, radius: float, is_shockwave: bool) -> void:
 	for node in get_tree().get_nodes_in_group("karts"):
 		var k := node as Kart
-		if k == null:
-			continue
-		if is_shockwave and k == owner_kart:
-			continue
+		if k == null or k == owner_kart:
+			continue   # las explosiones y la ola de choque no afectan a quien las lanza
+		# (los compañeros de equipo se libran solos: take_hit los ignora si no hay fuego amigo)
 		var d := k.sphere.global_position - center
 		if d.length() > radius:
 			continue

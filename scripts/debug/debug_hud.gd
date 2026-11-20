@@ -11,6 +11,7 @@ var _label: Label
 var _center: Label
 var _warn: Label
 var _ink: Control
+var _item_hud: ItemHud
 
 
 func _ready() -> void:
@@ -50,7 +51,7 @@ func _ready() -> void:
 	# Aviso de efectos que alteran el control (controles invertidos, ralentización...)
 	_warn = Label.new()
 	_warn.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_warn.offset_top = 60
+	_warn.offset_top = 175
 	_warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_warn.add_theme_font_size_override("font_size", 34)
 	_warn.add_theme_color_override("font_color", Color(1.0, 0.45, 1.0))
@@ -58,6 +59,8 @@ func _ready() -> void:
 	_warn.add_theme_constant_override("outline_size", 10)
 	_warn.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_warn)
+	_item_hud = ItemHud.new()
+	add_child(_item_hud)
 
 
 func _process(_delta: float) -> void:
@@ -82,20 +85,7 @@ func _process(_delta: float) -> void:
 		_center.text = race.center_text(kart)
 	if kart.team >= 0:
 		lines.append("Equipo %s" % GameSession.TEAM_NAMES[kart.team])
-	if kart.is_rolling():
-		lines.append("Ítem: ¡sorteando!")
-	elif kart.held_item != null:
-		var hint := "  (atrás+botón: lanzar/colocar detrás)" if kart.held_item is ItemProjectile \
-				or kart.held_item is ItemTrap else ""
-		lines.append("Ítem: %s x%d%s" % [kart.held_item.display_name, kart.held_uses, hint])
-	else:
-		lines.append("Ítem: -")
-	var fx_names := PackedStringArray()
-	for i in kart.fx.instances:
-		if i.data.id != &"boost":
-			fx_names.append("%s %.1fs" % [i.data.display_name, i.time_left])
-	if not fx_names.is_empty():
-		lines.append("Efectos: " + ", ".join(fx_names))
+	_item_hud.kart = kart   # el ítem y los efectos se dibujan en ItemHud (iconos), ya no como texto
 	_ink.visible = kart.fx.mods.ink
 	var warns := PackedStringArray()
 	if kart.fx.mods.steer_mult < 0.0:
@@ -114,11 +104,13 @@ func _process(_delta: float) -> void:
 		lines.append(role + InputManager.describe_seat(s))
 	if info_provider.is_valid():
 		lines.append(info_provider.call())
-	if show_help:
+	# La ayuda de controles se ve en la cuenta atrás y los primeros segundos; luego se oculta para no tapar la vista
+	var show_controls_help := race == null or race.state != RaceManager.State.RACING or race.race_time < 14.0
+	if show_help and show_controls_help:
 		lines.append("[Mando] stick girar | A/RT acelerar | Y/LT reversa | B ítem | X mirar atrás | LB/RB derrapar")
 		lines.append("[Teclado J1] WASD + Shift | [J2] flechas + L | R reiniciar")
 		lines.append("Pausa: Start / P / Esc | Mirar atrás: X (mando) / C (J1) / / (J2)")
-		lines.append("Artillero: LB/RB golpean izq/der")
+		lines.append("Artillero: LB/RB golpean izq/der · B ítem")
 		lines.append("F1-F4: nº de karts (solo depuración) | [ ]: escala de render")
 	_label.text = "\n".join(lines)
 	_label.add_theme_color_override("font_color",
