@@ -141,7 +141,7 @@ Todo el arte 3D se **genera por código** (low poly, color por vértice, sin tex
 - La ayuda de controles de la pantalla se oculta a los 14 s de carrera.
 
 ## Pistas y paisaje
-Diez pistas inspiradas en el cartel de diseños del proyecto (trazados dibujados a mano en `tools/generate_tracks.gd`, ~1,7 km y ~65 s por vuelta), cada una con su tema visual y todo generado por código (sin descargas ni licencias):
+Diez pistas inspiradas en el cartel de diseños del proyecto (trazados calcados de los mapas de `F:Devpistas.png` (curvas a izquierda y derecha equilibradas) en `tools/generate_tracks.gd`, 1,9-2,3 km y ~70-95 s por vuelta), cada una con su tema visual y todo generado por código (sin descargas ni licencias):
 
 | Pista | Tema | Decorado |
 |---|---|---|

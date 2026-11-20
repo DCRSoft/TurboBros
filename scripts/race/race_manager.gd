@@ -38,6 +38,7 @@ class Racer:
 	var wrong_way := false
 	var respawns := 0
 	var launch_pending := true      ## aún no ha acelerado en la cuenta atrás
+	var launch_armed := false       ## ya soltó el acelerador desde que empezó la cuenta (A también confirma en los menús)
 	var launch_factor := 0.0        ## -1 = motor ahogado; 0..1 = fuerza del turbo de salida
 
 var circuit: Circuit
@@ -82,6 +83,7 @@ func start() -> void:
 	for r in racers:
 		r.kart.frozen = true
 		r.launch_pending = true
+		r.launch_armed = false
 		r.launch_factor = 0.0
 
 
@@ -100,7 +102,13 @@ func _reads_launch_input(r: Racer) -> bool:
 
 func _check_launch_input() -> void:
 	for r in racers:
-		if r.launch_pending and _reads_launch_input(r) and r.kart.controller.get_controls().throttle > 0.5:
+		if not (r.launch_pending and _reads_launch_input(r)):
+			continue
+		var pressed: bool = r.kart.controller.get_controls().throttle > 0.5
+		if not r.launch_armed:
+			# Si llega con el acelerador pulsado (el mismo botón que confirmó el menú) no cuenta hasta que lo suelte
+			r.launch_armed = not pressed
+		elif pressed:
 			r.launch_pending = false
 			r.launch_factor = launch_factor_for(_countdown_left)
 
@@ -138,7 +146,8 @@ func center_text(kart: Kart) -> String:
 	match state:
 		State.COUNTDOWN:
 			if r and r.launch_factor < 0.0:
-				return "¡MOTOR AHOGADO!"
+				return "%d
+¡MOTOR AHOGADO!" % ceili(_countdown_left)
 			return str(ceili(_countdown_left))
 		State.RACING:
 			if r and r.finished:

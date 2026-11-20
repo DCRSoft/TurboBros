@@ -1535,7 +1535,18 @@ func _test_tracks_and_scenery() -> void:
 		_check("pista %s: radio de curva mínimo >= 16 m y sin solapes" % tr.id,
 				radius >= 16.0 and overlap > c.road_half_width * 2.0 + 10.0,
 				"radio=%.0f m, separación mínima=%.0f m, largo=%.0f m" % [radius, overlap, c.length])
-		_check("pista %s: largo razonable (1200-2300 m)" % tr.id, c.length > 1200.0 and c.length < 2300.0, "%.0f m" % c.length)
+		# Giros equilibrados: ni todo a un lado (pista monótona) ni sin curvas
+		var left_t := 0.0
+		var right_t := 0.0
+		for i in c.count:
+			if c.turn[i] > 0.0:
+				left_t += c.turn[i]
+			else:
+				right_t -= c.turn[i]
+		var share := minf(left_t, right_t) / maxf(left_t + right_t, 0.0001)
+		_check("pista %s: giros equilibrados izquierda/derecha (>= 20 %% cada lado)" % tr.id, share >= 0.20,
+				"izquierda %.0f° / derecha %.0f° (%.0f %%)" % [rad_to_deg(left_t), rad_to_deg(right_t), share * 100.0])
+		_check("pista %s: largo razonable (1800-2400 m)" % tr.id, c.length > 1800.0 and c.length < 2400.0, "%.0f m" % c.length)
 		# El terreno queda por debajo de la carretera, sin tapar la calzada
 		var worst := -INF
 		for i in range(0, c.count, 7):
@@ -1621,6 +1632,8 @@ func _launch_run(m: RaceManager, k: Kart, sc: ScriptedController, remaining: Var
 	m.start()
 	var r := m.get_racer(k)
 	if remaining != null:
+		await get_tree().physics_frame   # un fotograma con el acelerador suelto: "armado" (suelta antes de contar)
+		sc.set_input(0.0, 0.0)
 		m._countdown_left = float(remaining)
 		sc.set_input(0.0, 1.0)
 		await get_tree().physics_frame
@@ -1661,7 +1674,7 @@ func _test_track_screen() -> void:
 			n >= 10 and ArtLibrary.track(scene.tracks[0].id) != null and right == start_idx + 1 and down == right + 5 and wrapped,
 			"%d pistas, %d -> %d -> %d" % [n, start_idx, right, down])
 	_check("pistas: vueltas entre 1 y 9", top == LobbyModel.MAX_LAPS and scene.laps == 1)
-	_check("pistas: el largo se calcula (1,4-2,0 km)", scene.tracks[0].length_m() > 1400.0 and scene.tracks[0].length_m() < 2000.0,
+	_check("pistas: el largo se calcula (1,8-2,0 km)", scene.tracks[0].length_m() > 1800.0 and scene.tracks[0].length_m() < 2000.0,
 			"%.0f m" % scene.tracks[0].length_m())
 	scene.queue_free()
 	await _ticks(2)
@@ -1716,6 +1729,35 @@ func _test_launch() -> void:
 	_check("minimapa: cada vista dibuja el trazado de la pista y los karts", mm != null and mm.manager == m
 			and mm._built_for == m.circuit and mm._line.size() > 50 and m.racers.size() >= 1,
 			"puntos=%d" % (mm._line.size() if mm else -1))
+	# Llega con el acelerador pulsado (el botón que confirmó el menú) y lo mantiene: no cuenta como acelerar antes de tiempo
+	sc.set_input(0.0, 0.0)
+	k.respawn(m.circuit.grid_transform(0))
+	for _i in 20:
+		await get_tree().physics_frame
+	sc.set_input(0.0, 1.0)
+	m.start()
+	for _i in 10:
+		await get_tree().physics_frame
+	var held_text := m.center_text(k)
+	m._countdown_left = 0.02
+	while m.state != RaceManager.State.RACING:
+		await get_tree().physics_frame
+	await get_tree().physics_frame
+	_check("arranque: si llega con el acelerador pulsado no se ahoga (y la cuenta atrás se ve)",
+			not k.fx.has(&"stalled") and held_text.is_valid_int(), "texto='%s'" % held_text)
+	# Lo suelta y luego acelera antes de tiempo: sí se ahoga y se ve el aviso junto al número
+	sc.set_input(0.0, 0.0)
+	k.respawn(m.circuit.grid_transform(0))
+	for _i in 20:
+		await get_tree().physics_frame
+	m.start()
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	sc.set_input(0.0, 1.0)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_check("arranque: soltar y acelerar antes de tiempo muestra el aviso sin ocultar el número",
+			m.center_text(k).begins_with("3") and m.center_text(k).contains("AHOGADO"), m.center_text(k).replace("\n", " / "))
 	race.queue_free()
 	await get_tree().process_frame
 
