@@ -31,6 +31,3 @@ Thumbs.db
 # Claude Code (config local)
 .claude/settings.local.json
 
-# Arte propio con licencia aún por decidir (repositorio público): no subir hasta decidirlo (ver CREDITS.md)
-assets/ui/cover.jpg
-assets/ui/cover.jpg.import
