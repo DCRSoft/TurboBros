@@ -24,6 +24,11 @@ func poll() -> Array[Dictionary]:
 			_axis(dev, cur, prev, "y", "up", "down", out)
 		_prev[key] = cur
 	_warmup = false
+	for e in out:   # sonidos de menú: un "tic" al mover y un tono al confirmar / volver
+		match e["action"]:
+			"left", "right", "up", "down": AudioManager.play(&"ui_move", 0.35)
+			"confirm", "start": AudioManager.play(&"ui_confirm", 0.45)
+			"back": AudioManager.play(&"ui_back", 0.4)
 	return out
 
 

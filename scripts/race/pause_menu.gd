@@ -103,6 +103,7 @@ func open() -> void:
 	_refresh()
 	_input = MenuInput.new()   # ignora lo que ya estuviera pulsado al abrir
 	get_tree().paused = not online
+	AudioManager.set_music_ducked(true)
 	opened.emit()
 
 
@@ -112,6 +113,7 @@ func close() -> void:
 	is_open = false
 	visible = false
 	get_tree().paused = false
+	AudioManager.set_music_ducked(false)
 	closed.emit()
 
 

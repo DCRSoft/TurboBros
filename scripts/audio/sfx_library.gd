@@ -15,7 +15,7 @@ static func get_stream(name: StringName) -> AudioStreamWAV:
 
 static func names() -> Array[StringName]:
 	return [&"beep", &"go", &"boost", &"pickup", &"use_item", &"hit", &"explosion", &"drift_tick",
-			&"landing", &"absorb", &"engine"]
+			&"landing", &"absorb", &"engine", &"ui_move", &"ui_confirm", &"ui_back", &"pad", &"stall", &"lastlap"]
 
 
 static func _build(name: StringName) -> AudioStreamWAV:
@@ -31,6 +31,12 @@ static func _build(name: StringName) -> AudioStreamWAV:
 		&"landing": return _wav(_mix(_tone(70.0, 0.18, 0.0, 12.0), _noise(0.1, 20.0), 0.3))
 		&"absorb": return _wav(_arpeggio([880.0, 660.0], 0.06))
 		&"engine": return _engine_loop()
+		&"ui_move": return _wav(_tone(660.0, 0.04, 0.0, 12.0))
+		&"ui_confirm": return _wav(_arpeggio([660.0, 990.0], 0.05))
+		&"ui_back": return _wav(_arpeggio([520.0, 390.0], 0.05))
+		&"pad": return _wav(_sweep(300.0, 1300.0, 0.28, 0.12, 3.0))
+		&"stall": return _wav(_mix(_sweep(240.0, 55.0, 0.55, 0.55, 3.0), _noise(0.55, 5.0), 0.7))
+		&"lastlap": return _wav(_arpeggio([523.0, 659.0, 784.0, 1047.0, 1319.0], 0.06))
 	push_error("Sonido desconocido: %s" % name)
 	return _wav(PackedFloat32Array([0.0]))
 

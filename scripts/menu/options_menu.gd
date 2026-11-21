@@ -8,7 +8,7 @@ var _rows: Array[Label] = []
 var _info: Label
 var _input := MenuInput.new()
 const ITEMS: Array[String] = ["Calidad", "Escala máxima de render", "Auto-ajuste de escala (si bajan de 60 FPS)",
-		"FPS desbloqueados", "Pantalla completa", "Volumen de efectos", "Volumen del motor", "Volver"]
+		"FPS desbloqueados", "Pantalla completa", "Volumen de efectos", "Volumen del motor", "Volumen de la música", "Volver"]
 
 
 func _ready() -> void:
@@ -83,6 +83,7 @@ func _change(d: int) -> void:
 			AudioManager.set_sfx_volume(AudioManager.sfx_volume + d * 0.1)
 			AudioManager.play(&"pickup", 0.6)
 		6: AudioManager.set_engine_volume(AudioManager.engine_volume + d * 0.1)
+		7: AudioManager.set_music_volume(AudioManager.music_volume + d * 0.1)
 	_refresh()
 
 
@@ -96,6 +97,7 @@ func _refresh() -> void:
 		"Sí" if g.fullscreen else "No",
 		"◀ %d %% ▶" % roundi(AudioManager.sfx_volume * 100.0),
 		"◀ %d %% ▶" % roundi(AudioManager.engine_volume * 100.0),
+		"◀ %d %% ▶" % roundi(AudioManager.music_volume * 100.0),
 		"",
 	]
 	for i in ITEMS.size():

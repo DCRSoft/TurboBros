@@ -6,6 +6,8 @@ extends Node
 
 signal race_started
 signal countdown_beep(number: int)
+signal pad_hit(kart: Kart)                       ## un kart entra en una zona de turbo
+signal launch_result(kart: Kart, factor: float)  ## resultado del arranque de un humano: -1 ahogado, 0..1 turbo
 signal kart_finished(kart: Kart, place: int)
 signal race_finished(results: Array)
 
@@ -116,6 +118,7 @@ func _check_launch_input() -> void:
 func _apply_launch(r: Racer) -> void:
 	if not _reads_launch_input(r):
 		return
+	launch_result.emit(r.kart, r.launch_factor)
 	if r.launch_factor < 0.0:
 		r.kart.fx.add(EffectLibrary.get_effect(&"stalled"), STALL_TIME)
 	elif r.launch_factor > 0.02:
@@ -218,6 +221,8 @@ func _apply_pads() -> void:
 			var dz := p.z - q.z
 			var rad: float = pad["radius"]
 			if dx * dx + dz * dz < rad * rad and absf(p.y - q.y) < 3.0:
+				if not k.fx.has(&"boost"):
+					pad_hit.emit(k)
 				k.fx.add(boost)
 				break
 

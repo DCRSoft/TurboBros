@@ -16,6 +16,7 @@ var _state := &"checking"   # checking | none | available | downloading | ready 
 
 func _ready() -> void:
 	GameSession.reset()
+	AudioManager.ensure_menu_music()
 	var bg := ColorRect.new()
 	bg.color = Color(0.08, 0.09, 0.12)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

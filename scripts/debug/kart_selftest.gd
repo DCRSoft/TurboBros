@@ -1452,6 +1452,7 @@ func _run() -> void:
 
 	# 6d. Sonido
 	_test_sfx()
+	await _test_music()
 	await _test_audio_manager()
 
 	# 6c. Calidades gráficas
@@ -1801,6 +1802,89 @@ func _test_shortcuts() -> void:
 		c.queue_free()
 	_check("atajos: cada pista tiene uno, es al menos 40 m más corto y no pisa la carretera", all_ok and min_gain >= 40.0 and min_sep >= 20.0,
 			"ahorro mínimo %.0f m, separación mínima %.0f m,%s" % [min_gain, min_sep, detail])
+
+
+func _test_music() -> void:
+	var ids := MusicComposer.style_ids()
+	var good := true
+	var detail := ""
+	var hashes := {}
+	for id in ids:
+		var w := AudioManager._load_music(id, true) as AudioStreamWAV
+		if w == null:
+			good = false
+			detail += " falta:%s" % id
+			continue
+		var secs := w.get_length()
+		var raw := FileAccess.get_file_as_bytes("res://assets/audio/music/%s.wav" % id)   # el original sin compresión
+		var peak := 0.0
+		var sumsq := 0.0
+		var cnt := 0
+		for i in range(44, raw.size() - 1, 74):
+			var v := raw.decode_s16(i) / 32768.0
+			peak = maxf(peak, absf(v))
+			sumsq += v * v
+			cnt += 1
+		var rms := sqrt(sumsq / maxf(cnt, 1))
+		var ok := secs >= 18.0 and secs <= 34.0 and peak <= 0.95 and rms > 0.05 and w.loop_mode == AudioStreamWAV.LOOP_FORWARD
+		good = good and ok
+		if not ok:
+			detail += " %s(%.0fs pico %.2f rms %.2f)" % [id, secs, peak, rms]
+		hashes[hash(w.data)] = true
+	_check("música: hay un bucle de 18-34 s por estilo (9 temas + menú), sin saturar y con sonido", good and ids.size() == 10, detail)
+	_check("música: cada estilo suena distinto", hashes.size() == ids.size())
+	_check("música: hay fanfarria de resultados sin bucle", AudioManager._load_music(&"resultados", false) != null
+			and (AudioManager._load_music(&"resultados", false) as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_DISABLED)
+	var themes_ok := true
+	for t in DataCatalog.themes():
+		themes_ok = themes_ok and MusicComposer.STYLES.has(t.id)
+	_check("música: todos los temas de pista tienen su estilo", themes_ok)
+	var a := MusicComposer.new().render(&"menu")
+	var b := MusicComposer.new().render(&"menu")
+	_check("música: el compositor es determinista (misma semilla, misma música)", a.size() == b.size() and a.to_byte_array().hex_encode() == b.to_byte_array().hex_encode())
+
+	# Reproducción, volumen y última vuelta
+	AudioManager.music_volume = 0.4
+	AudioManager.play_music(&"costa")
+	await get_tree().create_timer(1.3).timeout
+	_check("música: sonando con fundido de entrada", AudioManager.is_music_playing() and AudioManager.music_id == &"costa")
+	AudioManager.set_music_volume(0.0)
+	await get_tree().create_timer(0.6).timeout
+	_check("música: volumen 0 la detiene", not AudioManager.is_music_playing())
+	AudioManager.set_music_volume(0.4)
+	await get_tree().create_timer(1.3).timeout
+	_check("música: al subir el volumen vuelve la misma música", AudioManager.is_music_playing() and AudioManager.music_id == &"costa")
+	GameSession.reset()
+	GameSession.laps = 2
+	var seats: Array[Seat] = [Seat.new()]
+	GameSession.setups = [{"slot": 0, "seats": seats, "team": -1}]
+	GameSession.bot_teams = []
+	var race: Node3D = load("res://scenes/race/race.tscn").instantiate()
+	race.attach_player_input = false
+	add_child(race)
+	await get_tree().physics_frame
+	var m: RaceManager = race.manager
+	await get_tree().create_timer(0.7).timeout
+	_check("música: en la cuenta atrás se silencia (entra con la salida)", AudioManager.music_id == &"")
+	m.state = RaceManager.State.RACING
+	AudioManager.play_music(&"costa")
+	await get_tree().create_timer(1.3).timeout
+	var r: RaceManager.Racer = m.racers[0]
+	r.progress = m.circuit.length * (m.laps - 1) + 20.0
+	AudioManager._update_last_lap(1.0)
+	var fast := AudioManager.music_pitch()
+	r.progress = 50.0
+	AudioManager._update_last_lap(1.0)
+	_check("música: en la última vuelta sube de tono y vuelve a la normal", fast > 1.05 and AudioManager.music_pitch() == 1.0,
+			"%.2f -> %.2f" % [fast, AudioManager.music_pitch()])
+	AudioManager.set_music_ducked(true)
+	var low := AudioManager._music_target()
+	AudioManager.set_music_ducked(false)
+	_check("música: en la pausa baja el volumen", low < AudioManager._music_target() * 0.5)
+	AudioManager.stop_music(0.0)
+	race.queue_free()
+	await get_tree().process_frame
+	GameSession.reset()
 
 
 func _test_launch() -> void:

@@ -19,6 +19,7 @@ var _help: Label
 
 func _ready() -> void:
 	GameSession.reset()
+	AudioManager.ensure_menu_music()
 	model.restore_memory(InputManager.get_devices())   # los jugadores de la carrera anterior siguen activos
 	var bg := ColorRect.new()
 	bg.color = Color(0.08, 0.09, 0.12)
