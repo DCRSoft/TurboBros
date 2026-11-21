@@ -231,11 +231,9 @@ func _update_progress(r: Racer, delta: float) -> void:
 		return
 	if r.finished:
 		return
-	if not r.initialized or r.needs_resync:
-		r.idx = circuit.nearest_global(pos)
-	else:
-		r.idx = circuit.nearest_index(pos, r.idx)
-	var s_raw := circuit.raw_s(pos, r.idx)
+	var pr := circuit.progress_at(pos, r.idx, not r.initialized or r.needs_resync)
+	r.idx = pr["idx"]
+	var s_raw: float = pr["s"]
 	var half := circuit.length * 0.5
 	if not r.initialized:
 		r.progress = s_raw if s_raw < half else s_raw - circuit.length
@@ -248,7 +246,7 @@ func _update_progress(r: Racer, delta: float) -> void:
 	if state != State.RACING:
 		return
 	# Contramano: velocidad contraria al sentido del circuito
-	var t := circuit.tangents[r.idx]
+	var t: Vector3 = pr["tangent"]
 	var vel := k.sphere.linear_velocity
 	if vel.x * t.x + vel.z * t.z < -2.0:
 		r.wrong_t += delta

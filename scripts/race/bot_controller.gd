@@ -25,6 +25,11 @@ var _stuck_count := 0
 var _reverse_t := 0.0
 var _lane_t := 0.0
 var _ok_t := 0.0
+var shortcut_chance := 0.6        ## probabilidad de tomar un atajo al llegar a su salida
+var _alt: Circuit.Alt = null      ## atajo que sigue ahora (null = carretera principal)
+var _alt_k := 0
+var shortcuts_taken := 0          ## veces que ha tomado un atajo (diagnóstico)
+var _alt_plan := {}               ## atajo -> decidido para esta pasada (true = lo toma)
 var _rng := RandomNumberGenerator.new()
 
 
@@ -56,6 +61,8 @@ func _think(dt: float) -> void:
 	var speed := vel.length()
 	_controls.item = false
 
+	_update_shortcut(pos)
+
 	# Carril: pequeño paseo aleatorio para no ir todos en fila
 	_lane_t -= dt
 	if _lane_t <= 0.0:
@@ -73,6 +80,9 @@ func _think(dt: float) -> void:
 	var look := int(clampf(10.0 + speed * 0.7, 12.0, 34.0) / circuit.step)
 	var ti := circuit.wrap_index(_idx + look)
 	var target := circuit.points[ti] + circuit.rights[ti] * lane
+	if _alt != null:
+		var ak := mini(_alt_k + look, _alt.count - 1)
+		target = _alt.points[ak] + _alt.rights[ak] * lane * 0.4
 	var fwd := kart.get_forward()
 	fwd.y = 0.0
 	fwd = fwd.normalized()
@@ -84,7 +94,10 @@ func _think(dt: float) -> void:
 	# Velocidad deseada según la curvatura próxima
 	var sharp := 0.0
 	for j in range(1, 19):
-		sharp += absf(circuit.turn[circuit.wrap_index(_idx + j)])
+		if _alt != null:
+			sharp += absf(_alt.turn[mini(_alt_k + j, _alt.count - 1)])
+		else:
+			sharp += absf(circuit.turn[circuit.wrap_index(_idx + j)])
 	var v_des := kart.stats.max_speed * skill * lerpf(1.0, 0.7, clampf(sharp / 2.2, 0.0, 1.0))
 	if kart.fx.mods.force_throttle:
 		v_des = INF
@@ -106,6 +119,37 @@ func _think(dt: float) -> void:
 		steer = -steer
 	_controls.steer = steer
 	_think_items(dt)
+
+
+## Atajos: a unos 90 m de la salida decide (una vez por pasada) si lo toma; al llegar lo sigue hasta el final.
+func _update_shortcut(pos: Vector3) -> void:
+	if _alt != null:
+		var best := INF
+		var bk := _alt_k
+		for k in range(maxi(_alt_k - 2, 0), mini(_alt_k + 14, _alt.count)):
+			var dx := pos.x - _alt.points[k].x
+			var dz := pos.z - _alt.points[k].z
+			var d := dx * dx + dz * dz
+			if d < best:
+				best = d
+				bk = k
+		_alt_k = bk
+		if _alt_k >= _alt.count - 3 or best > 40.0 * 40.0:
+			_alt = null   # llegó al final (o se salió del camino): vuelve a la carretera principal
+		return
+	for ai in circuit.alts.size():
+		var a: Circuit.Alt = circuit.alts[ai]
+		var ahead := posmod(a.ia - _idx, circuit.count)
+		if ahead > 60 and ahead < circuit.count - 10:
+			_alt_plan.erase(ai)
+		elif ahead <= 30 and not _alt_plan.has(ai):
+			_alt_plan[ai] = _rng.randf() < shortcut_chance
+		if _alt_plan.get(ai, false) and ahead <= 4:
+			_alt = a
+			_alt_k = 0
+			shortcuts_taken += 1
+			_alt_plan[ai] = false
+			return
 
 
 ## Carril al que desviarse para esquivar la trampa más cercana por delante (NAN = nada que esquivar).

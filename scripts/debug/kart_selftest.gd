@@ -1464,6 +1464,7 @@ func _run() -> void:
 
 	await _test_track_screen()
 	await _test_features()
+	await _test_shortcuts()
 
 	# 6c2. Arranque de la cuenta atrás
 	await _test_launch()
@@ -1759,6 +1760,47 @@ func _test_features() -> void:
 	race.queue_free()
 	await get_tree().process_frame
 	GameSession.reset()
+
+
+func _test_shortcuts() -> void:
+	var all_ok := true
+	var detail := ""
+	var min_gain := INF
+	var min_sep := INF
+	for tr in DataCatalog.tracks():
+		var c := Circuit.new()
+		c.track = tr
+		c.theme = DataCatalog.theme(tr.theme)
+		add_child(c)
+		await get_tree().process_frame
+		if c.alts.is_empty():
+			all_ok = false
+			detail += " sin atajo en " + String(tr.id)
+		for a in c.alts:
+			var arc := (a.ib - a.ia) * c.step
+			min_gain = minf(min_gain, arc - a.length)
+			# Separación de la carretera principal fuera de las bocas (los muros no se tocan)
+			for k in range(14, a.count - 14):
+				for i in c.count:
+					var d := Vector2(a.points[k].x - c.points[i].x, a.points[k].z - c.points[i].z).length()
+					min_sep = minf(min_sep, d)
+			# El progreso de un kart que recorre el atajo crece de forma continua desde la salida hasta la entrada
+			var prev := a.ia * c.step - 1.0
+			var mono := true
+			var last_s := 0.0
+			for k in a.count:
+				var pr := c.progress_at(a.points[k] + Vector3.UP * 0.9, a.ia, k == 0)
+				mono = mono and float(pr["s"]) >= prev - 0.5
+				prev = pr["s"]
+				last_s = pr["s"]
+			all_ok = all_ok and mono and absf(last_s - a.ib * c.step) < 6.0
+			if not mono or absf(last_s - a.ib * c.step) >= 6.0:
+				detail += " progreso %s (%.0f vs %.0f)" % [tr.id, last_s, a.ib * c.step]
+			# Hueco en el muro principal en la salida y muro intacto lejos de ella
+			all_ok = all_ok and c._wall_gap(a.ia + 2, a.side) and not c._wall_gap(a.ia + 2, -a.side) and not c._wall_gap(a.ia + 40, a.side)
+		c.queue_free()
+	_check("atajos: cada pista tiene uno, es al menos 40 m más corto y no pisa la carretera", all_ok and min_gain >= 40.0 and min_sep >= 20.0,
+			"ahorro mínimo %.0f m, separación mínima %.0f m,%s" % [min_gain, min_sep, detail])
 
 
 func _test_launch() -> void:

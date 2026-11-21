@@ -38,14 +38,19 @@ func _run() -> void:
 		for r in m.racers:
 			fin += 1 if r.finished else 0
 			resp += r.respawns
+		var taken := 0
+		for r in m.racers:
+			var bc := r.kart.get_node_or_null("Bot") as BotController
+			if bc != null:
+				taken += bc.shortcuts_taken
 		var slowest := INF   # los karts lentos (tanque + personaje pesado) pueden quedarse fuera del plazo de gracia: basta con que avancen
 		for r in m.racers:
 			slowest = minf(slowest, r.progress / m.circuit.length)
 		var ok := m.state == RaceManager.State.FINISHED and fin >= 1 and slowest > 0.85 and resp <= 2
 		failures += 0 if ok else 1
-		print("%s %s: %.0f m, paisaje %d ms, trozos=%d tris=%d props=%d | 1 vuelta: ganador %.1f s, llegaron %d/4, reapariciones %d" % [
+		print("%s %s: %.0f m, paisaje %d ms, trozos=%d tris=%d props=%d | 1 vuelta: ganador %.1f s, llegaron %d/4, reapariciones %d, atajos tomados %d" % [
 				"OK  " if ok else "FALLO", tr.id, race.circuit.length, s.build_ms, s.terrain_chunks, s.terrain_triangles,
-				s.prop_instances, m.results[0]["time"] if not m.results.is_empty() else -1.0, fin, resp])
+				s.prop_instances, m.results[0]["time"] if not m.results.is_empty() else -1.0, fin, resp, taken])
 		if only != "":
 			for r in m.racers:
 				print("      %s: llegó=%s tiempo=%.1f progreso=%.0f/%.0f reapariciones=%d" % [r.kart.racer_name, r.finished,

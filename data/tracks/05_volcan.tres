@@ -32,3 +32,8 @@ features = Array[Dictionary]([{
 "lat": 0.0,
 "type": "turbo"
 }])
+shortcuts = Array[Dictionary]([{
+"fa": 0.81698,
+"fb": 0.91947,
+"pts": PackedVector3Array(-141.3, 0, -143.4, -131.9, 0, -128.5, -136.2, 0, -108.4, -149.7, 0, -85.8, -168.1, 0, -63.4, -187, 0, -44)
+}])

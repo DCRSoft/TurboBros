@@ -35,6 +35,7 @@ var _nz := 0
 var _heights := PackedFloat32Array()
 var _dist := PackedFloat32Array()
 var _noise: FastNoiseLite
+var _rp := PackedVector3Array()   ## puntos de TODAS las carreteras (principal + atajos) para aplanar el terreno y despejar el decorado
 var _hash := {}              ## Vector2i -> PackedInt32Array (índices de muestras)
 var _region := {}            ## Vector2i -> anillo (0 = junto a la carretera)
 var _rng := RandomNumberGenerator.new()
@@ -56,6 +57,9 @@ func build(c: Circuit, t: ThemeData) -> void:
 	for i in circuit.count:
 		mean_y += circuit.points[i].y
 	mean_y /= maxf(circuit.count, 1)
+	_rp = circuit.points.duplicate()
+	for a in circuit.alts:
+		_rp.append_array(a.points)
 	_index_road()
 	_build_terrain()
 	_build_hazards()
@@ -121,7 +125,7 @@ func road_distance(x: float, z: float) -> float:
 		for dz in range(-1, 2):
 			var list: PackedInt32Array = _hash.get(Vector2i(kx + dx, kz + dz), PackedInt32Array())
 			for i in list:
-				var p := circuit.points[i]
+				var p := _rp[i]
 				var ex := p.x - x
 				var ez := p.z - z
 				var d := ex * ex + ez * ez
@@ -135,8 +139,8 @@ func road_distance(x: float, z: float) -> float:
 func _index_road() -> void:
 	_min = Vector2(INF, INF)
 	_max = Vector2(-INF, -INF)
-	for i in circuit.count:
-		var p := circuit.points[i]
+	for i in _rp.size():
+		var p := _rp[i]
 		_min = Vector2(minf(_min.x, p.x), minf(_min.y, p.z))
 		_max = Vector2(maxf(_max.x, p.x), maxf(_max.y, p.z))
 		var k := Vector2i(floori(p.x / HASH), floori(p.z / HASH))
@@ -178,8 +182,8 @@ func _build_terrain() -> void:
 	var reach := flat + 55.0
 	var r_nodes := int(ceilf(reach / _cell))
 	var stride := 2
-	for i in range(0, circuit.count, stride):
-		var p := circuit.points[i]
+	for i in range(0, _rp.size(), stride):
+		var p := _rp[i]
 		var gx := int(roundf((p.x - _x0) / _cell))
 		var gz := int(roundf((p.z - _z0) / _cell))
 		for iz in range(maxi(gz - r_nodes, 0), mini(gz + r_nodes + 1, _nz)):
@@ -194,7 +198,7 @@ func _build_terrain() -> void:
 					if d < _dist[idx]:
 						_dist[idx] = d
 						roady[idx] = p.y
-						near[idx] = i
+						near[idx] = i if i < circuit.count else -1
 	_heights = PackedFloat32Array()
 	_heights.resize(total)
 	for iz in _nz:

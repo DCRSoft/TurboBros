@@ -94,6 +94,10 @@ func _show_feature(race: Node3D, spec: String) -> void:
 	var n := int(parts[1]) if parts.size() > 1 else 0
 	await get_tree().create_timer(0.5).timeout
 	var c: Circuit = race.circuit
+	if kind == "shortcut" and not c.alts.is_empty():
+		race.human_karts[0].respawn(c.respawn_transform(c.wrap_index(c.alts[0].ia - 8)))
+		await get_tree().create_timer(1.2).timeout
+		return
 	var list: Array = {"bridge": c.bridges, "tunnel": c.tunnels, "ramp": c.ramps, "turbo": c.pads}.get(kind, [])
 	if list.is_empty():
 		print("Sin elementos de tipo ", kind)

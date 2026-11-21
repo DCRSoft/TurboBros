@@ -13,6 +13,10 @@ extends Resource
 ## Elementos del trazado: [{"type": "turbo"|"ramp"|"bridge"|"tunnel", "f": 0..1 (posición de inicio como fracción de la
 ## vuelta), "len": metros (puente/túnel/rampa), "lat": -1..1 (lado, solo turbo/rampa), "hazard": "water"|"lava"|"void" (puente)}]
 @export var features: Array[Dictionary] = []
+## Atajos (rutas alternas más cortas): [{"fa": fracción de salida, "fb": fracción de regreso, "pts": PackedVector3Array de puntos
+## intermedios (x, 0, z) en metros}]. Salen de la carretera por un lado y vuelven a ella; el progreso se cuenta como si
+## fuera la carretera principal.
+@export var shortcuts: Array[Dictionary] = []
 
 var _length := -1.0
 var _dense := PackedVector3Array()

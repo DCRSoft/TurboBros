@@ -8,6 +8,7 @@ var manager: RaceManager
 
 var _line := PackedVector2Array()    ## trazado normalizado a 0..1
 var _flag := PackedVector2Array()    ## dos puntos de la línea de meta
+var _alts: Array[PackedVector2Array] = []   ## atajos normalizados
 var _min := Vector2.ZERO
 var _scale := 1.0
 var _built_for: Circuit
@@ -37,6 +38,13 @@ func _build(c: Circuit) -> void:
 	for i in range(0, c.count, 2):
 		_line.append(_norm(Vector3(c.points[i].x, 0.0, c.points[i].z)))
 	_line.append(_line[0])
+	_alts.clear()
+	for a in c.alts:
+		var line := PackedVector2Array()
+		for k in range(0, a.count, 2):
+			line.append(_norm(a.points[k]))
+		line.append(_norm(a.points[a.count - 1]))
+		_alts.append(line)
 	var f := _norm(c.points[0])
 	var side := Vector2(c.rights[0].x, c.rights[0].z) * c.road_half_width * _scale * 1.6
 	_flag = PackedVector2Array([f - side, f + side])
@@ -61,6 +69,12 @@ func _draw() -> void:
 		pts.append(origin + p * side)
 	draw_polyline(pts, Color(0, 0, 0, 0.9), maxf(side * 0.045, 5.0), true)
 	draw_polyline(pts, Color(0.82, 0.84, 0.9), maxf(side * 0.03, 3.0), true)
+	for line in _alts:   # atajos: línea azul discontinua
+		var pl := PackedVector2Array()
+		for q in line:
+			pl.append(origin + q * side)
+		for k in range(0, pl.size() - 1, 2):
+			draw_line(pl[k], pl[k + 1], Color(0.35, 0.8, 1.0), maxf(side * 0.02, 2.0))
 	draw_line(origin + _flag[0] * side, origin + _flag[1] * side, Color.WHITE, 3.0)
 	# Karts: primero los demás y al final el propio, para que quede encima
 	for r in manager.racers:
