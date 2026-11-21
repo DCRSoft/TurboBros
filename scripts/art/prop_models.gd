@@ -6,7 +6,7 @@ extends RefCounted
 const KINDS: Array[String] = [
 	"pine", "snow_pine", "round_tree", "bush", "palm", "cactus", "rock", "lava_spire", "crystal", "ice_crystal",
 	"mushroom", "cabin", "dead_tree", "ruin_pillar", "banner", "tires", "lamp",
-	"tower", "grandstand", "tank", "chimney", "lighthouse",
+	"tower", "grandstand", "tank", "chimney", "lighthouse", "float_rock", "planet",
 ]
 
 static var _cache := {}
@@ -154,6 +154,15 @@ static func _make(kind: String) -> ArrayMesh:
 			b.cylinder(Vector3(0, 6.2, 0), 1.9, 1.9, 1.6, Color(0.85, 0.15, 0.15), 8)
 			b.cylinder(Vector3(0, 8.8, 0), 1.2, 1.4, 1.4, Color(1.0, 0.95, 0.6), 8)
 			b.cone(Vector3(0, 10.1, 0), 1.6, 1.4, Color(0.7, 0.15, 0.15), 8)
+		"float_rock":
+			b.ellipsoid(Vector3(0, 0.0, 0), Vector3(3.2, 1.1, 3.0), Color(0.5, 0.42, 0.62), 7, 3)
+			b.cylinder(Vector3(0, -3.2, 0), 2.6, 0.0, 6.0, Color(0.32, 0.27, 0.42), 7)
+			b.cone(Vector3(0.4, 2.1, 0.2), 0.7, 2.4, Color(0.55, 1.0, 0.95), 5)
+		"planet":
+			b.sphere(Vector3.ZERO, 1.0, Color(0.9, 0.9, 1.0), 10, 6)
+			b.push(MeshBuilder.rot_z(18.0))
+			b.cylinder(Vector3.ZERO, 1.9, 1.9, 0.05, Color(0.95, 0.85, 0.7), 14)
+			b.pop()
 		_:
 			b.box(Vector3(0, 0.5, 0), Vector3.ONE, Color.MAGENTA)
 	return b.build()

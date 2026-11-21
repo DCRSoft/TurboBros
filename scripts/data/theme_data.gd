@@ -6,6 +6,10 @@ extends Resource
 @export var id: StringName = &""
 @export var display_name := ""
 
+## Pista en el espacio: sin terreno ni montañas; la carretera flota sobre plataformas, entre rocas, planetas y estrellas,
+## y es un arcoíris.
+@export var floating := false
+
 @export_group("Cielo y luz")
 @export var sky_top := Color(0.35, 0.55, 0.9)
 @export var sky_horizon := Color(0.75, 0.85, 0.95)

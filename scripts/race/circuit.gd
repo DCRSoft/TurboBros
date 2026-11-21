@@ -375,6 +375,8 @@ func _build_geometry() -> void:
 		var rj := points[j] + rights[j] * hw
 		var hz := bridge_hazard_at(i)
 		var road_col: Color = CircuitFeatures.deck_color(hz, i / 2) if hz != "" else _road_colors[(i / 2) % 2]
+		if theme.floating and hz == "":
+			road_col = Color.from_hsv(fposmod(float(i) * step / 420.0, 1.0), 0.85 if (i / 2) % 2 == 0 else 0.75, 0.72)
 		_quad(verts, norms, cols, li, ri, rj, lj, up, road_col, faces, true)
 		# Bordillos (solo visual)
 		var cc := _curb_colors[i % 2]

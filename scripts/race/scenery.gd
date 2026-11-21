@@ -35,6 +35,7 @@ var _nz := 0
 var _heights := PackedFloat32Array()
 var _dist := PackedFloat32Array()
 var _noise: FastNoiseLite
+var _floating := false
 var _rp := PackedVector3Array()   ## puntos de TODAS las carreteras (principal + atajos) para aplanar el terreno y despejar el decorado
 var _hash := {}              ## Vector2i -> PackedInt32Array (índices de muestras)
 var _region := {}            ## Vector2i -> anillo (0 = junto a la carretera)
@@ -61,10 +62,14 @@ func build(c: Circuit, t: ThemeData) -> void:
 	for a in circuit.alts:
 		_rp.append_array(a.points)
 	_index_road()
-	_build_terrain()
-	_build_hazards()
-	_build_mountains()
-	_build_props()
+	_floating = theme.floating
+	if _floating:
+		_build_floating()
+	else:
+		_build_terrain()
+		_build_hazards()
+		_build_mountains()
+		_build_props()
 	_build_trackside()
 	_build_arch()
 	build_ms = Time.get_ticks_msec() - t0
@@ -97,12 +102,16 @@ func apply_theme(world_env: WorldEnvironment, sun: DirectionalLight3D) -> void:
 
 
 static func fog_density_for(t: ThemeData, p: Dictionary) -> float:
+	if t.floating:
+		return t.fog_density   # en el espacio no hay terreno que ocultar
 	var view := float(p.get("terrain_distance", 480.0))
 	return maxf(t.fog_density, 2.3 / (0.85 * view))
 
 
 ## Altura del terreno en (x, z) (interpolación bilineal de la malla).
 func height_at(x: float, z: float) -> float:
+	if _floating:
+		return _road_y_near(x, z) - ROAD_DROP
 	var fx := clampf((x - _x0) / _cell, 0.0, _nx - 1.001)
 	var fz := clampf((z - _z0) / _cell, 0.0, _nz - 1.001)
 	var ix := int(fx)
@@ -132,6 +141,24 @@ func road_distance(x: float, z: float) -> float:
 				if d < best:
 					best = d
 	return sqrt(best) if best < INF else 999.0
+
+
+## Altura de la muestra de carretera más cercana (pistas flotantes: la "base" del decorado a pie de pista).
+func _road_y_near(x: float, z: float) -> float:
+	var kx := floori(x / HASH)
+	var kz := floori(z / HASH)
+	var best := INF
+	var y := mean_y
+	for dx in range(-1, 2):
+		for dz in range(-1, 2):
+			var list: PackedInt32Array = _hash.get(Vector2i(kx + dx, kz + dz), PackedInt32Array())
+			for i in list:
+				var p := _rp[i]
+				var d := (p.x - x) * (p.x - x) + (p.z - z) * (p.z - z)
+				if d < best:
+					best = d
+					y = p.y
+	return y
 
 
 # --- Índices ---------------------------------------------------------------------------------
@@ -380,6 +407,109 @@ func _build_mountains() -> void:
 	mi.material_override = mat
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)
+
+
+# --- Espacio (pistas flotantes) -------------------------------------------------------------
+
+func _build_floating() -> void:
+	var center := Vector3((_min.x + _max.x) * 0.5, mean_y, (_min.y + _max.y) * 0.5)
+	_build_stars(center)
+	_build_platforms()
+	# Rocas flotantes cerca de la pista y planetas lejanos (MultiMesh)
+	var density_k := float(preset.get("prop_density", 1.0))
+	var rocks_xf: Array[Transform3D] = []
+	var rocks_col: Array[Color] = []
+	var n := int(46 * clampf(density_k, 0.4, 1.0))
+	for _k in n:
+		var i := _rng.randi() % circuit.count
+		var side := -1.0 if _rng.randf() < 0.5 else 1.0
+		var off := _rng.randf_range(34.0, 190.0)
+		var pos: Vector3 = circuit.points[i] + circuit.rights[i] * side * off + Vector3.UP * _rng.randf_range(-45.0, 30.0)
+		if road_distance(pos.x, pos.z) < circuit.road_half_width + 22.0:
+			continue
+		var s := _rng.randf_range(0.8, 2.4)
+		rocks_xf.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(s, s, s)), pos))
+		var v := _rng.randf_range(0.8, 1.15)
+		rocks_col.append(Color(v, v, v))
+	_add_multimesh("FloatRocks", "float_rock", rocks_xf, rocks_col, float(preset.get("prop_distance", 300.0)) + 220.0)
+	var planets_xf: Array[Transform3D] = []
+	var planets_col: Array[Color] = []
+	var tints: Array[Color] = [Color(0.95, 0.7, 0.4), Color(0.45, 0.7, 1.0), Color(0.9, 0.45, 0.8), Color(0.55, 0.95, 0.7)]
+	for k in 4:
+		var ang := (k + _rng.randf_range(-0.2, 0.2)) * TAU / 4.0
+		var dist := _rng.randf_range(520.0, 700.0)
+		var r := _rng.randf_range(45.0, 85.0)
+		var pos := center + Vector3(cos(ang) * dist, _rng.randf_range(-40.0, 140.0), sin(ang) * dist)
+		planets_xf.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(r, r, r)), pos))
+		planets_col.append(tints[k])
+	_add_multimesh("Planets", "planet", planets_xf, planets_col, 0.0)
+
+
+func _build_stars(center: Vector3) -> void:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	var sm := SphereMesh.new()
+	sm.radius = 1.0
+	sm.height = 2.0
+	sm.radial_segments = 4
+	sm.rings = 2
+	mm.mesh = sm
+	var count := int(700 * clampf(float(preset.get("prop_density", 1.0)), 0.5, 1.0))
+	mm.instance_count = count
+	for i in count:
+		var dir := Vector3(_rng.randf_range(-1.0, 1.0), _rng.randf_range(-0.6, 1.0), _rng.randf_range(-1.0, 1.0)).normalized()
+		var r := _rng.randf_range(430.0, 600.0)
+		var sz := _rng.randf_range(0.7, 2.2)
+		mm.set_instance_transform(i, Transform3D(Basis().scaled(Vector3(sz, sz, sz)), center + dir * r))
+		var hue := _rng.randf()
+		mm.set_instance_color(i, Color.from_hsv(hue, 0.0 if hue < 0.5 else 0.45, 1.0))
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.disable_fog = true
+	var mmi := MultiMeshInstance3D.new()
+	mmi.name = "Stars"
+	mmi.multimesh = mm
+	mmi.material_override = mat
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mmi)
+	prop_instances += count
+
+
+## Plataformas circulares bajo la carretera (como "estaciones"): disco, anillo luminoso, base de roca y cristales.
+func _build_platforms() -> void:
+	var b := MeshBuilder.new()
+	var glow := MeshBuilder.new()
+	var hw := circuit.road_half_width
+	var n := 6
+	for k in n:
+		var i := int((0.07 + float(k) / n) * circuit.count) % circuit.count
+		var p: Vector3 = circuit.points[i] - Vector3.UP * 0.25
+		var xf := Transform3D(Basis.IDENTITY, p)
+		b.push(xf)
+		b.cylinder(Vector3(0, -1.2, 0), 24.0, 23.0, 2.4, Color(0.58, 0.52, 0.74), 14)
+		b.cylinder(Vector3(0, -12.4, 0), 22.0, 0.0, 20.0, Color(0.3, 0.25, 0.42), 9)
+		b.cylinder(Vector3(0, -2.3, 0), 22.5, 22.5, 0.5, Color(0.42, 0.36, 0.58), 14)
+		for side in [-1.0, 1.0]:   # cristales a los lados de la carretera
+			var o: Vector3 = circuit.rights[i] * side * (hw + 8.0)
+			b.cone(o + Vector3(0, 3.5, 0), 1.6, 7.0, Color(0.55, 1.0, 0.95) if side < 0.0 else Color(1.0, 0.55, 0.9), 5)
+			b.cone(o + Vector3(2.2, 2.0, 1.5), 1.0, 4.0, Color(0.7, 0.8, 1.0), 5)
+		b.pop()
+		glow.push(xf)
+		glow.cylinder(Vector3(0, 0.05, 0), 24.6, 24.6, 0.35, Color(0.35, 0.95, 1.0), 20)
+		glow.pop()
+	var mi := b.build_instance()
+	mi.name = "Platforms"
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+	var gi := glow.build_instance()
+	gi.name = "PlatformGlow"
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.vertex_color_use_as_albedo = true
+	gi.material_override = mat
+	gi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(gi)
 
 
 # --- Decorado ---------------------------------------------------------------------------------

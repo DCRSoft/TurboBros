@@ -193,8 +193,9 @@ func _themes() -> void:
 		"banner_color": Color(1.0, 0.4, 0.1),
 	})
 	_theme("alien", "Fantasía", {
-		"sky_top": Color(0.2, 0.12, 0.4), "sky_horizon": Color(0.45, 0.85, 0.85), "ground_horizon": Color(0.4, 0.3, 0.6),
-		"ambient": Color(0.55, 0.52, 0.72), "fog_color": Color(0.5, 0.4, 0.75), "fog_density": 0.002,
+		"floating": true,
+		"sky_top": Color(0.02, 0.01, 0.1), "sky_horizon": Color(0.16, 0.09, 0.4), "ground_horizon": Color(0.16, 0.09, 0.4),
+		"ambient": Color(0.6, 0.55, 0.8), "fog_color": Color(0.16, 0.09, 0.4), "fog_density": 0.0007,
 		"sun_color": Color(0.85, 1.0, 0.95), "sun_energy": 1.0, "sun_rotation": Vector3(-55, -30, 0),
 		"ground_low": Color(0.25, 0.16, 0.42), "ground_high": Color(0.36, 0.3, 0.58), "rock": Color(0.2, 0.36, 0.42),
 		"accent": Color(0.55, 1.0, 0.9), "amplitude": 26.0, "feature_size": 105.0, "snow_line": 0.0,
